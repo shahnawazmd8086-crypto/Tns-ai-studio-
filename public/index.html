@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>TNS AI Studio</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="authGate" class="auth-gate">
+  <div class="auth-card">
+    <h1>TNS AI Studio</h1>
+    <p>अभी OTP की जरूरत नहीं। Email login या Guest Mode से Studio खोलें।</p>
+    <input id="loginEmail" type="email" placeholder="आपका email">
+    <input id="loginPass" type="password" placeholder="Password">
+    <div class="row"><button id="loginBtn" class="primary">Login</button><button id="guestBtn">Guest Mode</button></div>
+    <small>Production में secure server-side authentication जोड़ना होगा।</small>
+  </div>
+</div>
+<header>
+  <div><h1>TNS AI Studio</h1><p>AI Video • Edit • Character Lock • Voice • Projects</p></div>
+  <div class="row"><span id="userBadge"></span><button id="logoutBtn" class="ghost">Logout</button><button id="themeBtn" class="ghost">☾</button></div>
+</header>
+
+<nav class="tabs">
+<button class="tab active" data-tab="generate">Generate</button>
+<button class="tab" data-tab="edit">Edit</button>
+<button class="tab" data-tab="character">Character</button>
+<button class="tab" data-tab="voice">Voice</button>
+<button class="tab" data-tab="projects">Projects</button>
+<button class="tab" data-tab="settings">Settings</button>
+</nav>
+
+<main>
+<section id="generate" class="panel active">
+  <h2>AI Video Generator</h2>
+  <label>Idea / prompt<textarea id="idea" placeholder="Describe any video you want..."></textarea></label>
+  <div class="grid">
+    <label>Video type<select id="type">
+      <option>Realistic</option><option>Garden Jugaad DIY</option><option>3D Cartoon</option>
+      <option>2D Animation</option><option>Anime-style</option><option>Cinematic Story</option>
+      <option>Product / Commercial</option><option>Funny / Meme</option><option>Educational</option>
+    </select></label>
+    <label>Format<select id="format"><option>9:16 Shorts/Reels</option><option>16:9 YouTube</option><option>1:1 Social</option></select></label>
+    <label>Duration<select id="duration"><option>15 sec</option><option>30 sec</option><option>60 sec</option><option>90 sec</option><option>2 min</option></select></label>
+    <label>Camera<select id="camera"><option>Cinematic natural</option><option>Handheld realistic</option><option>Static tripod</option><option>Drone</option><option>Macro close-up</option></select></label>
+  </div>
+  <div class="row"><button id="buildBtn" class="primary">Build Video Plan</button><button id="generateBtn" class="primary">Start AI Job</button><button id="copyBtn">Copy Plan</button></div>
+  <pre id="plan" class="output">Your production plan will appear here.</pre><div id="jobBox" class="notice">AI render status: idle</div>
+  <div class="notice">Provider-ready architecture: connect an AI video provider on the server using environment variables. This UI never exposes secret API keys.</div>
+</section>
+
+<section id="edit" class="panel">
+  <h2>Video Editor</h2>
+  <input id="videoFile" type="file" accept="video/*"><div class="row"><button id="exportHint" class="primary">Prepare Export</button><button id="resetVideo">Reset Preview</button></div>
+  <video id="preview" controls playsinline></video>
+  <div class="grid tools">
+    <button data-tool="Trim/Cut">Trim / Cut</button><button data-tool="Crop/Resize">Crop / Resize</button>
+    <button data-tool="Captions">Captions</button><button data-tool="Audio/Music">Audio / Music</button>
+    <button data-tool="Speed">Speed</button><button data-tool="Effects">Effects</button>
+    <button data-tool="Mute">Mute</button><button data-tool="Rotate">Rotate</button>
+  </div>
+  <p id="editStatus" class="notice">Browser preview is ready. Export/render can be connected to FFmpeg/WebCodecs in the production backend.</p>
+</section>
+
+<section id="character" class="panel">
+  <h2>Character Lock Lab</h2>
+  <p class="notice">ONE IDEA = ONE LOCKED CHARACTER. Identity and appearance stay unchanged; only pose, expression and action may vary.</p>
+  <div class="grid">
+    <label>Character name<input id="charName" placeholder="e.g. Alex"></label>
+    <label>Age / gender<input id="charAge" placeholder="e.g. 28-year-old woman"></label>
+    <label>Face / hair<input id="charFace" placeholder="American-looking face, hairstyle, hair color"></label>
+    <label>Body / outfit<input id="charOutfit" placeholder="Body type, clothing, colors, footwear, accessories"></label>
+  </div>
+  <button id="lockBtn" class="primary">Lock Character</button>
+  <pre id="charOutput" class="output">No character locked.</pre>
+</section>
+
+<section id="voice" class="panel">
+  <h2>Voice & Dialogue</h2>
+  <label>Dialogue<textarea id="dialogue" placeholder="Paste narration/dialogue here..."></textarea></label>
+  <div class="grid">
+    <label>Voice style<select id="voiceStyle"><option>Natural friendly</option><option>Energetic Shorts</option><option>Calm educational</option><option>Cinematic</option></select></label>
+    <label>Language<select id="language"><option>English</option><option>Hindi</option><option>Hinglish</option><option>Other</option></select></label>
+  </div>
+  <button id="voiceBtn" class="primary">Prepare Voice Plan</button>
+  <pre id="voiceOutput" class="output"></pre>
+</section>
+
+<section id="projects" class="panel">
+  <h2>My Projects</h2>
+  <div class="row"><button id="saveBtn" class="primary">Save Current Project</button><button id="clearBtn">Clear All Local Projects</button></div>
+  <div id="projectList"></div>
+</section>
+
+<section id="settings" class="panel">
+  <h2>Studio Settings</h2>
+  <label>Provider endpoint (server-side)<input id="endpoint" placeholder="/api/video/generate"></label>
+  <label>Default project prefix<input id="prefix" value="TNS"></label>
+  <button id="saveSettings" class="primary">Save Settings</button>
+  <p class="notice">Security baseline: keep provider keys on the server, validate uploads, use authentication, rate limits, HTTPS, signed webhooks, access control, audit logs, and private object storage before public launch.</p>
+</section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

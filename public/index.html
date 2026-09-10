@@ -1,106 +1,561 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>TNS AI Studio</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#10131a">
+  <meta name="description" content="TNS AI Studio - AI video creation and video editing platform">
+  <title>TNS AI Studio</title>
+  <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
-<div id="authGate" class="auth-gate">
-  <div class="auth-card">
-    <h1>TNS AI Studio</h1>
-    <p>अभी OTP की जरूरत नहीं। Email login या Guest Mode से Studio खोलें।</p>
-    <input id="loginEmail" type="email" placeholder="आपका email">
-    <input id="loginPass" type="password" placeholder="Password">
-    <div class="row"><button id="loginBtn" class="primary">Login</button><button id="guestBtn">Guest Mode</button></div>
-    <small>Production में secure server-side authentication जोड़ना होगा।</small>
+
+<header class="topbar">
+  <div>
+    <strong class="brand">TNS AI Studio</strong>
+    <span id="userBadge" class="badge">Guest</span>
   </div>
-</div>
-<header>
-  <div><h1>TNS AI Studio</h1><p>AI Video • Edit • Character Lock • Voice • Projects</p></div>
-  <div class="row"><span id="userBadge"></span><button id="logoutBtn" class="ghost">Logout</button><button id="themeBtn" class="ghost">☾</button></div>
+
+  <div class="top-actions">
+    <button id="themeBtn" class="icon-btn" type="button">☼</button>
+    <button id="logoutBtn" class="ghost-btn" type="button">Logout</button>
+  </div>
 </header>
 
-<nav class="tabs">
-<button class="tab active" data-tab="generate">Generate</button>
-<button class="tab" data-tab="edit">Edit</button>
-<button class="tab" data-tab="character">Character</button>
-<button class="tab" data-tab="voice">Voice</button>
-<button class="tab" data-tab="projects">Projects</button>
-<button class="tab" data-tab="settings">Settings</button>
-</nav>
+<div id="authGate" class="auth-gate hidden">
+  <div class="card auth-card">
+    <h1>TNS AI Studio</h1>
+    <p>Create, edit and prepare AI videos in one place.</p>
 
-<main>
-<section id="generate" class="panel active">
-  <h2>AI Video Generator</h2>
-  <label>Idea / prompt<textarea id="idea" placeholder="Describe any video you want..."></textarea></label>
-  <div class="grid">
-    <label>Video type<select id="type">
-      <option>Realistic</option><option>Garden Jugaad DIY</option><option>3D Cartoon</option>
-      <option>2D Animation</option><option>Anime-style</option><option>Cinematic Story</option>
-      <option>Product / Commercial</option><option>Funny / Meme</option><option>Educational</option>
-    </select></label>
-    <label>Format<select id="format"><option>9:16 Shorts/Reels</option><option>16:9 YouTube</option><option>1:1 Social</option></select></label>
-    <label>Duration<select id="duration"><option>15 sec</option><option>30 sec</option><option>60 sec</option><option>90 sec</option><option>2 min</option></select></label>
-    <label>Camera<select id="camera"><option>Cinematic natural</option><option>Handheld realistic</option><option>Static tripod</option><option>Drone</option><option>Macro close-up</option></select></label>
+    <input
+      id="loginEmail"
+      type="email"
+      placeholder="Email"
+      autocomplete="email"
+    >
+
+    <input
+      id="loginPass"
+      type="password"
+      placeholder="Password"
+      autocomplete="current-password"
+    >
+
+    <button id="loginBtn" class="primary" type="button">
+      Continue
+    </button>
+
+    <button id="guestBtn" type="button">
+      Use Guest Mode
+    </button>
+
+    <small>
+      Prototype authentication only. Do not store real passwords in browser storage.
+    </small>
   </div>
-  <div class="row"><button id="buildBtn" class="primary">Build Video Plan</button><button id="generateBtn" class="primary">Start AI Job</button><button id="copyBtn">Copy Plan</button></div>
-  <pre id="plan" class="output">Your production plan will appear here.</pre><div id="jobBox" class="notice">AI render status: idle</div>
-  <div class="notice">Provider-ready architecture: connect an AI video provider on the server using environment variables. This UI never exposes secret API keys.</div>
-</section>
+</div>
 
-<section id="edit" class="panel">
-  <h2>Video Editor</h2>
-  <input id="videoFile" type="file" accept="video/*"><div class="row"><button id="exportHint" class="primary">Prepare Export</button><button id="resetVideo">Reset Preview</button></div>
-  <video id="preview" controls playsinline></video>
-  <div class="grid tools">
-    <button data-tool="Trim/Cut">Trim / Cut</button><button data-tool="Crop/Resize">Crop / Resize</button>
-    <button data-tool="Captions">Captions</button><button data-tool="Audio/Music">Audio / Music</button>
-    <button data-tool="Speed">Speed</button><button data-tool="Effects">Effects</button>
-    <button data-tool="Mute">Mute</button><button data-tool="Rotate">Rotate</button>
-  </div>
-  <p id="editStatus" class="notice">Browser preview is ready. Export/render can be connected to FFmpeg/WebCodecs in the production backend.</p>
-</section>
+<main id="app">
 
-<section id="character" class="panel">
-  <h2>Character Lock Lab</h2>
-  <p class="notice">ONE IDEA = ONE LOCKED CHARACTER. Identity and appearance stay unchanged; only pose, expression and action may vary.</p>
-  <div class="grid">
-    <label>Character name<input id="charName" placeholder="e.g. Alex"></label>
-    <label>Age / gender<input id="charAge" placeholder="e.g. 28-year-old woman"></label>
-    <label>Face / hair<input id="charFace" placeholder="American-looking face, hairstyle, hair color"></label>
-    <label>Body / outfit<input id="charOutfit" placeholder="Body type, clothing, colors, footwear, accessories"></label>
-  </div>
-  <button id="lockBtn" class="primary">Lock Character</button>
-  <pre id="charOutput" class="output">No character locked.</pre>
-</section>
+  <nav class="tabs">
 
-<section id="voice" class="panel">
-  <h2>Voice & Dialogue</h2>
-  <label>Dialogue<textarea id="dialogue" placeholder="Paste narration/dialogue here..."></textarea></label>
-  <div class="grid">
-    <label>Voice style<select id="voiceStyle"><option>Natural friendly</option><option>Energetic Shorts</option><option>Calm educational</option><option>Cinematic</option></select></label>
-    <label>Language<select id="language"><option>English</option><option>Hindi</option><option>Hinglish</option><option>Other</option></select></label>
-  </div>
-  <button id="voiceBtn" class="primary">Prepare Voice Plan</button>
-  <pre id="voiceOutput" class="output"></pre>
-</section>
+    <button class="tab active" data-tab="generate" type="button">
+      🤖 AI Create
+    </button>
 
-<section id="projects" class="panel">
-  <h2>My Projects</h2>
-  <div class="row"><button id="saveBtn" class="primary">Save Current Project</button><button id="clearBtn">Clear All Local Projects</button></div>
-  <div id="projectList"></div>
-</section>
+    <button class="tab" data-tab="editor" type="button">
+      🎬 Editor
+    </button>
 
-<section id="settings" class="panel">
-  <h2>Studio Settings</h2>
-  <label>Provider endpoint (server-side)<input id="endpoint" placeholder="/api/video/generate"></label>
-  <label>Default project prefix<input id="prefix" value="TNS"></label>
-  <button id="saveSettings" class="primary">Save Settings</button>
-  <p class="notice">Security baseline: keep provider keys on the server, validate uploads, use authentication, rate limits, HTTPS, signed webhooks, access control, audit logs, and private object storage before public launch.</p>
-</section>
+    <button class="tab" data-tab="voice" type="button">
+      🗣️ Voice
+    </button>
+
+    <button class="tab" data-tab="character" type="button">
+      🧑 Character
+    </button>
+
+    <button class="tab" data-tab="projects" type="button">
+      💾 Projects
+    </button>
+
+    <button class="tab" data-tab="settings" type="button">
+      ⚙️ Settings
+    </button>
+
+  </nav>
+
+
+  <!-- AI CREATE -->
+
+  <section id="generate" class="panel active">
+
+    <div class="card">
+
+      <h2>AI Video Creator</h2>
+
+      <label for="idea">Video idea</label>
+
+      <textarea
+        id="idea"
+        rows="4"
+        placeholder="Describe any video you want to create..."
+      ></textarea>
+
+
+      <div class="grid2">
+
+        <div>
+          <label for="type">Category</label>
+
+          <select id="type">
+            <option>Realistic</option>
+            <option>Garden Jugaad DIY</option>
+            <option>Cartoon / Animation</option>
+            <option>Cinematic</option>
+            <option>Story</option>
+            <option>Shorts / Reels</option>
+            <option>Educational</option>
+            <option>Promotional</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="language">Language</label>
+
+          <select id="language">
+            <option>English</option>
+            <option>Hindi</option>
+            <option>Bengali</option>
+            <option>Telugu</option>
+            <option>Marathi</option>
+            <option>Tamil</option>
+            <option>Gujarati</option>
+            <option>Kannada</option>
+            <option>Malayalam</option>
+            <option>Punjabi</option>
+            <option>Urdu</option>
+            <option>Other supported</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="format">Format</label>
+
+          <select id="format">
+            <option>9:16</option>
+            <option>16:9</option>
+            <option>1:1</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="duration">Duration</label>
+
+          <select id="duration">
+            <option>10 seconds</option>
+            <option>30 seconds</option>
+            <option>60 seconds</option>
+            <option>2 minutes</option>
+            <option>5 minutes</option>
+            <option>10+ minutes</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="camera">Camera</label>
+
+          <select id="camera">
+            <option>Natural</option>
+            <option>Cinematic</option>
+            <option>Handheld</option>
+            <option>Static</option>
+            <option>Dynamic</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="style">Visual style</label>
+
+          <select id="style">
+            <option>Photorealistic</option>
+            <option>3D Cartoon</option>
+            <option>2D Animation</option>
+            <option>Cinematic</option>
+            <option>Stylized</option>
+          </select>
+        </div>
+
+      </div>
+
+
+      <div class="button-row">
+
+        <button id="buildBtn" class="primary" type="button">
+          Build AI Plan
+        </button>
+
+        <button id="generateBtn" type="button">
+          Generate AI Job
+        </button>
+
+        <button id="copyBtn" type="button">
+          Copy Plan
+        </button>
+
+        <button id="saveBtn" type="button">
+          Save Project
+        </button>
+
+      </div>
+
+
+      <pre id="plan" class="output">Your production plan will appear here.</pre>
+
+      <div id="jobBox" class="status">
+        AI render status: idle
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- VIDEO EDITOR -->
+
+  <section id="editor" class="panel">
+
+    <div class="card">
+
+      <h2>Video Editor</h2>
+
+      <input
+        id="videoFile"
+        type="file"
+        accept="video/*"
+      >
+
+      <video
+        id="preview"
+        class="preview"
+        controls
+        playsinline
+      ></video>
+
+
+      <div class="timeline-head">
+        <span>Timeline</span>
+        <span id="timelineTime">00:00</span>
+      </div>
+
+      <div id="timeline" class="timeline"></div>
+
+
+      <div class="tool-grid">
+
+        <button data-tool="Trim" type="button">
+          ✂️ Trim
+        </button>
+
+        <button data-tool="Cut / Split" type="button">
+          🔪 Cut
+        </button>
+
+        <button data-tool="Merge" type="button">
+          🧩 Merge
+        </button>
+
+        <button data-tool="Crop" type="button">
+          ▣ Crop
+        </button>
+
+        <button data-tool="Resize" type="button">
+          ↔ Resize
+        </button>
+
+        <button data-tool="Rotate" type="button">
+          ↻ Rotate
+        </button>
+
+        <button data-tool="Speed" type="button">
+          ⚡ Speed
+        </button>
+
+        <button data-tool="Text" type="button">
+          T Text
+        </button>
+
+        <button data-tool="Captions" type="button">
+          CC Captions
+        </button>
+
+        <button data-tool="Music" type="button">
+          🎵 Music
+        </button>
+
+        <button data-tool="Volume" type="button">
+          🔊 Volume
+        </button>
+
+        <button data-tool="Effects" type="button">
+          ✨ Effects
+        </button>
+
+      </div>
+
+
+      <div class="button-row">
+
+        <button id="exportBtn" class="primary" type="button">
+          Export MP4
+        </button>
+
+        <button id="resetVideo" type="button">
+          Reset Preview
+        </button>
+
+      </div>
+
+
+      <div id="editStatus" class="status">
+        Select an editing tool.
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- AI VOICE -->
+
+  <section id="voice" class="panel">
+
+    <div class="card">
+
+      <h2>AI Voice Studio</h2>
+
+
+      <div class="grid2">
+
+        <div>
+          <label for="voiceLanguage">Language</label>
+
+          <select id="voiceLanguage">
+            <option>English</option>
+            <option>Hindi</option>
+            <option>Bengali</option>
+            <option>Telugu</option>
+            <option>Marathi</option>
+            <option>Tamil</option>
+            <option>Gujarati</option>
+            <option>Kannada</option>
+            <option>Malayalam</option>
+            <option>Punjabi</option>
+            <option>Urdu</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="voiceName">Voice</label>
+
+          <select id="voiceName">
+            <option>Natural Voice</option>
+            <option>Warm Voice</option>
+            <option>Energetic Voice</option>
+            <option>Calm Voice</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="voiceStyle">Style</label>
+
+          <select id="voiceStyle">
+            <option>Natural</option>
+            <option>Storytelling</option>
+            <option>Energetic</option>
+            <option>Professional</option>
+          </select>
+        </div>
+
+
+        <div>
+          <label for="voiceSpeed">Speed</label>
+
+          <select id="voiceSpeed">
+            <option>0.8x</option>
+            <option>1.0x</option>
+            <option>1.2x</option>
+            <option>1.5x</option>
+          </select>
+        </div>
+
+      </div>
+
+
+      <label for="dialogue">Dialogue / Script</label>
+
+      <textarea
+        id="dialogue"
+        rows="7"
+        placeholder="Write the dialogue here..."
+      ></textarea>
+
+
+      <button id="voiceBtn" class="primary" type="button">
+        Prepare AI Voice Job
+      </button>
+
+
+      <pre id="voiceOutput" class="output">
+Voice plan will appear here.
+      </pre>
+
+    </div>
+
+  </section>
+
+
+  <!-- LOCKED CHARACTER -->
+
+  <section id="character" class="panel">
+
+    <div class="card">
+
+      <h2>Locked Character Studio</h2>
+
+      <p>
+        One idea = one locked character.
+        Identity and appearance stay unchanged across scenes.
+      </p>
+
+
+      <label for="charName">Character name</label>
+
+      <input
+        id="charName"
+        placeholder="Character name"
+      >
+
+
+      <label for="charAge">Age / Gender</label>
+
+      <input
+        id="charAge"
+        placeholder="Example: 25-year-old woman"
+      >
+
+
+      <label for="charFace">Face / Hair</label>
+
+      <textarea
+        id="charFace"
+        rows="3"
+        placeholder="Exact face, hair and facial features..."
+      ></textarea>
+
+
+      <label for="charOutfit">Body / Outfit</label>
+
+      <textarea
+        id="charOutfit"
+        rows="3"
+        placeholder="Body type, clothes, colors, footwear, accessories..."
+      ></textarea>
+
+
+      <button id="lockBtn" class="primary" type="button">
+        Create Locked Character
+      </button>
+
+
+      <pre id="charOutput" class="output">
+Locked character description will appear here.
+      </pre>
+
+    </div>
+
+  </section>
+
+
+  <!-- PROJECTS -->
+
+  <section id="projects" class="panel">
+
+    <div class="card">
+
+      <h2>Projects</h2>
+
+      <div id="projectList"></div>
+
+      <button id="clearBtn" type="button">
+        Clear Local Projects
+      </button>
+
+    </div>
+
+  </section>
+
+
+  <!-- SETTINGS -->
+
+  <section id="settings" class="panel">
+
+    <div class="card">
+
+      <h2>Settings</h2>
+
+
+      <label for="endpoint">
+        Server endpoint
+      </label>
+
+      <input
+        id="endpoint"
+        placeholder="/api"
+      >
+
+
+      <label for="prefix">
+        API prefix
+      </label>
+
+      <input
+        id="prefix"
+        placeholder="/api"
+      >
+
+
+      <button id="saveSettings" class="primary" type="button">
+        Save Settings
+      </button>
+
+
+      <hr>
+
+
+      <h3>Language</h3>
+
+      <p>
+        The UI is structured for additional translations.
+        Provider-supported AI languages depend on the connected provider.
+      </p>
+
+    </div>
+
+  </section>
+
 </main>
-<script src="app.js"></script>
+
+
+<script src="/app.js"></script>
+
 </body>
-</html>
+  </html>

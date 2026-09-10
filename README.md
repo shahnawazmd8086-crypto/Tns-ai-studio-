@@ -1,62 +1,157 @@
-# TNS AI Studio v3
+# TNS AI Studio
 
-Mobile-first foundation for an all-purpose AI video studio.
+TNS AI Studio is a mobile-first AI video creation and editing platform.
 
-## Added in v3
-- Cleaner mobile UI and dark/light mode
-- Universal video categories
-- Structured long-video production plan
-- Locked-character lab with the user's one-idea/one-character rule
-- Separate voice/dialogue preparation for video + voice workflows
-- Local project save/load
-- Video upload preview
-- Expanded editor tool surface
-- Secure backend boundary for provider integration
-- Health endpoint
-- Provider-key safety guidance
-- Modular structure for future providers, auth, storage, queues and admin controls
+The project is designed to support AI video generation, video editing, AI voice, character consistency, multiple languages, long-video workflows, and future AI provider integrations.
 
-## Important
-This package is a production-oriented foundation, not a claim that AI rendering or professional timeline export is already connected.
-To make real generation work, connect one or more provider APIs server-side. For serious editing/export, add FFmpeg/WebCodecs on the server/client as appropriate.
+## Main Features
 
-## Run
-1. Install Node.js 18+.
-2. `npm install`
-3. `npm start`
-4. Open `http://localhost:3000`
+- AI video creation
+- Realistic video generation workflow
+- Garden Jugaad DIY video creation
+- Cartoon and animation video creation
+- Cinematic video creation
+- Story video creation
+- YouTube Shorts and Reels support
+- AI voice workflow
+- Multiple language selection
+- Locked character consistency
+- Video upload and preview
+- Video editing tools
+- Project save and load
+- Mobile-first interface
+- Modular backend architecture
+- Future AI provider support
 
-## Production checklist
-- Authentication + per-user authorization
-- Database
-- Private object storage + signed URLs
-- Upload size/type limits and malware scanning
-- FFmpeg sandboxing
-- Background job queue and retries
-- AI provider adapters with server-side secrets
-- Webhook signature verification
-- Rate limits / quotas / abuse protection
-- HTTPS, secure headers, CSRF protection where applicable
-- Audit logs and monitoring
-- Admin-configurable models/categories/prompt templates
-- Terms, privacy policy and deletion/export flows
+## Supported Video Categories
 
-Payment is intentionally not included in this version.
+TNS AI Studio is designed for different types of videos, including:
 
+- Realistic videos
+- Garden Jugaad DIY
+- Cartoon / Animation
+- Cinematic videos
+- Story videos
+- YouTube Shorts
+- Reels
+- Educational videos
+- Promotional videos
+- Creative videos
 
-## v4 integration layer
-- Provider adapter interface + mock provider
-- Server video-job API (`POST /api/video/jobs`, `GET /api/video/jobs/:id`)
-- Safe FFmpeg worker skeleton using `spawn()` argument arrays
-- Environment-variable template for server-side provider credentials
-- Security headers and request-size protection
-- Clear separation between browser UI and rendering backend
+## Locked Character System
 
-### To activate real rendering
-Choose a provider whose API terms/costs fit the project, implement its adapter under `server/providers/`, set the server environment variables, and connect the adapter to the job queue. Do not expose API keys in the browser.
+TNS AI Studio supports an idea-wise locked character system.
 
-### Production editing
-Install FFmpeg on a secured worker machine/container and implement only allow-listed operations. Generated files should live in private object storage with signed download URLs.
+### Rule
 
-### Still intentionally excluded
-Payments, because you asked to leave payment aside.
+One idea = one locked character.
+
+The same character should remain consistent from the first scene to the final scene.
+
+The following details should remain unchanged:
+
+- Face
+- Person identity
+- Age
+- Gender
+- Hairstyle
+- Hair color
+- Facial features
+- Body type
+- Clothing
+- Clothing colors
+- Footwear
+- Gloves
+- Accessories
+
+Only the following can change:
+
+- Pose
+- Body position
+- Facial expression
+- Hand movement
+- Action
+
+A new video idea can use a completely different character.
+
+## AI Voice
+
+The AI Voice Studio is designed to support:
+
+- Multiple languages
+- Different voice styles
+- Natural speaking
+- Storytelling
+- Professional voice
+- Energetic voice
+- Adjustable speaking speed
+- Dialogue and script preparation
+
+Actual AI voice generation requires a connected AI voice provider.
+
+## Language Support
+
+The interface is designed so additional languages can be added in the future.
+
+The actual AI generation and voice languages depend on the connected AI providers.
+
+## Video Editing
+
+The editor architecture is designed for essential video editing operations such as:
+
+- Trim
+- Cut
+- Split
+- Merge
+- Crop
+- Resize
+- Rotate
+- Speed control
+- Text
+- Captions
+- Music
+- Volume
+- Effects
+- Export
+
+Advanced editing and production export require a proper media-processing backend such as FFmpeg or WebCodecs.
+
+## Long Video Workflow
+
+Long videos can be created using multiple scenes.
+
+The planned workflow is:
+
+1. Create the video idea.
+2. Generate the production plan.
+3. Create individual scenes.
+4. Keep the character consistent across scenes.
+5. Generate the required video segments.
+6. Generate or prepare voice.
+7. Combine the segments.
+8. Apply editing operations.
+9. Export the final video.
+
+## Project Structure
+
+```text
+TNS AI Studio
+├── package.json
+├── README.md
+├── public/
+│   ├── index.html
+│   ├── style.css
+│   └── app.js
+└── server/
+    ├── server.js
+    ├── ffmpeg-worker.js
+    ├── jobs/
+    │   ├── video-job.js
+    │   └── voice-job.js
+    ├── providers/
+    │   ├── provider.js
+    │   └── mock.js
+    └── editor/
+        ├── timeline.js
+        ├── video-tools.js
+        └── export.js

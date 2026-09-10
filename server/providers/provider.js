@@ -2,20 +2,22 @@
 
 const providers = new Map();
 
-export function registerProvider(name, provider) {
+function registerProvider(name, provider) {
   if (!name || !provider) {
     throw new Error("Provider name and provider are required");
   }
 
-  providers.set(name.toLowerCase(), provider);
+  providers.set(String(name).toLowerCase(), provider);
+
+  return provider;
 }
 
-export function getProvider(name) {
+function getProvider(name) {
   if (!name) {
     throw new Error("Provider name is required");
   }
 
-  const provider = providers.get(name.toLowerCase());
+  const provider = providers.get(String(name).toLowerCase());
 
   if (!provider) {
     throw new Error(`Provider not found: ${name}`);
@@ -24,19 +26,27 @@ export function getProvider(name) {
   return provider;
 }
 
-export function hasProvider(name) {
-  return providers.has(name.toLowerCase());
+function hasProvider(name) {
+  if (!name) {
+    return false;
+  }
+
+  return providers.has(String(name).toLowerCase());
 }
 
-export function listProviders() {
+function listProviders() {
   return Array.from(providers.keys());
 }
 
-export function removeProvider(name) {
-  return providers.delete(name.toLowerCase());
+function removeProvider(name) {
+  if (!name) {
+    return false;
+  }
+
+  return providers.delete(String(name).toLowerCase());
 }
 
-export default {
+module.exports = {
   registerProvider,
   getProvider,
   hasProvider,

@@ -11,11 +11,6 @@ const {
   create: createImageJob,
   getJob: getImageJob
 } = require("./jobs/image-job");
-
-const {
-  registerProvider,
-  getProvider
-} = require("./providers/provider");
 const {
   registerProvider,
   getProvider

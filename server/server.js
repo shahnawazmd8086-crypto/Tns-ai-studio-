@@ -11,6 +11,12 @@ const {
   create: createImageJob,
   getJob: getImageJob
 } = require("./jobs/image-job");
+
+const {
+  create: createVoiceJob,
+  getJob: getVoiceJob
+} = require("./jobs/voice-job");
+
 const {
   registerProvider,
   getProvider
@@ -23,8 +29,6 @@ registerProvider("mock", new MockProvider());
 const PORT = process.env.PORT || 3000;
 
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
-
-const voiceJobs = new Map();
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -42,7 +46,6 @@ const MIME_TYPES = {
   ".wav": "audio/wav"
 };
 
-
 function sendJson(response, statusCode, data) {
   response.writeHead(statusCode, {
     "Content-Type": "application/json; charset=utf-8",
@@ -51,7 +54,6 @@ function sendJson(response, statusCode, data) {
 
   response.end(JSON.stringify(data));
 }
-
 
 function readBody(request, limit = 5 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
@@ -83,7 +85,6 @@ function readBody(request, limit = 5 * 1024 * 1024) {
   });
 }
 
-
 function safePublicFile(requestPath) {
   const decoded = decodeURIComponent(
     requestPath.split("?")[0]
@@ -105,37 +106,6 @@ function safePublicFile(requestPath) {
   }
 
   return fullPath;
-}
-
-
-/* =========================
-   VOICE JOB STORAGE
-========================= */
-
-function createVoiceJob(provider = "mock", input = {}) {
-  const id = require("crypto").randomUUID();
-
-  const job = {
-    id,
-    provider,
-    type: "voice",
-    status: "queued",
-    progress: 0,
-    input,
-    result: null,
-    error: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
-  voiceJobs.set(id, job);
-
-  return job;
-}
-
-
-function getVoiceJob(id) {
-  return voiceJobs.get(id) || null;
 }
 
 
@@ -312,7 +282,7 @@ const server = http.createServer(async (request, response) => {
         process.env.VOICE_PROVIDER || "mock"
       ).toLowerCase();
 
-      const job = createVoiceJob(
+      const job = await createVoiceJob(
         providerName,
         input
       );
@@ -349,7 +319,7 @@ const server = http.createServer(async (request, response) => {
       request.method === "GET" &&
       voiceMatch
     ) {
-      const job = getVoiceJob(
+      const job = await getVoiceJob(
         decodeURIComponent(voiceMatch[1])
       );
 

@@ -4,14 +4,18 @@ const path = require("path");
 
 const {
   create: createVideoJob,
-  } = require("./jobs/video-job");
-} = require("./jobs/video");
+  getJob: getVideoJob
+} = require("./jobs/video-job");
 
 const {
   create: createImageJob,
-  get} = require("./jobs/image-job");
-} = require("./jobs/image");
+  getJob: getImageJob
+} = require("./jobs/image-job");
 
+const {
+  registerProvider,
+  getProvider
+} = require("./providers/provider");
 const {
   registerProvider,
   getProvider

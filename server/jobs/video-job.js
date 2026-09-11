@@ -6,6 +6,8 @@ const jobs = new Map();
 async function create(provider = "mock", input = {}) {
   const id = crypto.randomUUID();
 
+  const now = new Date().toISOString();
+
   const job = {
     id,
     provider,
@@ -16,8 +18,8 @@ async function create(provider = "mock", input = {}) {
     providerJob: null,
     result: null,
     error: null,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    createdAt: now,
+    updatedAt: now
   };
 
   jobs.set(id, job);
@@ -46,10 +48,31 @@ async function update(id, patch = {}) {
 }
 
 
-async function setProgress(id, progress, status = "processing") {
+async function setProgress(
+  id,
+  progress,
+  status = "processing"
+) {
+  const safeProgress = Math.max(
+    0,
+    Math.min(
+      100,
+      Number(progress) || 0
+    )
+  );
+
   return update(id, {
-    progress: Math.max(0, Math.min(100, Number(progress) || 0)),
+    progress: safeProgress,
     status
+  });
+}
+
+
+async function start(id) {
+  return update(id, {
+    status: "processing",
+    progress: 1,
+    error: null
   });
 }
 
@@ -67,7 +90,9 @@ async function complete(id, result = {}) {
 async function fail(id, error) {
   return update(id, {
     status: "failed",
-    error: error?.message || String(error || "Video job failed.")
+    error:
+      error?.message ||
+      String(error || "Video job failed.")
   });
 }
 
@@ -79,12 +104,25 @@ async function cancel(id) {
 }
 
 
+async function remove(id) {
+  return jobs.delete(id);
+}
+
+
+async function list() {
+  return Array.from(jobs.values());
+}
+
+
 module.exports = {
   create,
   getJob,
   update,
   setProgress,
+  start,
   complete,
   fail,
-  cancel
+  cancel,
+  remove,
+  list
 };

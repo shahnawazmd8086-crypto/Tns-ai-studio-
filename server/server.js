@@ -4,12 +4,12 @@ const path = require("path");
 
 const {
   create: createVideoJob,
-  getJob: getVideoJob
+  } = require("./jobs/video-job");
 } = require("./jobs/video");
 
 const {
   create: createImageJob,
-  getJob: getImageJob
+  get} = require("./jobs/image-job");
 } = require("./jobs/image");
 
 const {

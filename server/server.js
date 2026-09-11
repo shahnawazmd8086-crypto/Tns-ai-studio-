@@ -1,18 +1,36 @@
-// TNS AI Studio - Main Server
-
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const { create, getJob } = require("./jobs/video-job");
+const {
+  create: createVideoJob,
+  getJob: getVideoJob
+} = require("./jobs/video-job");
+
+const {
+  create: createVoiceJob,
+  getJob: getVoiceJob
+} = require("./jobs/voice-job");
+
+const {
+  create: createImageJob,
+  getJob: getImageJob
+} = require("./jobs/image-job");
+
+const {
+  registerProvider,
+  getProvider
+} = require("./providers/provider");
+
 const MockProvider = require("./providers/mock");
 
+registerProvider("mock", new MockProvider());
+
 const PORT = process.env.PORT || 3000;
+
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
 
-const provider = new MockProvider();
-
-const mime = {
+const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
@@ -20,157 +38,402 @@ const mime = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
+  ".webp": "image/webp",
   ".svg": "image/svg+xml",
-  ".mp4": "video/mp4"
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav"
 };
 
-function json(res, code, data) {
-  res.writeHead(code, {
-    "Content-Type": "application/json; charset=utf-8"
+
+function sendJson(response, statusCode, data) {
+  response.writeHead(statusCode, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store"
   });
-  res.end(JSON.stringify(data));
+
+  response.end(JSON.stringify(data));
 }
 
-function body(req) {
+
+function readBody(request, limit = 5 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
-    let data = "";
+    let raw = "";
 
-    req.on("data", chunk => {
-      data += chunk;
-      if (data.length > 1024 * 1024) {
-        reject(new Error("Request body too large"));
-        req.destroy();
+    request.on("data", (chunk) => {
+      raw += chunk.toString();
+
+      if (raw.length > limit) {
+        reject(new Error("Request body is too large."));
+        request.destroy();
       }
     });
 
-    req.on("end", () => {
-      if (!data) return resolve({});
-      
+    request.on("end", () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+
       try {
-        resolve(JSON.parse(data));
+        resolve(JSON.parse(raw));
       } catch {
-        reject(new Error("Invalid JSON"));
+        reject(new Error("Invalid JSON request."));
       }
     });
 
-    req.on("error", reject);
+    request.on("error", reject);
   });
 }
 
-function safePublicPath(urlPath) {
-  let clean = decodeURIComponent(urlPath.split("?")[0]);
 
-  if (clean === "/") {
-    clean = "/index.html";
-  }
-
-  const filePath = path.normalize(
-    path.join(PUBLIC_DIR, clean)
+function safePublicFile(requestPath) {
+  const decoded = decodeURIComponent(
+    requestPath.split("?")[0]
   );
 
-  if (
-    filePath !== PUBLIC_DIR &&
-    !filePath.startsWith(PUBLIC_DIR + path.sep)
-  ) {
+  const relativePath =
+    decoded.replace(/^\/+/, "") || "index.html";
+
+  const fullPath = path.resolve(
+    PUBLIC_DIR,
+    relativePath
+  );
+
+  const publicRoot =
+    path.resolve(PUBLIC_DIR) + path.sep;
+
+  if (!fullPath.startsWith(publicRoot)) {
     return null;
   }
 
-  return filePath;
+  return fullPath;
 }
 
-const server = http.createServer(async (req, res) => {
+
+/* =========================
+   SERVER
+========================= */
+
+const server = http.createServer(async (request, response) => {
   try {
-    // Health check
-    if (req.method === "GET" && req.url === "/health") {
-      return json(res, 200, {
+    const url = new URL(
+      request.url,
+      `http://${request.headers.host || "localhost"}`
+    );
+
+
+    /* =========================
+       HEALTH CHECK
+    ========================= */
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/health"
+    ) {
+      return sendJson(response, 200, {
         ok: true,
-        service: "TNS AI Studio",
-        provider: provider.name
+        service: "tns-ai-studio",
+        version: "1.0.0",
+        time: new Date().toISOString()
       });
     }
 
-    // Create video job
+
+    /* =========================
+       AI VIDEO JOB
+    ========================= */
+
     if (
-      req.method === "POST" &&
-      req.url === "/api/video/jobs"
+      request.method === "POST" &&
+      url.pathname === "/api/video/jobs"
     ) {
-      const input = await body(req);
+      const input = await readBody(request);
 
-      const job = await create(provider.name, input);
+      const providerName = String(
+        process.env.VIDEO_PROVIDER || "mock"
+      ).toLowerCase();
 
-      return json(res, 202, job);
-    }
+      const provider = getProvider(providerName);
 
-    // Get video job
-    if (
-      req.method === "GET" &&
-      req.url.startsWith("/api/video/jobs/")
-    ) {
-      const id = req.url.split("/").pop();
+      const job = await createVideoJob(
+        providerName,
+        input
+      );
 
-      if (!id) {
-        return json(res, 400, {
-          error: "Job ID is required"
-        });
+      if (
+        provider &&
+        typeof provider.create === "function"
+      ) {
+        try {
+          job.providerJob =
+            await provider.create(input);
+        } catch (error) {
+          job.status = "failed";
+          job.error = error.message;
+        }
       }
 
-      const job = await getJob(id);
+      return sendJson(response, 202, job);
+    }
+
+
+    /* =========================
+       AI VIDEO JOB STATUS
+    ========================= */
+
+    const videoMatch =
+      url.pathname.match(
+        /^\/api\/video\/jobs\/([^/]+)$/
+      );
+
+    if (
+      request.method === "GET" &&
+      videoMatch
+    ) {
+      const job = await getVideoJob(
+        decodeURIComponent(videoMatch[1])
+      );
 
       if (!job) {
-        return json(res, 404, {
-          error: "Job not found"
+        return sendJson(response, 404, {
+          error: "Video job not found."
         });
       }
 
-      return json(res, 200, job);
+      return sendJson(response, 200, job);
     }
 
-    // Static files
-    if (req.method === "GET") {
-      const filePath = safePublicPath(req.url);
+
+    /* =========================
+       AI IMAGE JOB
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/image/jobs"
+    ) {
+      const input = await readBody(request);
+
+      const providerName = String(
+        process.env.IMAGE_PROVIDER || "mock"
+      ).toLowerCase();
+
+      const provider = getProvider(providerName);
+
+      const job = await createImageJob(
+        providerName,
+        input
+      );
+
+      if (
+        provider &&
+        typeof provider.createImage === "function"
+      ) {
+        try {
+          job.providerJob =
+            await provider.createImage(input);
+        } catch (error) {
+          job.status = "failed";
+          job.error = error.message;
+        }
+      }
+
+      return sendJson(response, 202, job);
+    }
+
+
+    /* =========================
+       AI IMAGE JOB STATUS
+    ========================= */
+
+    const imageMatch =
+      url.pathname.match(
+        /^\/api\/image\/jobs\/([^/]+)$/
+      );
+
+    if (
+      request.method === "GET" &&
+      imageMatch
+    ) {
+      const job = await getImageJob(
+        decodeURIComponent(imageMatch[1])
+      );
+
+      if (!job) {
+        return sendJson(response, 404, {
+          error: "Image job not found."
+        });
+      }
+
+      return sendJson(response, 200, job);
+    }
+
+
+    /* =========================
+       AI VOICE JOB
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/voice/jobs"
+    ) {
+      const input = await readBody(request);
+
+      const providerName = String(
+        process.env.VOICE_PROVIDER || "mock"
+      ).toLowerCase();
+
+      const job = await createVoiceJob(
+        providerName,
+        input
+      );
+
+      return sendJson(response, 202, job);
+    }
+
+
+    /* =========================
+       AI VOICE JOB STATUS
+    ========================= */
+
+    const voiceMatch =
+      url.pathname.match(
+        /^\/api\/voice\/jobs\/([^/]+)$/
+      );
+
+    if (
+      request.method === "GET" &&
+      voiceMatch
+    ) {
+      const job = await getVoiceJob(
+        decodeURIComponent(voiceMatch[1])
+      );
+
+      if (!job) {
+        return sendJson(response, 404, {
+          error: "Voice job not found."
+        });
+      }
+
+      return sendJson(response, 200, job);
+    }
+
+
+    /* =========================
+       VIDEO EDITOR EXPORT
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/editor/export"
+    ) {
+      const input = await readBody(request);
+
+      const job = await createVideoJob(
+        "ffmpeg",
+        {
+          operation: "export-mp4",
+          ...input
+        }
+      );
+
+      return sendJson(response, 202, job);
+    }
+
+
+    /* =========================
+       API INFORMATION
+    ========================= */
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/api"
+    ) {
+      return sendJson(response, 200, {
+        name: "TNS AI Studio API",
+        version: "1.0.0",
+        endpoints: {
+          health: "GET /health",
+          videoCreate: "POST /api/video/jobs",
+          videoStatus: "GET /api/video/jobs/:id",
+          imageCreate: "POST /api/image/jobs",
+          imageStatus: "GET /api/image/jobs/:id",
+          voiceCreate: "POST /api/voice/jobs",
+          voiceStatus: "GET /api/voice/jobs/:id",
+          editorExport: "POST /api/editor/export"
+        }
+      });
+    }
+
+
+    /* =========================
+       STATIC FRONTEND
+    ========================= */
+
+    if (request.method === "GET") {
+      const filePath =
+        safePublicFile(url.pathname);
 
       if (!filePath) {
-        return json(res, 403, {
-          error: "Forbidden"
+        return sendJson(response, 403, {
+          error: "Forbidden."
         });
       }
 
-      fs.stat(filePath, (err, stat) => {
-        if (err || !stat.isFile()) {
-          return json(res, 404, {
-            error: "Not found"
-          });
-        }
+      let target = filePath;
 
-        const ext = path.extname(filePath).toLowerCase();
-        const contentType =
-          mime[ext] || "application/octet-stream";
+      if (
+        !fs.existsSync(target) ||
+        fs.statSync(target).isDirectory()
+      ) {
+        target =
+          path.join(PUBLIC_DIR, "index.html");
+      }
 
-        res.writeHead(200, {
-          "Content-Type": contentType
-        });
+      const extension =
+        path.extname(target).toLowerCase();
 
-        fs.createReadStream(filePath).pipe(res);
+      response.writeHead(200, {
+        "Content-Type":
+          MIME_TYPES[extension] ||
+          "application/octet-stream"
       });
 
-      return;
+      return fs
+        .createReadStream(target)
+        .pipe(response);
     }
 
-    return json(res, 404, {
-      error: "Not found"
+
+    /* =========================
+       NOT FOUND
+    ========================= */
+
+    return sendJson(response, 404, {
+      error: "Not found."
     });
 
   } catch (error) {
+
     console.error(error);
 
-    return json(res, 400, {
-      error: error.message || "Bad request"
+    return sendJson(response, 500, {
+      error:
+        error.message ||
+        "Internal server error."
     });
   }
 });
 
+
+/* =========================
+   START SERVER
+========================= */
+
 server.listen(PORT, () => {
   console.log(
-    `TNS AI Studio running on http://localhost:${PORT}`
+    `TNS AI Studio running on port ${PORT}`
   );
 });

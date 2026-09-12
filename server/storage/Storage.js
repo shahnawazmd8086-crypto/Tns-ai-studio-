@@ -29,9 +29,13 @@ function exists(targetPath) {
     return false;
   }
 
-  return fs.existsSync(
-    resolvePath(targetPath)
-  );
+  try {
+    return fs.existsSync(
+      resolvePath(targetPath)
+    );
+  } catch (error) {
+    return false;
+  }
 }
 
 
@@ -111,16 +115,13 @@ function writeJson(
   filePath,
   data
 ) {
-  const json =
+  return writeFile(
+    filePath,
     JSON.stringify(
       data,
       null,
       2
-    );
-
-  return writeFile(
-    filePath,
-    json,
+    ),
     "utf8"
   );
 }
@@ -133,11 +134,21 @@ function readJson(filePath) {
       "utf8"
     );
 
-  return JSON.parse(content);
+  try {
+    return JSON.parse(content);
+  } catch (error) {
+    throw new Error(
+      `Invalid JSON file: ${resolvePath(filePath)}`
+    );
+  }
 }
 
 
 function deleteFile(filePath) {
+  if (!filePath) {
+    return false;
+  }
+
   const resolved =
     resolvePath(filePath);
 
@@ -154,6 +165,10 @@ function deleteFile(filePath) {
 function deleteDirectory(
   directory
 ) {
+  if (!directory) {
+    return false;
+  }
+
   const resolved =
     resolvePath(directory);
 
@@ -181,4 +196,124 @@ function listDirectory(
     {
       withFileTypes: true
     }
-  ).map((
+  ).map((entry) => ({
+    name: entry.name,
+    path: path.join(
+      resolved,
+      entry.name
+    ),
+    type: entry.isDirectory()
+      ? "directory"
+      : "file"
+  }));
+}
+
+
+function getFileInfo(filePath) {
+  if (!filePath) {
+    return null;
+  }
+
+  const resolved =
+    resolvePath(filePath);
+
+  if (!exists(resolved)) {
+    return null;
+  }
+
+  const stats =
+    fs.statSync(resolved);
+
+  return {
+    path: resolved,
+    name: path.basename(resolved),
+    extension: path.extname(resolved),
+    type: stats.isDirectory()
+      ? "directory"
+      : "file",
+    size: stats.isFile()
+      ? stats.size
+      : 0,
+    createdAt:
+      stats.birthtime.toISOString(),
+    modifiedAt:
+      stats.mtime.toISOString()
+  };
+}
+
+
+function copyFile(
+  source,
+  destination
+) {
+  const sourcePath =
+    resolvePath(source);
+
+  const destinationPath =
+    resolvePath(destination);
+
+  if (!isFile(sourcePath)) {
+    throw new Error(
+      `Source file does not exist: ${sourcePath}`
+    );
+  }
+
+  ensureDirectory(
+    path.dirname(destinationPath)
+  );
+
+  fs.copyFileSync(
+    sourcePath,
+    destinationPath
+  );
+
+  return destinationPath;
+}
+
+
+function moveFile(
+  source,
+  destination
+) {
+  const sourcePath =
+    resolvePath(source);
+
+  const destinationPath =
+    resolvePath(destination);
+
+  if (!isFile(sourcePath)) {
+    throw new Error(
+      `Source file does not exist: ${sourcePath}`
+    );
+  }
+
+  ensureDirectory(
+    path.dirname(destinationPath)
+  );
+
+  fs.renameSync(
+    sourcePath,
+    destinationPath
+  );
+
+  return destinationPath;
+}
+
+
+module.exports = {
+  resolvePath,
+  ensureDirectory,
+  exists,
+  isFile,
+  isDirectory,
+  writeFile,
+  readFile,
+  writeJson,
+  readJson,
+  deleteFile,
+  deleteDirectory,
+  listDirectory,
+  getFileInfo,
+  copyFile,
+  moveFile
+};

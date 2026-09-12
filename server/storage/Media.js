@@ -16,7 +16,10 @@ function ensureDirectory(directory) {
 
 
 function createMedia(input = {}) {
-  const filePath = input.path || input.filePath || null;
+  const filePath =
+    input.path ||
+    input.filePath ||
+    null;
 
   return {
     id: input.id || null,
@@ -35,7 +38,9 @@ function createMedia(input = {}) {
 
 function getMediaInfo(filePath) {
   if (!filePath) {
-    throw new Error("Media file path is required.");
+    throw new Error(
+      "Media file path is required."
+    );
   }
 
   const resolved = path.resolve(
@@ -61,8 +66,10 @@ function getMediaInfo(filePath) {
     name: path.basename(resolved),
     extension: path.extname(resolved),
     size: stats.size,
-    createdAt: stats.birthtime.toISOString(),
-    modifiedAt: stats.mtime.toISOString()
+    createdAt:
+      stats.birthtime.toISOString(),
+    modifiedAt:
+      stats.mtime.toISOString()
   };
 }
 
@@ -201,14 +208,104 @@ function listMedia(
   const results = [];
 
   function scan(currentDirectory) {
-    const entries = fs.readdirSync(
-      currentDirectory,
-      {
-        withFileTypes: true
-      }
-    );
+    const entries =
+      fs.readdirSync(
+        currentDirectory,
+        {
+          withFileTypes: true
+        }
+      );
 
     for (const entry of entries) {
-      const fullPath = path.join(
-        currentDirectory,
-        entry.name
+      const fullPath =
+        path.join(
+          currentDirectory,
+          entry.name
+        );
+
+      if (entry.isFile()) {
+        try {
+          results.push(
+            getMediaInfo(fullPath)
+          );
+        } catch (error) {
+          continue;
+        }
+      } else if (
+        entry.isDirectory() &&
+        recursive
+      ) {
+        scan(fullPath);
+      }
+    }
+  }
+
+  scan(resolved);
+
+  return results;
+}
+
+
+function getMediaByExtension(
+  directory,
+  extension,
+  options = {}
+) {
+  const normalizedExtension =
+    String(extension || "")
+      .toLowerCase()
+      .startsWith(".")
+      ? String(extension || "")
+          .toLowerCase()
+      : `.${String(extension || "")
+          .toLowerCase()}`;
+
+  return listMedia(
+    directory,
+    options
+  ).filter(
+    (media) =>
+      media.extension.toLowerCase() ===
+      normalizedExtension
+  );
+}
+
+
+function getMediaSize(filePath) {
+  const info =
+    getMediaInfo(filePath);
+
+  return info.size;
+}
+
+
+function getMediaUrl(
+  filePath,
+  publicPrefix = "/media"
+) {
+  if (!filePath) {
+    return null;
+  }
+
+  const fileName =
+    path.basename(
+      String(filePath)
+    );
+
+  return `${String(publicPrefix).replace(/\/$/, "")}/${encodeURIComponent(fileName)}`;
+}
+
+
+module.exports = {
+  ensureDirectory,
+  createMedia,
+  getMediaInfo,
+  mediaExists,
+  deleteMedia,
+  copyMedia,
+  moveMedia,
+  listMedia,
+  getMediaByExtension,
+  getMediaSize,
+  getMediaUrl
+};

@@ -2,62 +2,127 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#10131a">
-  <meta name="description" content="TNS AI Studio - AI video, image, voice and editing studio">
+
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,viewport-fit=cover"
+  >
+
+  <meta
+    name="theme-color"
+    content="#10131a"
+  >
+
+  <meta
+    name="description"
+    content="TNS AI Studio - AI video, image, voice and professional video editing studio"
+  >
+
   <title>TNS AI Studio</title>
-  <link rel="stylesheet" href="/style.css">
+
+  <link
+    rel="stylesheet"
+    href="/style.css"
+  >
 </head>
 
 <body>
 
 <header class="topbar">
+
   <div class="brand-area">
-    <strong class="brand">TNS AI Studio</strong>
-    <span id="userBadge" class="badge">Guest</span>
+
+    <strong class="brand">
+      TNS AI Studio
+    </strong>
+
+    <span
+      id="userBadge"
+      class="badge"
+    >
+      Guest
+    </span>
+
   </div>
 
+
   <div class="top-actions">
-    <button id="themeBtn" class="icon-btn" type="button">☼</button>
-    <button id="logoutBtn" class="ghost-btn" type="button">Logout</button>
+
+    <button
+      id="themeBtn"
+      class="icon-btn"
+      type="button"
+      aria-label="Toggle theme"
+    >
+      ☼
+    </button>
+
+    <button
+      id="logoutBtn"
+      class="ghost-btn"
+      type="button"
+    >
+      Logout
+    </button>
+
   </div>
+
 </header>
 
 
-<div id="authGate" class="auth-gate hidden">
+<!-- AUTHENTICATION GATE -->
+
+<div
+  id="authGate"
+  class="auth-gate hidden"
+>
 
   <div class="card auth-card">
 
-    <h1>TNS AI Studio</h1>
+    <h1>
+      TNS AI Studio
+    </h1>
 
     <p>
       Create AI videos, AI images, AI voice and edit videos in one place.
     </p>
 
+
+    <label for="loginEmail">
+      Email
+    </label>
+
     <input
       id="loginEmail"
       type="email"
-      placeholder="Email"
+      placeholder="Enter your email"
       autocomplete="email"
     >
+
+
+    <label for="loginPass">
+      Password
+    </label>
 
     <input
       id="loginPass"
       type="password"
-      placeholder="Strong password"
+      placeholder="Enter your strong password"
       autocomplete="current-password"
     >
 
-    <button id="loginBtn" class="primary" type="button">
+
+    <button
+      id="loginBtn"
+      class="primary"
+      type="button"
+    >
       Continue
     </button>
 
-    <button id="guestBtn" type="button">
-      Use Guest Mode
-    </button>
 
     <small>
-      Development authentication only. Real secure authentication will be connected through the backend.
+      Secure authentication, OTP, Google login and mobile login will be connected through the backend before production launch.
     </small>
 
   </div>
@@ -65,35 +130,73 @@
 </div>
 
 
+<!-- MAIN APPLICATION -->
+
 <main id="app">
+
+  <!-- MAIN NAVIGATION -->
 
   <nav class="tabs">
 
-    <button class="tab active" data-tab="generate" type="button">
+    <button
+      class="tab active"
+      data-tab="generate"
+      type="button"
+    >
       🤖 AI Create
     </button>
 
-    <button class="tab" data-tab="image" type="button">
+
+    <button
+      class="tab"
+      data-tab="image"
+      type="button"
+    >
       🖼️ AI Image
     </button>
 
-    <button class="tab" data-tab="editor" type="button">
+
+    <button
+      class="tab"
+      data-tab="editor"
+      type="button"
+    >
       🎬 Editor
     </button>
 
-    <button class="tab" data-tab="voice" type="button">
+
+    <button
+      class="tab"
+      data-tab="voice"
+      type="button"
+    >
       🗣️ AI Voice
     </button>
 
-    <button class="tab" data-tab="character" type="button">
+
+    <button
+      class="tab"
+      data-tab="character"
+      type="button"
+    >
       🧑 Character
     </button>
 
-    <button class="tab" data-tab="projects" type="button">
+
+    <button
+      class="tab"
+      data-tab="projects"
+      type="button"
+    >
       💾 Projects
     </button>
 
-    <button class="tab" data-tab="settings" type="button">
+
+    <button
+      class="tab"
+      data-tab="settings"
+      type="button"
+    >
       ⚙️ Settings
     </button>
 
@@ -102,13 +205,21 @@
 
   <!-- AI VIDEO CREATOR -->
 
-  <section id="generate" class="panel active">
+  <section
+    id="generate"
+    class="panel active"
+  >
 
     <div class="card">
 
-      <h2>AI Video Creator</h2>
+      <h2>
+        AI Video Creator
+      </h2>
 
-      <label for="idea">Video Script / Idea</label>
+
+      <label for="idea">
+        Video Script / Idea
+      </label>
 
       <textarea
         id="idea"
@@ -120,113 +231,340 @@
       <div class="grid2">
 
         <div>
-          <label for="type">Video Category</label>
+
+          <label for="type">
+            Video Category
+          </label>
 
           <select id="type">
-            <option>Realistic</option>
-            <option>Garden Jugaad DIY</option>
-            <option>Cartoon / Animation</option>
-            <option>Cinematic</option>
-            <option>Story</option>
-            <option>Shorts / Reels</option>
-            <option>Educational</option>
-            <option>Product Video</option>
-            <option>Advertisement</option>
-            <option>Documentary</option>
-            <option>Travel</option>
-            <option>Kids</option>
-            <option>Other</option>
+
+            <option>
+              Realistic
+            </option>
+
+            <option>
+              Garden Jugaad DIY
+            </option>
+
+            <option>
+              Cartoon / Animation
+            </option>
+
+            <option>
+              Cinematic
+            </option>
+
+            <option>
+              Story
+            </option>
+
+            <option>
+              Shorts / Reels
+            </option>
+
+            <option>
+              Educational
+            </option>
+
+            <option>
+              Product Video
+            </option>
+
+            <option>
+              Advertisement
+            </option>
+
+            <option>
+              Documentary
+            </option>
+
+            <option>
+              Travel
+            </option>
+
+            <option>
+              Kids
+            </option>
+
+            <option>
+              Other
+            </option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="language">Video Language</label>
+
+          <label for="language">
+            Video Language
+          </label>
 
           <select id="language">
-            <option>English</option>
-            <option>Hindi</option>
-            <option>Bengali</option>
-            <option>Telugu</option>
-            <option>Marathi</option>
-            <option>Tamil</option>
-            <option>Gujarati</option>
-            <option>Kannada</option>
-            <option>Malayalam</option>
-            <option>Punjabi</option>
-            <option>Urdu</option>
-            <option>Odia</option>
-            <option>Assamese</option>
-            <option>Sanskrit</option>
-            <option>Spanish</option>
-            <option>French</option>
-            <option>German</option>
-            <option>Portuguese</option>
-            <option>Arabic</option>
-            <option>Japanese</option>
-            <option>Korean</option>
-            <option>Chinese</option>
-            <option>Other Supported Language</option>
+
+            <option>
+              English
+            </option>
+
+            <option>
+              Hindi
+            </option>
+
+            <option>
+              Bengali
+            </option>
+
+            <option>
+              Telugu
+            </option>
+
+            <option>
+              Marathi
+            </option>
+
+            <option>
+              Tamil
+            </option>
+
+            <option>
+              Gujarati
+            </option>
+
+            <option>
+              Kannada
+            </option>
+
+            <option>
+              Malayalam
+            </option>
+
+            <option>
+              Punjabi
+            </option>
+
+            <option>
+              Urdu
+            </option>
+
+            <option>
+              Odia
+            </option>
+
+            <option>
+              Assamese
+            </option>
+
+            <option>
+              Sanskrit
+            </option>
+
+            <option>
+              Spanish
+            </option>
+
+            <option>
+              French
+            </option>
+
+            <option>
+              German
+            </option>
+
+            <option>
+              Portuguese
+            </option>
+
+            <option>
+              Arabic
+            </option>
+
+            <option>
+              Japanese
+            </option>
+
+            <option>
+              Korean
+            </option>
+
+            <option>
+              Chinese
+            </option>
+
+            <option>
+              Other Supported Language
+            </option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="format">Video Format</label>
+
+          <label for="format">
+            Video Format
+          </label>
 
           <select id="format">
-            <option>9:16</option>
-            <option>16:9</option>
-            <option>1:1</option>
+
+            <option>
+              9:16
+            </option>
+
+            <option>
+              16:9
+            </option>
+
+            <option>
+              1:1
+            </option>
+
+            <option>
+              4:5
+            </option>
+
+            <option>
+              4:3
+            </option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="duration">Duration</label>
+
+          <label for="duration">
+            Duration
+          </label>
 
           <select id="duration">
-            <option>10 seconds</option>
-            <option>30 seconds</option>
-            <option>60 seconds</option>
-            <option>2 minutes</option>
-            <option>5 minutes</option>
-            <option>10 minutes</option>
-            <option>15 minutes</option>
-            <option>30 minutes</option>
-            <option>60+ minutes</option>
+
+            <option>
+              10 seconds
+            </option>
+
+            <option>
+              30 seconds
+            </option>
+
+            <option>
+              60 seconds
+            </option>
+
+            <option>
+              2 minutes
+            </option>
+
+            <option>
+              5 minutes
+            </option>
+
+            <option>
+              10 minutes
+            </option>
+
+            <option>
+              15 minutes
+            </option>
+
+            <option>
+              30 minutes
+            </option>
+
+            <option>
+              60+ minutes
+            </option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="camera">Camera</label>
+
+          <label for="camera">
+            Camera
+          </label>
 
           <select id="camera">
-            <option>Natural</option>
-            <option>Cinematic</option>
-            <option>Handheld</option>
-            <option>Static</option>
-            <option>Dynamic</option>
-            <option>Drone</option>
-            <option>First Person</option>
+
+            <option>
+              Natural
+            </option>
+
+            <option>
+              Cinematic
+            </option>
+
+            <option>
+              Handheld
+            </option>
+
+            <option>
+              Static
+            </option>
+
+            <option>
+              Dynamic
+            </option>
+
+            <option>
+              Drone
+            </option>
+
+            <option>
+              First Person
+            </option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="style">Visual Style</label>
+
+          <label for="style">
+            Visual Style
+          </label>
 
           <select id="style">
-            <option>Photorealistic</option>
-            <option>Ultra Realistic</option>
-            <option>Cinematic</option>
-            <option>3D Cartoon</option>
-            <option>2D Animation</option>
-            <option>Anime</option>
-            <option>Stylized</option>
-            <option>Documentary</option>
+
+            <option>
+              Photorealistic
+            </option>
+
+            <option>
+              Ultra Realistic
+            </option>
+
+            <option>
+              Cinematic
+            </option>
+
+            <option>
+              3D Cartoon
+            </option>
+
+            <option>
+              2D Animation
+            </option>
+
+            <option>
+              Anime
+            </option>
+
+            <option>
+              Stylized
+            </option>
+
+            <option>
+              Documentary
+            </option>
+
           </select>
+
         </div>
 
       </div>
@@ -234,31 +572,51 @@
 
       <div class="button-row">
 
-        <button id="buildBtn" class="primary" type="button">
+        <button
+          id="buildBtn"
+          class="primary"
+          type="button"
+        >
           Build AI Plan
         </button>
 
-        <button id="generateBtn" type="button">
+
+        <button
+          id="generateBtn"
+          type="button"
+        >
           Generate AI Video
         </button>
 
-        <button id="copyBtn" type="button">
+
+        <button
+          id="copyBtn"
+          type="button"
+        >
           Copy Plan
         </button>
 
-        <button id="saveBtn" type="button">
+
+        <button
+          id="saveBtn"
+          type="button"
+        >
           Save Project
         </button>
 
       </div>
 
 
-      <pre id="plan" class="output">
-Your AI production plan will appear here.
-      </pre>
+      <pre
+        id="plan"
+        class="output"
+      >Your AI production plan will appear here.</pre>
 
 
-      <div id="jobBox" class="status">
+      <div
+        id="jobBox"
+        class="status"
+      >
         AI video status: idle
       </div>
 
@@ -269,13 +627,21 @@ Your AI production plan will appear here.
 
   <!-- AI IMAGE CREATOR -->
 
-  <section id="image" class="panel">
+  <section
+    id="image"
+    class="panel"
+  >
 
     <div class="card">
 
-      <h2>AI Image Creator</h2>
+      <h2>
+        AI Image Creator
+      </h2>
 
-      <label for="imagePrompt">Image Script / Prompt</label>
+
+      <label for="imagePrompt">
+        Image Script / Prompt
+      </label>
 
       <textarea
         id="imagePrompt"
@@ -287,32 +653,84 @@ Your AI production plan will appear here.
       <div class="grid2">
 
         <div>
-          <label for="imageStyle">Image Style</label>
+
+          <label for="imageStyle">
+            Image Style
+          </label>
 
           <select id="imageStyle">
-            <option>Photorealistic</option>
-            <option>Ultra Realistic</option>
-            <option>Cinematic</option>
-            <option>3D</option>
-            <option>Cartoon</option>
-            <option>Anime</option>
-            <option>Illustration</option>
-            <option>Fantasy</option>
-            <option>Product Photography</option>
+
+            <option>
+              Photorealistic
+            </option>
+
+            <option>
+              Ultra Realistic
+            </option>
+
+            <option>
+              Cinematic
+            </option>
+
+            <option>
+              3D
+            </option>
+
+            <option>
+              Cartoon
+            </option>
+
+            <option>
+              Anime
+            </option>
+
+            <option>
+              Illustration
+            </option>
+
+            <option>
+              Fantasy
+            </option>
+
+            <option>
+              Product Photography
+            </option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="imageRatio">Image Ratio</label>
+
+          <label for="imageRatio">
+            Image Ratio
+          </label>
 
           <select id="imageRatio">
-            <option>9:16</option>
-            <option>16:9</option>
-            <option>1:1</option>
-            <option>4:5</option>
-            <option>3:2</option>
+
+            <option>
+              9:16
+            </option>
+
+            <option>
+              16:9
+            </option>
+
+            <option>
+              1:1
+            </option>
+
+            <option>
+              4:5
+            </option>
+
+            <option>
+              3:2
+            </option>
+
           </select>
+
         </div>
 
       </div>
@@ -320,24 +738,40 @@ Your AI production plan will appear here.
 
       <div class="button-row">
 
-        <button id="generateImageBtn" class="primary" type="button">
+        <button
+          id="generateImageBtn"
+          class="primary"
+          type="button"
+        >
           Generate AI Image
         </button>
 
-        <button id="saveImageBtn" type="button">
+
+        <button
+          id="saveImageBtn"
+          type="button"
+        >
           Save Image
         </button>
 
       </div>
 
 
-      <div id="imageStatus" class="status">
+      <div
+        id="imageStatus"
+        class="status"
+      >
         AI image status: idle
       </div>
 
 
-      <div id="imagePreviewBox" class="image-preview-box">
-        <p>Generated image will appear here.</p>
+      <div
+        id="imagePreviewBox"
+        class="image-preview-box"
+      >
+        <p>
+          Generated image will appear here.
+        </p>
       </div>
 
     </div>
@@ -347,11 +781,17 @@ Your AI production plan will appear here.
 
   <!-- VIDEO EDITOR -->
 
-  <section id="editor" class="panel">
+  <section
+    id="editor"
+    class="panel"
+  >
 
     <div class="card">
 
-      <h2>Professional Video Editor</h2>
+      <h2>
+        Professional Video Editor
+      </h2>
+
 
       <input
         id="videoFile"
@@ -369,12 +809,22 @@ Your AI production plan will appear here.
 
 
       <div class="timeline-head">
-        <span>Timeline</span>
-        <span id="timelineTime">00:00</span>
+
+        <span>
+          Timeline
+        </span>
+
+        <span id="timelineTime">
+          00:00
+        </span>
+
       </div>
 
 
-      <div id="timeline" class="timeline"></div>
+      <div
+        id="timeline"
+        class="timeline"
+      ></div>
 
 
       <div class="tool-grid">
@@ -468,18 +918,29 @@ Your AI production plan will appear here.
 
       <div class="button-row">
 
-        <button id="exportBtn" class="primary" type="button">
+        <button
+          id="exportBtn"
+          class="primary"
+          type="button"
+        >
           Export HD MP4
         </button>
 
-        <button id="resetVideo" type="button">
+
+        <button
+          id="resetVideo"
+          type="button"
+        >
           Reset Preview
         </button>
 
       </div>
 
 
-      <div id="editStatus" class="status">
+      <div
+        id="editStatus"
+        class="status"
+      >
         Select an editing tool.
       </div>
 
@@ -490,19 +951,28 @@ Your AI production plan will appear here.
 
   <!-- AI VOICE -->
 
-  <section id="voice" class="panel">
+  <section
+    id="voice"
+    class="panel"
+  >
 
     <div class="card">
 
-      <h2>AI Voice Studio</h2>
+      <h2>
+        AI Voice Studio
+      </h2>
 
 
       <div class="grid2">
 
         <div>
-          <label for="voiceLanguage">Voice Language</label>
+
+          <label for="voiceLanguage">
+            Voice Language
+          </label>
 
           <select id="voiceLanguage">
+
             <option>English</option>
             <option>Hindi</option>
             <option>Bengali</option>
@@ -525,53 +995,75 @@ Your AI production plan will appear here.
             <option>Japanese</option>
             <option>Korean</option>
             <option>Chinese</option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="voiceName">Voice</label>
+
+          <label for="voiceName">
+            Voice
+          </label>
 
           <select id="voiceName">
+
             <option>Natural Voice</option>
             <option>Warm Voice</option>
             <option>Energetic Voice</option>
             <option>Calm Voice</option>
             <option>Professional Voice</option>
             <option>Storyteller Voice</option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="voiceStyle">Voice Style</label>
+
+          <label for="voiceStyle">
+            Voice Style
+          </label>
 
           <select id="voiceStyle">
+
             <option>Natural</option>
             <option>Storytelling</option>
             <option>Energetic</option>
             <option>Professional</option>
             <option>Documentary</option>
             <option>Advertisement</option>
+
           </select>
+
         </div>
 
 
         <div>
-          <label for="voiceSpeed">Voice Speed</label>
+
+          <label for="voiceSpeed">
+            Voice Speed
+          </label>
 
           <select id="voiceSpeed">
+
             <option>0.8x</option>
             <option>1.0x</option>
             <option>1.2x</option>
             <option>1.5x</option>
+
           </select>
+
         </div>
 
       </div>
 
 
-      <label for="dialogue">Dialogue / Voice Script</label>
+      <label for="dialogue">
+        Dialogue / Voice Script
+      </label>
 
       <textarea
         id="dialogue"
@@ -580,14 +1072,19 @@ Your AI production plan will appear here.
       ></textarea>
 
 
-      <button id="voiceBtn" class="primary" type="button">
+      <button
+        id="voiceBtn"
+        class="primary"
+        type="button"
+      >
         Generate AI Voice
       </button>
 
 
-      <pre id="voiceOutput" class="output">
-Voice production plan will appear here.
-      </pre>
+      <pre
+        id="voiceOutput"
+        class="output"
+      >Voice production plan will appear here.</pre>
 
     </div>
 
@@ -596,18 +1093,26 @@ Voice production plan will appear here.
 
   <!-- LOCKED CHARACTER -->
 
-  <section id="character" class="panel">
+  <section
+    id="character"
+    class="panel"
+  >
 
     <div class="card">
 
-      <h2>Locked Character Studio</h2>
+      <h2>
+        Locked Character Studio
+      </h2>
+
 
       <p>
         One idea = one locked character. Character identity and appearance remain consistent across scenes.
       </p>
 
 
-      <label for="charName">Character Name</label>
+      <label for="charName">
+        Character Name
+      </label>
 
       <input
         id="charName"
@@ -615,7 +1120,9 @@ Voice production plan will appear here.
       >
 
 
-      <label for="charAge">Age / Gender</label>
+      <label for="charAge">
+        Age / Gender
+      </label>
 
       <input
         id="charAge"
@@ -623,7 +1130,9 @@ Voice production plan will appear here.
       >
 
 
-      <label for="charFace">Face / Hair / Facial Features</label>
+      <label for="charFace">
+        Face / Hair / Facial Features
+      </label>
 
       <textarea
         id="charFace"
@@ -632,7 +1141,9 @@ Voice production plan will appear here.
       ></textarea>
 
 
-      <label for="charOutfit">Body / Clothing / Accessories</label>
+      <label for="charOutfit">
+        Body / Clothing / Accessories
+      </label>
 
       <textarea
         id="charOutfit"
@@ -641,14 +1152,19 @@ Voice production plan will appear here.
       ></textarea>
 
 
-      <button id="lockBtn" class="primary" type="button">
+      <button
+        id="lockBtn"
+        class="primary"
+        type="button"
+      >
         Create Locked Character
       </button>
 
 
-      <pre id="charOutput" class="output">
-Locked character description will appear here.
-      </pre>
+      <pre
+        id="charOutput"
+        class="output"
+      >Locked character description will appear here.</pre>
 
     </div>
 
@@ -657,15 +1173,25 @@ Locked character description will appear here.
 
   <!-- PROJECTS -->
 
-  <section id="projects" class="panel">
+  <section
+    id="projects"
+    class="panel"
+  >
 
     <div class="card">
 
-      <h2>My Projects</h2>
+      <h2>
+        My Projects
+      </h2>
+
 
       <div id="projectList"></div>
 
-      <button id="clearBtn" type="button">
+
+      <button
+        id="clearBtn"
+        type="button"
+      >
         Clear Local Projects
       </button>
 
@@ -676,11 +1202,16 @@ Locked character description will appear here.
 
   <!-- SETTINGS -->
 
-  <section id="settings" class="panel">
+  <section
+    id="settings"
+    class="panel"
+  >
 
     <div class="card">
 
-      <h2>Settings</h2>
+      <h2>
+        Settings
+      </h2>
 
 
       <label for="endpoint">
@@ -703,7 +1234,11 @@ Locked character description will appear here.
       >
 
 
-      <button id="saveSettings" class="primary" type="button">
+      <button
+        id="saveSettings"
+        class="primary"
+        type="button"
+      >
         Save Settings
       </button>
 
@@ -711,35 +1246,15 @@ Locked character description will appear here.
       <hr>
 
 
-      <h3>Application Language</h3>
+      <h3>
+        Application Language
+      </h3>
 
       <p>
-        TNS AI Studio is designed for multilingual support.
-        More interface languages can be added through future updates.
+        TNS AI Studio supports multilingual video, image and voice workflows.
       </p>
 
 
-      <h3>Export Quality</h3>
-
-      <p>
-        HD and higher export options depend on the available media-processing system and connected AI providers.
-      </p>
-
-
-      <h3>Security</h3>
-
-      <p>
-        Production authentication, secure storage, upload protection and server-side security will be configured before public launch.
-      </p>
-
-    </div>
-
-  </section>
-
-</main>
-
-
-<script src="/app.js"></script>
-
-</body>
-          </html>
+      <h3>
+        Export Quality
+      

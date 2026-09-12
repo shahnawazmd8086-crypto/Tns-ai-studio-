@@ -1,15 +1,12 @@
 const crypto = require("crypto");
 
-
 const users = new Map();
-
 
 function normalizeEmail(email) {
   return String(email || "")
     .trim()
     .toLowerCase();
 }
-
 
 function validatePassword(password) {
   if (typeof password !== "string") {
@@ -19,14 +16,12 @@ function validatePassword(password) {
   return password.length >= 8;
 }
 
-
 function hashPassword(password) {
   return crypto
     .createHash("sha256")
     .update(String(password))
     .digest("hex");
 }
-
 
 function createUser(input = {}) {
   const email = normalizeEmail(input.email);
@@ -59,7 +54,6 @@ function createUser(input = {}) {
   return sanitizeUser(user);
 }
 
-
 function findUserByEmail(email) {
   const normalizedEmail = normalizeEmail(email);
 
@@ -69,7 +63,6 @@ function findUserByEmail(email) {
 
   return users.get(normalizedEmail) || null;
 }
-
 
 function verifyPassword(email, password) {
   const user = findUserByEmail(email);
@@ -83,7 +76,6 @@ function verifyPassword(email, password) {
     hashPassword(password)
   );
 }
-
 
 function sanitizeUser(user) {
   if (!user) {
@@ -99,20 +91,17 @@ function sanitizeUser(user) {
   };
 }
 
-
 function getUser(email) {
   return sanitizeUser(
     findUserByEmail(email)
   );
 }
 
-
 function listUsers() {
   return Array.from(users.values()).map(
     sanitizeUser
   );
 }
-
 
 function deleteUser(email) {
   const normalizedEmail = normalizeEmail(email);
@@ -123,7 +112,6 @@ function deleteUser(email) {
 
   return users.delete(normalizedEmail);
 }
-
 
 module.exports = {
   normalizeEmail,

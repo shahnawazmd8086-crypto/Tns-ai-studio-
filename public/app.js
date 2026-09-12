@@ -1,20 +1,48 @@
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => document.querySelectorAll(selector);
 
-const API_BASE = "/api";
+const API_BASE =
+  window.TNSAPIConfig?.baseURL || "";
 
-function getSession() {
-  try {
-    return JSON.parse(localStorage.getItem("tnsSession") || "null");
-  } catch {
-    return null;
+
+/* =========================
+   AUTHENTICATION HELPERS
+========================= */
+
+function getCurrentAuthUser() {
+  if (
+    window.TNSAuth &&
+    typeof window.TNSAuth.getCurrentUser === "function"
+  ) {
+    return window.TNSAuth.getCurrentUser();
   }
+
+  return null;
 }
 
+
+function isAuthenticated() {
+  if (
+    window.TNSAuth &&
+    typeof window.TNSAuth.isLoggedIn === "function"
+  ) {
+    return window.TNSAuth.isLoggedIn();
+  }
+
+  return false;
+}
+
+
 function sessionKey() {
-  const session = getSession();
-  const email = session?.email || "guest";
-  return `tnsProjects_${email.replace(/[^a-z0-9@._-]/gi, "_")}`;
+  const user = getCurrentAuthUser();
+
+  const email =
+    user?.email ||
+    "unknown-user";
+
+  return `tnsProjects_${String(email)
+    .toLowerCase()
+    .replace(/[^a-z0-9@._-]/gi, "_")}`;
 }
 
 
@@ -24,18 +52,26 @@ function sessionKey() {
 
 $$(".tab").forEach((button) => {
   button.addEventListener("click", () => {
-    $$(".tab").forEach((item) => item.classList.remove("active"));
-    $$(".panel").forEach((panel) => panel.classList.remove("active"));
+    $$(".tab").forEach((item) =>
+      item.classList.remove("active")
+    );
+
+    $$(".panel").forEach((panel) =>
+      panel.classList.remove("active")
+    );
 
     button.classList.add("active");
 
-    const panel = $("#" + button.dataset.tab);
+    const panel =
+      $("#" + button.dataset.tab);
 
     if (panel) {
       panel.classList.add("active");
     }
 
-    if (button.dataset.tab === "projects") {
+    if (
+      button.dataset.tab === "projects"
+    ) {
       renderProjects();
     }
   });
@@ -46,16 +82,25 @@ $$(".tab").forEach((button) => {
    THEME
 ========================= */
 
-$("#themeBtn")?.addEventListener("click", () => {
-  document.body.classList.toggle("light");
+$("#themeBtn")?.addEventListener(
+  "click",
+  () => {
+    document.body.classList.toggle("light");
 
-  localStorage.setItem(
-    "tnsTheme",
-    document.body.classList.contains("light") ? "light" : "dark"
-  );
-});
+    localStorage.setItem(
+      "tnsTheme",
+      document.body.classList.contains("light")
+        ? "light"
+        : "dark"
+    );
+  }
+);
 
-if (localStorage.getItem("tnsTheme") === "light") {
+
+if (
+  localStorage.getItem("tnsTheme") ===
+  "light"
+) {
   document.body.classList.add("light");
 }
 
@@ -154,36 +199,50 @@ The frontend prepares the production request and sends it to the secure backend.
   return plan;
 }
 
-$("#buildBtn")?.addEventListener("click", buildPlan);
+
+$("#buildBtn")?.addEventListener(
+  "click",
+  buildPlan
+);
 
 
 /* =========================
    COPY PLAN
 ========================= */
 
-$("#copyBtn")?.addEventListener("click", async () => {
-  const text = $("#plan")?.textContent || "";
+$("#copyBtn")?.addEventListener(
+  "click",
+  async () => {
+    const text =
+      $("#plan")?.textContent || "";
 
-  try {
-    await navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(
+        text
+      );
 
-    $("#copyBtn").textContent = "Copied ✓";
+      $("#copyBtn").textContent =
+        "Copied ✓";
 
-    setTimeout(() => {
-      $("#copyBtn").textContent = "Copy Plan";
-    }, 1200);
-  } catch {
-    alert("Could not copy the plan.");
+      setTimeout(() => {
+        $("#copyBtn").textContent =
+          "Copy Plan";
+      }, 1200);
+    } catch {
+      alert("Could not copy the plan.");
+    }
   }
-});
+);
 
 
 /* =========================
    LOCKED CHARACTER
 ========================= */
 
-$("#lockBtn")?.addEventListener("click", () => {
-  const character = `LOCKED CHARACTER
+$("#lockBtn")?.addEventListener(
+  "click",
+  () => {
+    const character = `LOCKED CHARACTER
 
 Name:
 ${$("#charName")?.value.trim() || "Unnamed Character"}
@@ -226,10 +285,17 @@ Only these may change:
 - Hand movement
 - Action`;
 
-  $("#charOutput").textContent = character;
+    if ($("#charOutput")) {
+      $("#charOutput").textContent =
+        character;
+    }
 
-  localStorage.setItem("tnsChar", character);
-});
+    localStorage.setItem(
+      "tnsChar",
+      character
+    );
+  }
+);
 
 
 /* =========================
@@ -239,35 +305,67 @@ Only these may change:
 async function startAIJob() {
   const plan = buildPlan();
 
-  $("#jobBox").textContent = "AI video status: submitting...";
+  if ($("#jobBox")) {
+    $("#jobBox").textContent =
+      "AI video status: submitting...";
+  }
 
   try {
-    const response = await fetch(`${API_BASE}/video/jobs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        idea: $("#idea")?.value || "",
-        type: $("#type")?.value || "",
-        format: $("#format")?.value || "",
-        duration: $("#duration")?.value || "",
-        language: $("#language")?.value || "",
-        camera: $("#camera")?.value || "",
-        style: $("#style")?.value || "",
-        plan,
-        character: localStorage.getItem("tnsChar") || ""
-      })
-    });
+    const response = await fetch(
+      `${API_BASE}/api/video/jobs`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          idea:
+            $("#idea")?.value || "",
 
-    const data = await response.json();
+          type:
+            $("#type")?.value || "",
+
+          format:
+            $("#format")?.value || "",
+
+          duration:
+            $("#duration")?.value || "",
+
+          language:
+            $("#language")?.value || "",
+
+          camera:
+            $("#camera")?.value || "",
+
+          style:
+            $("#style")?.value || "",
+
+          plan,
+
+          character:
+            localStorage.getItem(
+              "tnsChar"
+            ) || ""
+        })
+      }
+    );
+
+    const data =
+      await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "Could not create AI video job.");
+      throw new Error(
+        data.error ||
+          "Could not create AI video job."
+      );
     }
 
     $("#jobBox").textContent =
-      `AI video status: ${data.status || "queued"} • Job: ${data.id || "unknown"}`;
+      `AI video status: ${
+        data.status || "queued"
+      } • Job: ${
+        data.id || "unknown"
+      }`;
 
     if (data.id) {
       pollVideoJob(data.id);
@@ -278,42 +376,59 @@ async function startAIJob() {
   }
 }
 
-$("#generateBtn")?.addEventListener("click", startAIJob);
+
+$("#generateBtn")?.addEventListener(
+  "click",
+  startAIJob
+);
 
 
 async function pollVideoJob(jobId) {
   let attempts = 0;
 
-  const timer = setInterval(async () => {
-    attempts++;
+  const timer = setInterval(
+    async () => {
+      attempts++;
 
-    try {
-      const response = await fetch(
-        `${API_BASE}/video/jobs/${encodeURIComponent(jobId)}`
-      );
+      try {
+        const response =
+          await fetch(
+            `${API_BASE}/api/video/jobs/${encodeURIComponent(
+              jobId
+            )}`
+          );
 
-      const job = await response.json();
+        const job =
+          await response.json();
 
-      $("#jobBox").textContent =
-        `AI video status: ${job.status || "unknown"} • Job: ${jobId}`;
+        $("#jobBox").textContent =
+          `AI video status: ${
+            job.status || "unknown"
+          } • Job: ${jobId}`;
 
-      if (job.result?.url) {
-        $("#jobBox").innerHTML =
-          `AI video completed • <a href="${job.result.url}" target="_blank" rel="noopener">Open Video</a>`;
+        if (job.result?.url) {
+          $("#jobBox").innerHTML =
+            `AI video completed • <a href="${job.result.url}" target="_blank" rel="noopener">Open Video</a>`;
+        }
+
+        if (
+          [
+            "completed",
+            "failed",
+            "cancelled"
+          ].includes(job.status) ||
+          attempts >= 60
+        ) {
+          clearInterval(timer);
+        }
+      } catch {
+        if (attempts >= 8) {
+          clearInterval(timer);
+        }
       }
-
-      if (
-        ["completed", "failed", "cancelled"].includes(job.status) ||
-        attempts >= 60
-      ) {
-        clearInterval(timer);
-      }
-    } catch {
-      if (attempts >= 8) {
-        clearInterval(timer);
-      }
-    }
-  }, 2000);
+    },
+    2000
+  );
 }
 
 
@@ -321,273 +436,411 @@ async function pollVideoJob(jobId) {
    AI IMAGE CREATOR
 ========================= */
 
-$("#generateImageBtn")?.addEventListener("click", async () => {
-  const prompt = $("#imagePrompt")?.value.trim();
+$("#generateImageBtn")?.addEventListener(
+  "click",
+  async () => {
+    const prompt =
+      $("#imagePrompt")?.value.trim();
 
-  if (!prompt) {
-    alert("Please enter an image script or prompt.");
-    return;
-  }
-
-  $("#imageStatus").textContent = "AI image status: submitting...";
-
-  try {
-    const response = await fetch(`${API_BASE}/image/jobs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        prompt,
-        style: $("#imageStyle")?.value || "Photorealistic",
-        ratio: $("#imageRatio")?.value || "9:16"
-      })
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Could not create image job.");
+    if (!prompt) {
+      alert(
+        "Please enter an image script or prompt."
+      );
+      return;
     }
 
     $("#imageStatus").textContent =
-      `AI image status: ${data.status || "queued"} • Job: ${data.id || "unknown"}`;
+      "AI image status: submitting...";
 
-    if (data.id) {
-      pollImageJob(data.id);
+    try {
+      const response =
+        await fetch(
+          `${API_BASE}/api/image/jobs`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              prompt,
+
+              style:
+                $("#imageStyle")?.value ||
+                "Photorealistic",
+
+              ratio:
+                $("#imageRatio")?.value ||
+                "9:16"
+            })
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Could not create image job."
+        );
+      }
+
+      $("#imageStatus").textContent =
+        `AI image status: ${
+          data.status || "queued"
+        } • Job: ${
+          data.id || "unknown"
+        }`;
+
+      if (data.id) {
+        pollImageJob(data.id);
+      }
+    } catch (error) {
+      $("#imageStatus").textContent =
+        `AI image status: ${error.message}`;
     }
-  } catch (error) {
-    $("#imageStatus").textContent =
-      `AI image status: ${error.message}`;
   }
-});
+);
 
 
 async function pollImageJob(jobId) {
   let attempts = 0;
 
-  const timer = setInterval(async () => {
-    attempts++;
+  const timer = setInterval(
+    async () => {
+      attempts++;
 
-    try {
-      const response = await fetch(
-        `${API_BASE}/image/jobs/${encodeURIComponent(jobId)}`
-      );
+      try {
+        const response =
+          await fetch(
+            `${API_BASE}/api/image/jobs/${encodeURIComponent(
+              jobId
+            )}`
+          );
 
-      const data = await response.json();
+        const data =
+          await response.json();
 
-      $("#imageStatus").textContent =
-        `AI image status: ${data.status || "unknown"} • Job: ${jobId}`;
+        $("#imageStatus").textContent =
+          `AI image status: ${
+            data.status || "unknown"
+          } • Job: ${jobId}`;
 
-      if (data.result?.url) {
-        const box = $("#imagePreviewBox");
+        if (data.result?.url) {
+          const box =
+            $("#imagePreviewBox");
 
-        if (box) {
-          box.innerHTML = "";
+          if (box) {
+            box.innerHTML = "";
 
-          const image = document.createElement("img");
-          image.src = data.result.url;
-          image.alt = "Generated AI image";
+            const image =
+              document.createElement(
+                "img"
+              );
 
-          box.appendChild(image);
+            image.src =
+              data.result.url;
+
+            image.alt =
+              "Generated AI image";
+
+            box.appendChild(image);
+          }
+        }
+
+        if (
+          [
+            "completed",
+            "failed",
+            "cancelled"
+          ].includes(data.status) ||
+          attempts >= 60
+        ) {
+          clearInterval(timer);
+        }
+      } catch {
+        if (attempts >= 8) {
+          clearInterval(timer);
         }
       }
-
-      if (
-        ["completed", "failed", "cancelled"].includes(data.status) ||
-        attempts >= 60
-      ) {
-        clearInterval(timer);
-      }
-    } catch {
-      if (attempts >= 8) {
-        clearInterval(timer);
-      }
-    }
-  }, 2000);
-});
+    },
+    2000
+  );
+}
 
 
 /* =========================
    SAVE IMAGE
 ========================= */
 
-$("#saveImageBtn")?.addEventListener("click", () => {
-  const image = $("#imagePreviewBox img");
+$("#saveImageBtn")?.addEventListener(
+  "click",
+  () => {
+    const image =
+      $("#imagePreviewBox img");
 
-  if (!image?.src) {
-    alert("Generate an image first.");
-    return;
+    if (!image?.src) {
+      alert(
+        "Generate an image first."
+      );
+      return;
+    }
+
+    const link =
+      document.createElement("a");
+
+    link.href = image.src;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.download =
+      "tns-ai-image.png";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    link.remove();
   }
-
-  const link = document.createElement("a");
-  link.href = image.src;
-  link.target = "_blank";
-  link.rel = "noopener";
-  link.download = "tns-ai-image.png";
-
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-});
+);
 
 
 /* =========================
    VIDEO UPLOAD
 ========================= */
 
-$("#videoFile")?.addEventListener("change", (event) => {
-  const file = event.target.files?.[0];
+$("#videoFile")?.addEventListener(
+  "change",
+  (event) => {
+    const file =
+      event.target.files?.[0];
 
-  if (!file) {
-    return;
-  }
-
-  const preview = $("#preview");
-
-  if (preview) {
-    if (preview.dataset.objectUrl) {
-      URL.revokeObjectURL(preview.dataset.objectUrl);
+    if (!file) {
+      return;
     }
 
-    const objectUrl = URL.createObjectURL(file);
+    const preview =
+      $("#preview");
 
-    preview.dataset.objectUrl = objectUrl;
-    preview.src = objectUrl;
-    preview.load();
+    if (preview) {
+      if (
+        preview.dataset.objectUrl
+      ) {
+        URL.revokeObjectURL(
+          preview.dataset.objectUrl
+        );
+      }
+
+      const objectUrl =
+        URL.createObjectURL(file);
+
+      preview.dataset.objectUrl =
+        objectUrl;
+
+      preview.src = objectUrl;
+
+      preview.load();
+    }
+
+    const timeline =
+      $("#timeline");
+
+    if (timeline) {
+      timeline.innerHTML = "";
+
+      const clip =
+        document.createElement(
+          "div"
+        );
+
+      clip.className = "clip";
+
+      clip.textContent =
+        `${file.name} • ${(file.size / 1024 / 1024).toFixed(1)} MB`;
+
+      timeline.appendChild(clip);
+    }
   }
-
-  const timeline = $("#timeline");
-
-  if (timeline) {
-    timeline.innerHTML = "";
-
-    const clip = document.createElement("div");
-    clip.className = "clip";
-
-    clip.textContent =
-      `${file.name} • ${(file.size / 1024 / 1024).toFixed(1)} MB`;
-
-    timeline.appendChild(clip);
-  }
-});
+);
 
 
 /* =========================
    EDITOR TOOLS
 ========================= */
 
-$$("[data-tool]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const tool = button.dataset.tool;
+$$("[data-tool]").forEach(
+  (button) => {
+    button.addEventListener(
+      "click",
+      () => {
+        const tool =
+          button.dataset.tool;
 
-    $("#editStatus").textContent =
-      `${tool}: selected. The final media operation will be processed by the backend.`;
-  });
-});
+        $("#editStatus").textContent =
+          `${tool}: selected. The final media operation will be processed by the backend.`;
+      }
+    );
+  }
+);
 
 
 /* =========================
    VIDEO EXPORT
 ========================= */
 
-$("#exportBtn")?.addEventListener("click", async () => {
-  $("#editStatus").textContent = "Export: submitting...";
+$("#exportBtn")?.addEventListener(
+  "click",
+  async () => {
+    $("#editStatus").textContent =
+      "Export: submitting...";
 
-  try {
-    const response = await fetch(`${API_BASE}/editor/export`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        format: $("#format")?.value || "9:16",
-        operation: "export-mp4"
-      })
-    });
+    try {
+      const response =
+        await fetch(
+          `${API_BASE}/api/editor/export`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              format:
+                $("#format")?.value ||
+                "9:16",
 
-    const data = await response.json();
+              operation:
+                "export-mp4"
+            })
+          }
+        );
 
-    if (!response.ok) {
-      throw new Error(data.error || "Export request failed.");
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Export request failed."
+        );
+      }
+
+      $("#editStatus").textContent =
+        `Export job: ${
+          data.id || "unknown"
+        } • ${
+          data.status || "queued"
+        }`;
+    } catch (error) {
+      $("#editStatus").textContent =
+        `Export server unavailable: ${error.message}`;
     }
-
-    $("#editStatus").textContent =
-      `Export job: ${data.id || "unknown"} • ${data.status || "queued"}`;
-  } catch (error) {
-    $("#editStatus").textContent =
-      `Export server unavailable: ${error.message}`;
   }
-});
+);
 
 
 /* =========================
    RESET VIDEO
 ========================= */
 
-$("#resetVideo")?.addEventListener("click", () => {
-  const preview = $("#preview");
+$("#resetVideo")?.addEventListener(
+  "click",
+  () => {
+    const preview =
+      $("#preview");
 
-  if (preview) {
-    if (preview.dataset.objectUrl) {
-      URL.revokeObjectURL(preview.dataset.objectUrl);
-      delete preview.dataset.objectUrl;
+    if (preview) {
+      if (
+        preview.dataset.objectUrl
+      ) {
+        URL.revokeObjectURL(
+          preview.dataset.objectUrl
+        );
+
+        delete preview.dataset.objectUrl;
+      }
+
+      preview.removeAttribute("src");
+      preview.load();
     }
 
-    preview.removeAttribute("src");
-    preview.load();
-  }
+    if ($("#videoFile")) {
+      $("#videoFile").value = "";
+    }
 
-  if ($("#videoFile")) {
-    $("#videoFile").value = "";
-  }
+    if ($("#timeline")) {
+      $("#timeline").innerHTML = "";
+    }
 
-  if ($("#timeline")) {
-    $("#timeline").innerHTML = "";
-  }
+    if ($("#timelineTime")) {
+      $("#timelineTime").textContent =
+        "00:00";
+    }
 
-  if ($("#timelineTime")) {
-    $("#timelineTime").textContent = "00:00";
+    $("#editStatus").textContent =
+      "Video preview reset.";
   }
-
-  $("#editStatus").textContent = "Video preview reset.";
-});
+);
 
 
 /* =========================
    VIDEO TIMELINE TIME
 ========================= */
 
-$("#preview")?.addEventListener("timeupdate", () => {
-  const video = $("#preview");
+$("#preview")?.addEventListener(
+  "timeupdate",
+  () => {
+    const video =
+      $("#preview");
 
-  if (!video || !$("#timelineTime")) {
-    return;
+    if (
+      !video ||
+      !$("#timelineTime")
+    ) {
+      return;
+    }
+
+    const seconds =
+      Math.floor(
+        video.currentTime || 0
+      );
+
+    const minutes =
+      Math.floor(seconds / 60);
+
+    const remainingSeconds =
+      seconds % 60;
+
+    $("#timelineTime").textContent =
+      `${String(minutes).padStart(
+        2,
+        "0"
+      )}:${String(
+        remainingSeconds
+      ).padStart(2, "0")}`;
   }
-
-  const seconds = Math.floor(video.currentTime || 0);
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  $("#timelineTime").textContent =
-    `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
-});
+);
 
 
 /* =========================
    VOICE
 ========================= */
 
-$("#voiceBtn")?.addEventListener("click", async () => {
-  const dialogue = $("#dialogue")?.value.trim();
+$("#voiceBtn")?.addEventListener(
+  "click",
+  async () => {
+    const dialogue =
+      $("#dialogue")?.value.trim();
 
-  if (!dialogue) {
-    alert("Please enter dialogue or a voice script.");
-    return;
-  }
+    if (!dialogue) {
+      alert(
+        "Please enter dialogue or a voice script."
+      );
+      return;
+    }
 
-  const voicePlan = `VOICE PRODUCTION PLAN
+    const voicePlan =
+      `VOICE PRODUCTION PLAN
 
 Language:
 ${$("#voiceLanguage")?.value || "English"}
@@ -613,36 +866,63 @@ AUDIO RULES
 - Scene timing synchronization
 - Natural character dialogue where applicable`;
 
-  $("#voiceOutput").textContent = voicePlan;
+    $("#voiceOutput").textContent =
+      voicePlan;
 
-  try {
-    const response = await fetch(`${API_BASE}/voice/jobs`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        language: $("#voiceLanguage")?.value || "English",
-        voice: $("#voiceName")?.value || "Natural Voice",
-        style: $("#voiceStyle")?.value || "Natural",
-        speed: $("#voiceSpeed")?.value || "1.0x",
-        dialogue
-      })
-    });
+    try {
+      const response =
+        await fetch(
+          `${API_BASE}/api/voice/jobs`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              language:
+                $("#voiceLanguage")?.value ||
+                "English",
 
-    const data = await response.json();
+              voice:
+                $("#voiceName")?.value ||
+                "Natural Voice",
 
-    if (!response.ok) {
-      throw new Error(data.error || "Could not create voice job.");
+              style:
+                $("#voiceStyle")?.value ||
+                "Natural",
+
+              speed:
+                $("#voiceSpeed")?.value ||
+                "1.0x",
+
+              dialogue
+            })
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Could not create voice job."
+        );
+      }
+
+      $("#voiceOutput").textContent +=
+        `\n\nServer Job: ${
+          data.id || "unknown"
+        } • ${
+          data.status || "queued"
+        }`;
+    } catch (error) {
+      $("#voiceOutput").textContent +=
+        `\n\nVoice server: ${error.message}`;
     }
-
-    $("#voiceOutput").textContent +=
-      `\n\nServer Job: ${data.id || "unknown"} • ${data.status || "queued"}`;
-  } catch (error) {
-    $("#voiceOutput").textContent +=
-      `\n\nVoice server: ${error.message}`;
   }
-});
+);
 
 
 /* =========================
@@ -652,31 +932,42 @@ AUDIO RULES
 function currentProject() {
   return {
     title:
-      ($("#idea")?.value || "Untitled TNS Project").slice(0, 100),
+      (
+        $("#idea")?.value ||
+        "Untitled TNS Project"
+      ).slice(0, 100),
 
     date:
       new Date().toLocaleString(),
 
     type:
-      $("#type")?.value || "Realistic",
+      $("#type")?.value ||
+      "Realistic",
 
     format:
-      $("#format")?.value || "9:16",
+      $("#format")?.value ||
+      "9:16",
 
     duration:
-      $("#duration")?.value || "60 seconds",
+      $("#duration")?.value ||
+      "60 seconds",
 
     language:
-      $("#language")?.value || "English",
+      $("#language")?.value ||
+      "English",
 
     plan:
-      $("#plan")?.textContent || "",
+      $("#plan")?.textContent ||
+      "",
 
     character:
-      localStorage.getItem("tnsChar") || "",
+      localStorage.getItem(
+        "tnsChar"
+      ) || "",
 
     dialogue:
-      $("#dialogue")?.value || ""
+      $("#dialogue")?.value ||
+      ""
   };
 }
 
@@ -696,214 +987,327 @@ function escapeHtml(value) {
 }
 
 
+function getLocalProjects() {
+  if (!isAuthenticated()) {
+    return [];
+  }
+
+  try {
+    const data =
+      localStorage.getItem(
+        sessionKey()
+      );
+
+    if (!data) {
+      return [];
+    }
+
+    const projects =
+      JSON.parse(data);
+
+    return Array.isArray(projects)
+      ? projects
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+
+function saveLocalProjects(
+  projects
+) {
+  if (!isAuthenticated()) {
+    return;
+  }
+
+  localStorage.setItem(
+    sessionKey(),
+    JSON.stringify(projects)
+  );
+}
+
+
 function renderProjects() {
-  const list = $("#projectList");
+  const list =
+    $("#projectList");
 
   if (!list) {
     return;
   }
 
-  let projects = [];
+  if (!isAuthenticated()) {
+    list.innerHTML =
+      "<p>Please log in to view projects.</p>";
 
-  try {
-    projects = JSON.parse(
-      localStorage.getItem(sessionKey()) || "[]"
-    );
-  } catch {
-    projects = [];
-  }
-
-  if (!projects.length) {
-    list.innerHTML = "<p>No local projects yet.</p>";
     return;
   }
 
-  list.innerHTML = projects
-    .map(
-      (project, index) => `
-        <article>
-          <div>
-            <b>${escapeHtml(project.title)}</b>
-            <small>
-              ${escapeHtml(project.date)} •
-              ${escapeHtml(project.type)}
-            </small>
-          </div>
+  const projects =
+    getLocalProjects();
 
-          <button
-            type="button"
-            onclick="loadProject(${index})"
-          >
-            Load
-          </button>
-        </article>
-      `
-    )
-    .join("");
+  if (!projects.length) {
+    list.innerHTML =
+      "<p>No local projects yet.</p>";
+
+    return;
+  }
+
+  list.innerHTML =
+    projects
+      .map(
+        (project, index) => `
+          <article>
+            <div>
+              <b>${escapeHtml(
+                project.title
+              )}</b>
+
+              <small>
+                ${escapeHtml(
+                  project.date
+                )} •
+                ${escapeHtml(
+                  project.type
+                )}
+              </small>
+            </div>
+
+            <button
+              type="button"
+              onclick="loadProject(${index})"
+            >
+              Load
+            </button>
+          </article>
+        `
+      )
+      .join("");
 }
 
 
-window.loadProject = function (index) {
-  let projects = [];
+window.loadProject =
+  function (index) {
+    if (!isAuthenticated()) {
+      alert(
+        "Please log in first."
+      );
 
-  try {
-    projects = JSON.parse(
-      localStorage.getItem(sessionKey()) || "[]"
-    );
-  } catch {
-    projects = [];
-  }
-
-  const project = projects[index];
-
-  if (!project) {
-    return;
-  }
-
-  if ($("#idea")) $("#idea").value = project.title || "";
-  if ($("#type")) $("#type").value = project.type || "Realistic";
-  if ($("#format")) $("#format").value = project.format || "9:16";
-  if ($("#duration")) $("#duration").value = project.duration || "60 seconds";
-  if ($("#language")) $("#language").value = project.language || "English";
-  if ($("#plan")) $("#plan").textContent = project.plan || "";
-  if ($("#dialogue")) $("#dialogue").value = project.dialogue || "";
-
-  if (project.character) {
-    localStorage.setItem("tnsChar", project.character);
-
-    if ($("#charOutput")) {
-      $("#charOutput").textContent = project.character;
+      return;
     }
-  }
 
-  document
-    .querySelector('[data-tab="generate"]')
-    ?.click();
-};
+    const projects =
+      getLocalProjects();
+
+    const project =
+      projects[index];
+
+    if (!project) {
+      return;
+    }
+
+    if ($("#idea")) {
+      $("#idea").value =
+        project.title || "";
+    }
+
+    if ($("#type")) {
+      $("#type").value =
+        project.type ||
+        "Realistic";
+    }
+
+    if ($("#format")) {
+      $("#format").value =
+        project.format ||
+        "9:16";
+    }
+
+    if ($("#duration")) {
+      $("#duration").value =
+        project.duration ||
+        "60 seco
+        }
+
+    if ($("#language")) {
+      $("#language").value =
+        project.language ||
+        "English";
+    }
+
+    if ($("#plan")) {
+      $("#plan").textContent =
+        project.plan || "";
+    }
+
+    if ($("#dialogue")) {
+      $("#dialogue").value =
+        project.dialogue || "";
+    }
+
+    if (project.character) {
+      localStorage.setItem(
+        "tnsChar",
+        project.character
+      );
+
+      if ($("#charOutput")) {
+        $("#charOutput").textContent =
+          project.character;
+      }
+    }
+
+    document
+      .querySelector(
+        '[data-tab="generate"]'
+      )
+      ?.click();
+  };
 
 
-$("#saveBtn")?.addEventListener("click", () => {
-  let projects = [];
+$("#saveBtn")?.addEventListener(
+  "click",
+  () => {
+    if (!isAuthenticated()) {
+      alert(
+        "Please log in before saving a project."
+      );
 
-  try {
-    projects = JSON.parse(
-      localStorage.getItem(sessionKey()) || "[]"
+      return;
+    }
+
+    const projects =
+      getLocalProjects();
+
+    projects.unshift(
+      currentProject()
     );
-  } catch {
-    projects = [];
+
+    saveLocalProjects(
+      projects.slice(0, 50)
+    );
+
+    renderProjects();
+
+    alert(
+      "Project saved locally."
+    );
   }
-
-  projects.unshift(currentProject());
-
-  localStorage.setItem(
-    sessionKey(),
-    JSON.stringify(projects.slice(0, 50))
-  );
-
-  renderProjects();
-
-  alert("Project saved locally.");
-});
+);
 
 
-$("#clearBtn")?.addEventListener("click", () => {
-  localStorage.removeItem(sessionKey());
-  renderProjects();
-});
+$("#clearBtn")?.addEventListener(
+  "click",
+  () => {
+    if (!isAuthenticated()) {
+      return;
+    }
+
+    localStorage.removeItem(
+      sessionKey()
+    );
+
+    renderProjects();
+  }
+);
 
 
 /* =========================
    SETTINGS
 ========================= */
 
-$("#saveSettings")?.addEventListener("click", () => {
-  const endpoint =
-    $("#endpoint")?.value.trim() || "/api";
+$("#saveSettings")?.addEventListener(
+  "click",
+  () => {
+    const endpoint =
+      $("#endpoint")?.value.trim() ||
+      "/api";
 
-  const prefix =
-    $("#prefix")?.value.trim() || "/api";
+    const prefix =
+      $("#prefix")?.value.trim() ||
+      "/api";
 
-  localStorage.setItem("tnsEndpoint", endpoint);
-  localStorage.setItem("tnsPrefix", prefix);
+    localStorage.setItem(
+      "tnsEndpoint",
+      endpoint
+    );
 
-  alert("Settings saved locally.");
-});
+    localStorage.setItem(
+      "tnsPrefix",
+      prefix
+    );
+
+    alert(
+      "Settings saved locally."
+    );
+  }
+);
 
 
 if ($("#endpoint")) {
   $("#endpoint").value =
-    localStorage.getItem("tnsEndpoint") || "/api";
+    localStorage.getItem(
+      "tnsEndpoint"
+    ) || "/api";
 }
+
 
 if ($("#prefix")) {
   $("#prefix").value =
-    localStorage.getItem("tnsPrefix") || "/api";
+    localStorage.getItem(
+      "tnsPrefix"
+    ) || "/api";
 }
 
 
 /* =========================
-   AUTHENTICATION
+   AUTH UI
 ========================= */
 
 function initAuth() {
-  const session = getSession();
+  const loggedIn =
+    isAuthenticated();
 
-  if (session) {
-    $("#authGate")?.classList.add("hidden");
+  const user =
+    getCurrentAuthUser();
+
+  if (loggedIn && user) {
+    $("#authGate")?.classList.add(
+      "hidden"
+    );
 
     if ($("#userBadge")) {
       $("#userBadge").textContent =
-        session.email || "Guest";
+        user.email ||
+        "Authenticated User";
     }
   } else {
-    $("#authGate")?.classList.remove("hidden");
+    $("#authGate")?.classList.remove(
+      "hidden"
+    );
+
+    if ($("#userBadge")) {
+      $("#userBadge").textContent =
+        "Login required";
+    }
   }
 }
 
 
-$("#loginBtn")?.addEventListener("click", () => {
-  const email =
-    $("#loginEmail")?.value.trim();
+$("#logoutBtn")?.addEventListener(
+  "click",
+  () => {
+    if (
+      window.TNSAuth &&
+      typeof window.TNSAuth.logout ===
+        "function"
+    ) {
+      window.TNSAuth.logout();
+    }
 
-  const password =
-    $("#loginPass")?.value || "";
-
-  if (!email || !password) {
-    alert("Please enter your email and password.");
-    return;
+    location.reload();
   }
-
-  localStorage.setItem(
-    "tnsSession",
-    JSON.stringify({
-      email,
-      mode: "development",
-      at: Date.now()
-    })
-  );
-
-  initAuth();
-});
-
-
-$("#guestBtn")?.addEventListener("click", () => {
-  localStorage.setItem(
-    "tnsSession",
-    JSON.stringify({
-      email: "Guest Mode",
-      mode: "guest",
-      at: Date.now()
-    })
-  );
-
-  initAuth();
-});
-
-
-$("#logoutBtn")?.addEventListener("click", () => {
-  localStorage.removeItem("tnsSession");
-  location.reload();
-});
+);
 
 
 /* =========================

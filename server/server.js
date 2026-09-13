@@ -1,7 +1,18 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const {
+  signup
+} = require("./auth/Signup");
 
+const {
+  login
+} = require("./auth/Login");
+
+const {
+  createSession,
+  destroySession
+} = require("./auth/Sessions");
 const {
   create: createVideoJob,
   getJob: getVideoJob

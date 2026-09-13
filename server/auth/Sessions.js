@@ -8,10 +8,17 @@ function createSession(userId, options = {}) {
   if (!userId) {
     throw new Error("User ID is required.");
   }
+const timeoutMinutes =
+  Math.max(
+    1,
+    Number(
+      process.env.SESSION_TIMEOUT_MINUTES
+    ) || 1440
+  );
 
-  const expiresInMs =
-    Number(options.expiresInMs) ||
-    7 * 24 * 60 * 60 * 1000;
+const expiresInMs =
+  Number(options.expiresInMs) ||
+  timeoutMinutes * 60 * 1000;
 
   const now = Date.now();
 

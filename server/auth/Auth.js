@@ -22,23 +22,9 @@ const users = new Map();
 function normalizeEmail(email) {
   return String(email || "")
     .trim()
-    .toLowerCase();
-}
-
-function validatePassword(password) {
-  if (typeof password !== "string") {
-    return false;
-  }
-
-  return password.length >= 8;
-}
-
-function hashPassword(password) {
-  return crypto
-    .createHash("sha256")
-    .update(String(password))
-    .digest("hex");
-}
+    .toLowerCase()
+  
+  
 
 function createUser(input = {}) {
   const email = normalizeEmail(input.email);

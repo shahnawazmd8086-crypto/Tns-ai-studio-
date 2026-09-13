@@ -73,12 +73,10 @@ function verifyPassword(email, password) {
   if (!user) {
     return false;
   }
-
-  return (
-    user.passwordHash ===
-    hashPassword(password)
-  );
-}
+  return bcrypt.compareSync(
+  String(password),
+  user.passwordHash
+);
 
 function sanitizeUser(user) {
   if (!user) {

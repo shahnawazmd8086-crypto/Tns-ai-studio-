@@ -1122,12 +1122,11 @@ window.loadProject =
         project.format ||
         "9:16";
     }
-
-    if ($("#duration")) {
-      $("#duration").value =
-        project.duration ||
-        "60 seco
-        }
+if ($("#duration")) {
+  $("#duration").value =
+    project.duration ||
+    "60 seconds";
+}
 
     if ($("#language")) {
       $("#language").value =

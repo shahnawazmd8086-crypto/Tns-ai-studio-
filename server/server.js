@@ -235,7 +235,99 @@ if (
         time: new Date().toISOString()
       });
     }
+    /* =========================
+       AUTH - SIGNUP
+    ========================= */
 
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/signup"
+    ) {
+      const input = await readBody(request);
+
+      const result = signup(input);
+
+      const session = createSession(
+        result.user.id,
+        {
+          expiresInMs:
+            24 * 60 * 60 * 1000
+        }
+      );
+
+      response.setHeader(
+        "Set-Cookie",
+        `tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`
+      );
+
+      return sendJson(response, 201, {
+        success: true,
+        user: result.user
+      });
+    }
+
+
+    /* =========================
+       AUTH - LOGIN
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/login"
+    ) {
+      const input = await readBody(request);
+
+      const result = login(input);
+
+      const session = createSession(
+        result.user.id,
+        {
+          expiresInMs:
+            24 * 60 * 60 * 1000
+        }
+      );
+
+      response.setHeader(
+        "Set-Cookie",
+        `tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400`
+      );
+
+      return sendJson(response, 200, {
+        success: true,
+        user: result.user
+      });
+    }
+
+
+    /* =========================
+       AUTH - LOGOUT
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/logout"
+    ) {
+      const cookieHeader =
+        request.headers.cookie || "";
+
+      const match =
+        cookieHeader.match(
+          /(?:^|;\s*)tns_session=([^;]+)/
+        );
+
+      if (match) {
+        destroySession(match[1]);
+      }
+
+      response.setHeader(
+        "Set-Cookie",
+        "tns_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0"
+      );
+
+      return sendJson(response, 200, {
+        success: true
+      });
+    }
 
     /* =========================
        AI VIDEO CREATE

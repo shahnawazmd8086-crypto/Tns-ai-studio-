@@ -1,5 +1,22 @@
 const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 
+function validatePassword(password) {
+  if (typeof password !== "string") {
+    return false;
+  }
+
+  return (
+    password.length >= 8 &&
+    /[A-Z]/.test(password) &&
+    /[a-z]/.test(password) &&
+    /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password)
+  );
+}
+function hashPassword(password) {
+  return bcrypt.hashSync(String(password), 12);
+}
 const users = new Map();
 
 function normalizeEmail(email) {

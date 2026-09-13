@@ -1,6 +1,16 @@
 const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 
+// Temporary in-memory user store.
+// Production me ise persistent database se replace karna hoga.
+const users = new Map();
+
+function normalizeEmail(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
 function validatePassword(password) {
   if (typeof password !== "string") {
     return false;
@@ -14,17 +24,10 @@ function validatePassword(password) {
     /[^A-Za-z0-9]/.test(password)
   );
 }
+
 function hashPassword(password) {
   return bcrypt.hashSync(String(password), 12);
 }
-const users = new Map();
-
-function normalizeEmail(email) {
-  return String(email || "")
-    .trim()
-    .toLowerCase()
-  
-  
 
 function createUser(input = {}) {
   const email = normalizeEmail(input.email);
@@ -35,7 +38,7 @@ function createUser(input = {}) {
 
   if (!validatePassword(input.password)) {
     throw new Error(
-      "Password must be at least 8 characters long."
+      "Password must be at least 8 characters and include uppercase, lowercase, number, and special character."
     );
   }
 
@@ -73,10 +76,12 @@ function verifyPassword(email, password) {
   if (!user) {
     return false;
   }
+
   return bcrypt.compareSync(
-  String(password),
-  user.passwordHash
-);
+    String(password),
+    user.passwordHash
+  );
+}
 
 function sanitizeUser(user) {
   if (!user) {

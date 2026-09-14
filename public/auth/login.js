@@ -1,104 +1,53 @@
-const LOGIN_API =
-  "/api/auth/login";
-
+const LOGIN_API = "/api/auth/login";
 
 function getLoginForm() {
-  return document.querySelector(
-    "#loginForm"
-  );
+  return document.querySelector("#loginForm");
 }
-
 
 function getEmailInput() {
-  return document.querySelector(
-    "#loginEmail"
-  );
+  return document.querySelector("#loginEmail");
 }
-
 
 function getPasswordInput() {
-  return document.querySelector(
-    "#loginPassword"
-  );
+  return document.querySelector("#loginPassword");
 }
-
 
 function getMessageElement() {
-  return document.querySelector(
-    "#loginMessage"
-  );
+  return document.querySelector("#loginMessage");
 }
 
+function showMessage(message, type = "info") {
+  const element = getMessageElement();
 
-function showMessage(
-  message,
-  type = "info"
-) {
-  const element =
-    getMessageElement();
+  if (!element) return;
 
-  if (!element) {
-    return;
-  }
-
-  element.textContent =
-    String(message || "");
-
-  element.dataset.type =
-    type;
+  element.textContent = String(message || "");
+  element.dataset.type = type;
 }
 
+function setLoading(loading) {
+  const form = getLoginForm();
 
-function setLoading(
-  loading
-) {
-  const form =
-    getLoginForm();
+  if (!form) return;
 
-  if (!form) {
-    return;
-  }
+  const button = form.querySelector('button[type="submit"]');
 
-  const button =
-    form.querySelector(
-      'button[type="submit"]'
-    );
-
-  if (!button) {
-    return;
-  }
+  if (!button) return;
 
   button.disabled = loading;
-
-  button.textContent =
-    loading
-      ? "Signing in..."
-      : "Login";
+  button.textContent = loading ? "Signing in..." : "Continue";
 }
 
-
-function validateLoginInput(
-  email,
-  password
-) {
-  const safeEmail =
-    String(email || "")
-      .trim()
-      .toLowerCase();
-
-  const safePassword =
-    String(password || "");
+function validateLoginInput(email, password) {
+  const safeEmail = String(email || "").trim().toLowerCase();
+  const safePassword = String(password || "");
 
   if (!safeEmail) {
-    throw new Error(
-      "Email is required."
-    );
+    throw new Error("Email is required.");
   }
 
   if (!safePassword) {
-    throw new Error(
-      "Password is required."
-    );
+    throw new Error("Password is required.");
   }
 
   return {
@@ -107,122 +56,71 @@ function validateLoginInput(
   };
 }
 
+async function login(email, password) {
+  const input = validateLoginInput(email, password);
 
-async function login(
-  email,
-  password
-) {
-  const input =
-    validateLoginInput(
-      email,
-      password
-    );
-
-  const response =
-    await fetch(
-      LOGIN_API,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify(input)
-      }
-    );
+  const response = await fetch(LOGIN_API, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(input)
+  });
 
   let data = null;
 
   try {
-    data =
-      await response.json();
-  } catch (error) {
+    data = await response.json();
+  } catch {
     data = null;
   }
 
   if (!response.ok) {
     throw new Error(
       data?.message ||
+      data?.error ||
       "Invalid email or password."
     );
   }
 
-  const user =
-    data?.user || null;
-
-  if (
-    window.TNSAuth &&
-    user
-  ) {
-    window.TNSAuth.setLoggedIn(
-      user
-    );
-  }
-
   window.dispatchEvent(
-    new CustomEvent(
-      "tns:login-success",
-      {
-        detail: {
-          user
-        }
+    new CustomEvent("tns:login-success", {
+      detail: {
+        user: data?.user || null
       }
-    )
+    })
   );
 
   return data;
 }
 
-
-async function handleLoginSubmit(
-  event
-) {
+async function handleLoginSubmit(event) {
   event.preventDefault();
 
-  const emailInput =
-    getEmailInput();
+  const emailInput = getEmailInput();
+  const passwordInput = getPasswordInput();
 
-  const passwordInput =
-    getPasswordInput();
-
-  const email =
-    emailInput
-      ? emailInput.value
-      : "";
-
-  const password =
-    passwordInput
-      ? passwordInput.value
-      : "";
+  const email = emailInput ? emailInput.value : "";
+  const password = passwordInput ? passwordInput.value : "";
 
   try {
     setLoading(true);
+    showMessage("Signing in...", "info");
+
+    const result = await login(email, password);
 
     showMessage(
-      "Signing in...",
-      "info"
-    );
-
-    const result =
-      await login(
-        email,
-        password
-      );
-
-    showMessage(
-      result?.message ||
-        "Login successful.",
+      result?.message || "Login successful.",
       "success"
     );
 
-    setTimeout(() => {
-      window.location.href =
-        "/index.html";
+    window.setTimeout(() => {
+      window.location.href = "/index.html";
     }, 300);
   } catch (error) {
     showMessage(
-      error.message ||
-        "Login failed.",
+      error?.message || "Login failed.",
       "error"
     );
   } finally {
@@ -230,21 +128,16 @@ async function handleLoginSubmit(
   }
 }
 
-
 function initLogin() {
-  const form =
-    getLoginForm();
+  const form = getLoginForm();
 
-  if (!form) {
+  if (!form || form.dataset.tnsLoginBound === "true") {
     return;
   }
 
-  form.addEventListener(
-    "submit",
-    handleLoginSubmit
-  );
+  form.dataset.tnsLoginBound = "true";
+  form.addEventListener("submit", handleLoginSubmit);
 }
-
 
 window.TNSLogin = {
   login,
@@ -252,15 +145,10 @@ window.TNSLogin = {
   initLogin
 };
 
-
-if (
-  document.readyState ===
-  "loading"
-) {
-  document.addEventListener(
-    "DOMContentLoaded",
-    initLogin
-  );
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initLogin, {
+    once: true
+  });
 } else {
   initLogin();
 }

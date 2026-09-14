@@ -79,6 +79,8 @@
 
   <div class="card auth-card">
 
+    <form id="loginForm" novalidate>
+
     <h1>
       TNS AI Studio
     </h1>
@@ -88,42 +90,47 @@
     </p>
 
 
-    <label for="loginEmail">
-      Email
-    </label>
+    <form id="loginForm" novalidate>
 
-    <input
-      id="loginEmail"
-      type="email"
-      placeholder="Enter your email"
-      autocomplete="email"
-    >
+      <label for="loginEmail">
+        Email
+      </label>
 
-
-    <label for="loginPass">
-      Password
-    </label>
-
-    <input
-      id="loginPass"
-      type="password"
-      placeholder="Enter your strong password"
-      autocomplete="current-password"
-    >
+      <input
+        id="loginEmail"
+        name="email"
+        type="email"
+        placeholder="Enter your email"
+        autocomplete="email"
+        required
+      >
 
 
-    <button
-      id="loginBtn"
-      class="primary"
-      type="button"
-    >
-      Continue
-    </button>
+      <label for="loginPassword">
+        Password
+      </label>
+
+      <input
+        id="loginPassword"
+        name="password"
+        type="password"
+        placeholder="Enter your strong password"
+        autocomplete="current-password"
+        required
+      >
 
 
-    <small>
-      Secure authentication, OTP, Google login and mobile login will be connected through the backend before production launch.
-    </small>
+      <button
+        id="loginBtn"
+        class="primary"
+        type="submit"
+      >
+        Continue
+      </button>
+
+      <p id="loginMessage" role="status" aria-live="polite"></p>
+
+    </form>
 
   </div>
 

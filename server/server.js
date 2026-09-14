@@ -66,6 +66,71 @@ function sendJson(response, statusCode, data) {
   response.end(JSON.stringify(data));
 }
 
+
+function parseCookies(request) {
+  const header = request.headers.cookie || "";
+  const cookies = {};
+
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+
+    if (key) {
+      cookies[key] = decodeURIComponent(value);
+    }
+  }
+
+  return cookies;
+}
+
+function getSessionFromRequest(request) {
+  const cookies = parseCookies(request);
+  const token = cookies.tns_session;
+
+  if (!token) {
+    return null;
+  }
+
+  return getSession(token);
+}
+
+function requireSession(request, response) {
+  const session = getSessionFromRequest(request);
+
+  if (!session) {
+    sendJson(response, 401, {
+      error: "Authentication required."
+    });
+    return null;
+  }
+
+  return session;
+}
+
+function setSessionCookie(response, token, expiresAt) {
+  const maxAge = Math.max(
+    0,
+    Math.floor(
+      (Date.parse(expiresAt) - Date.now()) / 1000
+    )
+  );
+
+  response.setHeader(
+    "Set-Cookie",
+    `tns_session=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`
+  );
+}
+
+function clearSessionCookie(response) {
+  response.setHeader(
+    "Set-Cookie",
+    "tns_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+  );
+}
+
 function readBody(request, limit = 5 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     let raw = "";
@@ -132,6 +197,115 @@ const server = http.createServer(async (request, response) => {
     );
 
     /* =========================
+       AUTH LOGIN
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/login"
+    ) {
+      const input = await readBody(request);
+      const result = login(input);
+
+      const session = createSession(
+        result.user.id
+      );
+
+      setSessionCookie(
+        response,
+        session.token,
+        session.expiresAt
+      );
+
+      return sendJson(response, 200, {
+        success: true,
+        user: result.user,
+        session: {
+          expiresAt: session.expiresAt
+        }
+      });
+    }
+
+
+    /* =========================
+       AUTH SIGNUP
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/signup"
+    ) {
+      const input = await readBody(request);
+      const user = signup(input);
+
+      const session = createSession(user.id);
+
+      setSessionCookie(
+        response,
+        session.token,
+        session.expiresAt
+      );
+
+      return sendJson(response, 201, {
+        success: true,
+        user,
+        session: {
+          expiresAt: session.expiresAt
+        }
+      });
+    }
+
+
+    /* =========================
+       AUTH SESSION
+    ========================= */
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/api/auth/me"
+    ) {
+      const session = getSessionFromRequest(request);
+
+      if (!session) {
+        return sendJson(response, 401, {
+          authenticated: false
+        });
+      }
+
+      return sendJson(response, 200, {
+        authenticated: true,
+        userId: session.userId,
+        expiresAt: session.expiresAt
+      });
+    }
+
+
+    /* =========================
+       AUTH LOGOUT
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/logout"
+    ) {
+      const session = getSessionFromRequest(request);
+
+      if (session) {
+        destroySession(
+          parseCookies(request).tns_session
+        );
+      }
+
+      clearSessionCookie(response);
+
+      return sendJson(response, 200, {
+        success: true,
+        message: "Logged out successfully."
+      });
+    }
+
+
+    /* =========================
        AI VIDEO CREATE
     ========================= */
 
@@ -139,6 +313,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/api/video/jobs"
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const input = await readBody(request);
 
       const providerName = String(
@@ -182,6 +359,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "GET" &&
       videoMatch
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const job = await getVideoJob(
         decodeURIComponent(videoMatch[1])
       );
@@ -204,6 +384,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/api/image/jobs"
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const input = await readBody(request);
 
       const providerName = String(
@@ -247,6 +430,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "GET" &&
       imageMatch
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const job = await getImageJob(
         decodeURIComponent(imageMatch[1])
       );
@@ -269,6 +455,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/api/voice/jobs"
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const input = await readBody(request);
 
       const providerName = String(
@@ -312,6 +501,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "GET" &&
       voiceMatch
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const job = await getVoiceJob(
         decodeURIComponent(voiceMatch[1])
       );
@@ -334,6 +526,9 @@ const server = http.createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/api/editor/export"
     ) {
+      const session = requireSession(request, response);
+      if (!session) return;
+
       const input = await readBody(request);
 
       const job = await createVideoJob(
@@ -361,6 +556,10 @@ const server = http.createServer(async (request, response) => {
         version: "1.0.0",
         endpoints: {
           health: "GET /health",
+          authLogin: "POST /api/auth/login",
+          authSignup: "POST /api/auth/signup",
+          authMe: "GET /api/auth/me",
+          authLogout: "POST /api/auth/logout",
           videoCreate: "POST /api/video/jobs",
           videoStatus: "GET /api/video/jobs/:id",
           imageCreate: "POST /api/image/jobs",

@@ -10,6 +10,17 @@ const {
 } = require("./auth/Login");
 
 const {
+  getUser,
+  listUsers
+} = require("./auth/Auth");
+
+function getUserById(id) {
+  const users = listUsers();
+  return users.find((user) => user.id === id) || null;
+}
+
+
+const {
   createSession,
   destroySession
 } = require("./auth/Sessions");
@@ -96,6 +107,21 @@ function readBody(request, limit = 5 * 1024 * 1024) {
   });
 }
 
+function parseCookies(request) {
+  const header = request.headers.cookie || "";
+  const cookies = {};
+
+  for (const part of header.split(";")) {
+    const index = part.indexOf("=");
+    if (index === -1) continue;
+    const key = part.slice(0, index).trim();
+    const value = part.slice(index + 1).trim();
+    cookies[key] = decodeURIComponent(value);
+  }
+
+  return cookies;
+}
+
 function safePublicFile(requestPath) {
   const decoded = decodeURIComponent(
     requestPath.split("?")[0]
@@ -132,6 +158,21 @@ const server = http.createServer(async (request, response) => {
     );
 
     /* =========================
+       HEALTH CHECK
+    ========================= */
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/health"
+    ) {
+      return sendJson(response, 200, {
+        ok: true,
+        service: "tns-studio"
+      });
+    }
+
+
+    /* =========================
        AUTH LOGIN
     ========================= */
 
@@ -139,22 +180,124 @@ const server = http.createServer(async (request, response) => {
       request.method === "POST" &&
       url.pathname === "/api/auth/login"
     ) {
-      const input = await readBody(request, 1024 * 1024);
-      const result = login(input);
+      try {
+        const input = await readBody(request, 1024 * 1024);
+        const result = login(input);
 
-      const session = createSession(
-        result.user.id
-      );
+        const session = createSession(
+          result.user.id
+        );
+
+        response.setHeader(
+          "Set-Cookie",
+          `tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${Math.max(1, Math.floor((Date.parse(session.expiresAt) - Date.now()) / 1000))}`
+        );
+
+        return sendJson(response, 200, {
+          success: true,
+          message: "Login successful.",
+          user: result.user
+        });
+      } catch (error) {
+        return sendJson(response, 401, {
+          success: false,
+          message: "Invalid email or password."
+        });
+      }
+    }
+
+
+    /* =========================
+       AUTH SIGNUP
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/signup"
+    ) {
+      try {
+        const input = await readBody(request, 1024 * 1024);
+        const result = signup(input);
+
+        const session = createSession(result.user.id);
+
+        response.setHeader(
+          "Set-Cookie",
+          `tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${Math.max(1, Math.floor((Date.parse(session.expiresAt) - Date.now()) / 1000))}`
+        );
+
+        return sendJson(response, 201, {
+          success: true,
+          message: "Account created successfully.",
+          user: result.user
+        });
+      } catch (error) {
+        const message = error?.message || "Unable to create account.";
+        const status = message === "User already exists." ? 409 : 400;
+        return sendJson(response, status, {
+          success: false,
+          message
+        });
+      }
+    }
+
+
+    /* =========================
+       AUTH ME
+    ========================= */
+
+    if (
+      request.method === "GET" &&
+      url.pathname === "/api/auth/me"
+    ) {
+      const cookies = parseCookies(request);
+      const session = cookies.tns_session
+        ? require("./auth/Sessions").getSession(cookies.tns_session)
+        : null;
+
+      if (!session) {
+        return sendJson(response, 401, {
+          authenticated: false,
+          user: null
+        });
+      }
+
+      const user = getUserById(session.userId);
+      if (!user) {
+        return sendJson(response, 401, {
+          authenticated: false,
+          user: null
+        });
+      }
+
+      return sendJson(response, 200, {
+        authenticated: true,
+        user
+      });
+    }
+
+
+    /* =========================
+       AUTH LOGOUT
+    ========================= */
+
+    if (
+      request.method === "POST" &&
+      url.pathname === "/api/auth/logout"
+    ) {
+      const cookies = parseCookies(request);
+      if (cookies.tns_session) {
+        destroySession(cookies.tns_session);
+      }
 
       response.setHeader(
         "Set-Cookie",
-        `tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${Math.max(1, Math.floor((Date.parse(session.expiresAt) - Date.now()) / 1000))}`
+        "tns_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0"
       );
 
       return sendJson(response, 200, {
         success: true,
-        message: "Login successful.",
-        user: result.user
+        message: "Logged out successfully."
       });
     }
 

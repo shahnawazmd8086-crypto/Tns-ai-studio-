@@ -1,305 +1,184 @@
-const SIGNUP_API =
-  "/api/auth/signup";
+(() => {
+  "use strict";
 
+  const SIGNUP_API = "/api/auth/signup";
 
-function getSignupForm() {
-  return document.querySelector(
-    "#signupForm"
-  );
-}
-
-
-function getEmailInput() {
-  return document.querySelector(
-    "#signupEmail"
-  );
-}
-
-
-function getPasswordInput() {
-  return document.querySelector(
-    "#signupPassword"
-  );
-}
-
-
-function getConfirmPasswordInput() {
-  return document.querySelector(
-    "#signupConfirmPassword"
-  );
-}
-
-
-function getMessageElement() {
-  return document.querySelector(
-    "#signupMessage"
-  );
-}
-
-
-function showMessage(
-  message,
-  type = "info"
-) {
-  const element =
-    getMessageElement();
-
-  if (!element) {
-    return;
+  function signupGetForm() {
+    return document.querySelector("#signupForm");
   }
 
-  element.textContent =
-    String(message || "");
-
-  element.dataset.type =
-    type;
-}
-
-
-function setLoading(
-  loading
-) {
-  const form =
-    getSignupForm();
-
-  if (!form) {
-    return;
+  function signupGetEmailInput() {
+    return document.querySelector("#signupEmail");
   }
 
-  const button =
-    form.querySelector(
-      'button[type="submit"]'
-    );
-
-  if (!button) {
-    return;
+  function signupGetPasswordInput() {
+    return document.querySelector("#signupPassword");
   }
 
-  button.disabled =
-    loading;
-
-  button.textContent =
-    loading
-      ? "Creating account..."
-      : "Sign Up";
-}
-
-
-function validateSignupInput(
-  email,
-  password,
-  confirmPassword
-) {
-  const safeEmail =
-    String(email || "")
-      .trim()
-      .toLowerCase();
-
-  const safePassword =
-    String(password || "");
-
-  const safeConfirmPassword =
-    String(confirmPassword || "");
-
-  if (!safeEmail) {
-    throw new Error(
-      "Email is required."
-    );
+  function signupGetConfirmPasswordInput() {
+    return document.querySelector("#signupConfirmPassword");
   }
 
-  if (!safePassword) {
-    throw new Error(
-      "Password is required."
-    );
+  function signupGetMessageElement() {
+    return document.querySelector("#signupMessage");
   }
 
-  if (safePassword.length < 8) {
-    throw new Error(
-      "Password must be at least 8 characters long."
-    );
+  function signupShowMessage(message, type = "info") {
+    const element = signupGetMessageElement();
+    if (!element) return;
+    element.textContent = String(message || "");
+    element.dataset.type = type;
   }
 
-  if (
-    safePassword !==
-    safeConfirmPassword
-  ) {
-    throw new Error(
-      "Passwords do not match."
-    );
+  function signupSetLoading(loading) {
+    const form = signupGetForm();
+    if (!form) return;
+
+    const button = form.querySelector('button[type="submit"]');
+    if (!button) return;
+
+    button.disabled = loading;
+    button.textContent = loading ? "Creating account..." : "Sign Up";
   }
 
-  return {
-    email: safeEmail,
-    password: safePassword
-  };
-}
+  function signupValidateInput(email, password, confirmPassword) {
+    const safeEmail = String(email || "").trim().toLowerCase();
+    const safePassword = String(password || "");
+    const safeConfirmPassword = String(confirmPassword || "");
 
+    if (!safeEmail) throw new Error("Email is required.");
+    if (!safePassword) throw new Error("Password is required.");
 
-async function signup(
-  email,
-  password,
-  confirmPassword
-) {
-  const input =
-    validateSignupInput(
-      email,
-      password,
-      confirmPassword
-    );
+    if (safePassword.length < 8 || !/[A-Z]/.test(safePassword) || !/[a-z]/.test(safePassword) || !/[0-9]/.test(safePassword) || !/[^A-Za-z0-9]/.test(safePassword)) {
+      throw new Error("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+    }
 
-  const response =
-    await fetch(
-      SIGNUP_API,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type":
-            "application/json"
-        },
-        body: JSON.stringify(input)
-      }
-    );
+    if (safePassword !== safeConfirmPassword) {
+      throw new Error("Passwords do not match.");
+    }
 
-  let data = null;
-
-  try {
-    data =
-      await response.json();
-  } catch (error) {
-    data = null;
+    return { email: safeEmail, password: safePassword };
   }
 
-  if (!response.ok) {
-    throw new Error(
-      data?.message ||
-      "Unable to create account."
-    );
+  async function signupRequest(email, password, confirmPassword) {
+    const input = signupValidateInput(email, password, confirmPassword);
+
+    const response = await fetch(SIGNUP_API, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify(input)
+    });
+
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message ||
+        data?.error ||
+        "Unable to create account."
+      );
+    }
+
+    const user = data?.user || null;
+    if (window.TNSAuth && user && typeof window.TNSAuth.setLoggedIn === "function") {
+      window.TNSAuth.setLoggedIn(user);
+    }
+
+    return data;
   }
 
-  const user =
-    data?.user || null;
+  async function signupHandleSubmit(event) {
+    event.preventDefault();
 
-  if (
-    window.TNSAuth &&
-    user
-  ) {
-    window.TNSAuth.setLoggedIn(
-      user
-    );
-  }
+    const emailInput = signupGetEmailInput();
+    const passwordInput = signupGetPasswordInput();
+    const confirmInput = signupGetConfirmPasswordInput();
 
-  return data;
-}
+    try {
+      signupSetLoading(true);
+      signupShowMessage("Creating your account...", "info");
 
-
-async function handleSignupSubmit(
-  event
-) {
-  event.preventDefault();
-
-  const emailInput =
-    getEmailInput();
-
-  const passwordInput =
-    getPasswordInput();
-
-  const confirmPasswordInput =
-    getConfirmPasswordInput();
-
-  const email =
-    emailInput
-      ? emailInput.value
-      : "";
-
-  const password =
-    passwordInput
-      ? passwordInput.value
-      : "";
-
-  const confirmPassword =
-    confirmPasswordInput
-      ? confirmPasswordInput.value
-      : "";
-
-  try {
-    setLoading(true);
-
-    showMessage(
-      "Creating your account...",
-      "info"
-    );
-
-    const result =
-      await signup(
-        email,
-        password,
-        confirmPassword
+      const result = await signupRequest(
+        emailInput?.value || "",
+        passwordInput?.value || "",
+        confirmInput?.value || ""
       );
 
-    showMessage(
-      result?.message ||
-        "Account created successfully.",
-      "success"
-    );
+      signupShowMessage(
+        result?.message || "Account created successfully.",
+        "success"
+      );
 
-    window.dispatchEvent(
-      new CustomEvent(
-        "tns:signup-success",
-        {
-          detail: {
-            user:
-              result?.user || null
-          }
-        }
-      )
-    );
+      window.dispatchEvent(
+        new CustomEvent("tns:signup-success", {
+          detail: { user: result?.user || null }
+        })
+      );
 
-    setTimeout(() => {
-      window.location.href =
-        "/index.html";
-    }, 500);
-  } catch (error) {
-    showMessage(
-      error.message ||
-        "Signup failed.",
-      "error"
-    );
-  } finally {
-    setLoading(false);
-  }
-}
-
-
-function initSignup() {
-  const form =
-    getSignupForm();
-
-  if (!form) {
-    return;
+      window.setTimeout(() => {
+        window.location.replace("/index.html");
+      }, 500);
+    } catch (error) {
+      signupShowMessage(
+        error?.message || "Signup failed.",
+        "error"
+      );
+    } finally {
+      signupSetLoading(false);
+    }
   }
 
-  form.addEventListener(
-    "submit",
-    handleSignupSubmit
-  );
-}
+  function signupInit() {
+    const form = signupGetForm();
+    const showSignupButton = document.querySelector("#showSignupBtn");
+    const showLoginButton = document.querySelector("#showLoginBtn");
+    const loginForm = document.querySelector("#loginForm");
 
+    if (form && form.dataset.tnsSignupBound !== "1") {
+      form.dataset.tnsSignupBound = "1";
+      form.addEventListener("submit", signupHandleSubmit);
+    }
 
-window.TNSSignup = {
-  signup,
-  validateSignupInput,
-  initSignup
-};
+    if (showSignupButton && form && loginForm && showSignupButton.dataset.tnsSignupSwitchBound !== "1") {
+      showSignupButton.dataset.tnsSignupSwitchBound = "1";
+      showSignupButton.addEventListener("click", () => {
+        loginForm.classList.add("hidden");
+        showSignupButton.classList.add("hidden");
+        form.classList.remove("hidden");
+        signupGetEmailInput()?.focus();
+      });
+    }
 
+    if (showLoginButton && form && loginForm && showLoginButton.dataset.tnsLoginSwitchBound !== "1") {
+      showLoginButton.dataset.tnsLoginSwitchBound = "1";
+      showLoginButton.addEventListener("click", () => {
+        form.classList.add("hidden");
+        loginForm.classList.remove("hidden");
+        if (showSignupButton) showSignupButton.classList.remove("hidden");
+        form.reset();
+        signupShowMessage("", "info");
+      });
+    }
+  }
 
-if (
-  document.readyState ===
-  "loading"
-) {
-  document.addEventListener(
-    "DOMContentLoaded",
-    initSignup
-  );
-} else {
-  initSignup();
-      }
+  window.TNSSignup = {
+    signup: signupRequest,
+    validateSignupInput: signupValidateInput,
+    initSignup: signupInit
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", signupInit, { once: true });
+  } else {
+    signupInit();
+  }
+})();

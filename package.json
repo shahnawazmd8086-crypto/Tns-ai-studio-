@@ -1,6 +1,6 @@
 {
   "name": "tns-ai-studio",
-  "version": "7.0.0",
+  "version": "7.0.1",
   "private": true,
   "description": "TNS AI Studio - mobile-first AI video generator and video editor",
   "main": "server/server.js",

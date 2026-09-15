@@ -135,8 +135,32 @@
     </form>
 
 
+    <button
+      id="showSignupBtn"
+      class="secondary"
+      type="button"
+    >
+      Create a new account
+    </button>
+
+    <form id="signupForm" class="hidden" novalidate>
+      <label for="signupEmail">Email</label>
+      <input id="signupEmail" name="email" type="email" placeholder="Enter your email" autocomplete="email" required>
+
+      <label for="signupPassword">Password</label>
+      <input id="signupPassword" name="password" type="password" placeholder="8+ chars, upper/lower/number/symbol" autocomplete="new-password" required>
+
+      <label for="signupConfirmPassword">Confirm password</label>
+      <input id="signupConfirmPassword" name="confirmPassword" type="password" placeholder="Repeat your password" autocomplete="new-password" required>
+
+      <button id="signupBtn" class="primary" type="submit">Sign Up</button>
+      <p id="signupMessage" role="status" aria-live="polite"></p>
+
+      <button id="showLoginBtn" class="secondary" type="button">Back to Login</button>
+    </form>
+
     <small>
-      Sign in securely to continue to TNS AI Studio.
+      Secure account access for TNS AI Studio.
     </small>
 
   </div>

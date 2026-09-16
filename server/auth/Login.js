@@ -1,44 +1,55 @@
 const {
   normalizeEmail,
+  normalizeMobile,
+  validateEmail,
+  validateMobile,
+  validatePassword,
   findUserByEmail,
+  findUserByMobile,
   verifyPassword,
   sanitizeUser
 } = require("./Auth");
 
-
 function validateLoginInput(input = {}) {
-  const email = normalizeEmail(input.email);
+  const identifier = String(input.identifier || input.email || input.mobile || "").trim();
   const password = String(input.password || "");
 
-  if (!email) {
-    throw new Error("Email is required.");
+  if (!identifier) {
+    throw new Error("Email or mobile number is required.");
   }
 
   if (!password) {
     throw new Error("Password is required.");
   }
 
+  if (!validatePassword(password)) {
+    throw new Error("Password must be at least 8 characters.");
+  }
+
+  const isEmail = identifier.includes("@");
+  const normalized = isEmail ? normalizeEmail(identifier) : normalizeMobile(identifier);
+
+  if (isEmail && !validateEmail(normalized)) {
+    throw new Error("Please enter a valid email address.");
+  }
+
+  if (!isEmail && !validateMobile(normalized)) {
+    throw new Error("Please enter a valid mobile number.");
+  }
+
   return {
-    email,
+    identifier: normalized,
     password
   };
 }
 
-
 function login(input = {}) {
-  const {
-    email,
-    password
-  } = validateLoginInput(input);
+  const { identifier, password } = validateLoginInput(input);
+  const isEmail = identifier.includes("@");
+  const user = isEmail ? findUserByEmail(identifier) : findUserByMobile(identifier);
 
-  const user = findUserByEmail(email);
-
-  if (!user) {
-    throw new Error("Invalid email or password.");
-  }
-
-  if (!verifyPassword(email, password)) {
-    throw new Error("Invalid email or password.");
+  if (!user || !verifyPassword(identifier, password)) {
+    throw new Error("Invalid email/mobile number or password.");
   }
 
   return {
@@ -46,7 +57,6 @@ function login(input = {}) {
     user: sanitizeUser(user)
   };
 }
-
 
 function canLogin(input = {}) {
   try {
@@ -56,7 +66,6 @@ function canLogin(input = {}) {
     return false;
   }
 }
-
 
 module.exports = {
   validateLoginInput,

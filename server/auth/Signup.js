@@ -1,70 +1,82 @@
 const {
-  createUser,
   normalizeEmail,
+  normalizeMobile,
+  validateEmail,
+  validateMobile,
   findUserByEmail,
-  validatePassword
+  findUserByMobile,
+  createUser,
+  sanitizeUser
 } = require("./Auth");
-
 
 function validateSignupInput(input = {}) {
   const email = normalizeEmail(input.email);
+  const mobile = normalizeMobile(input.mobile);
   const password = String(input.password || "");
+  const name = String(input.name || "").trim();
 
   if (!email) {
     throw new Error("Email is required.");
   }
 
-  if (!validatePassword(password)) {
-    throw new Error(
-      "Password must be at least 8 characters long."
-    );
+  if (!validateEmail(email)) {
+    throw new Error("Please enter a valid email address.");
+  }
+
+  if (!mobile) {
+    throw new Error("Mobile number is required.");
+  }
+
+  if (!validateMobile(mobile)) {
+    throw new Error("Please enter a valid mobile number.");
+  }
+
+  if (!password) {
+    throw new Error("Password is required.");
+  }
+
+  if (password.length < 8) {
+    throw new Error("Password must be at least 8 characters.");
   }
 
   return {
     email,
-    password
+    mobile,
+    password,
+    name
   };
 }
-
 
 function signup(input = {}) {
   const {
     email,
-    password
+    mobile,
+    password,
+    name
   } = validateSignupInput(input);
 
   if (findUserByEmail(email)) {
-    throw new Error("User already exists.");
+    throw new Error("An account with this email already exists.");
+  }
+
+  if (findUserByMobile(mobile)) {
+    throw new Error("An account with this mobile number already exists.");
   }
 
   const user = createUser({
     email,
-    password
+    mobile,
+    password,
+    name
   });
 
   return {
     success: true,
-    user
+    user: sanitizeUser(user)
   };
 }
 
-
-function isEmailAvailable(email) {
-  const normalizedEmail =
-    normalizeEmail(email);
-
-  if (!normalizedEmail) {
-    return false;
-  }
-
-  return !findUserByEmail(
-    normalizedEmail
-  );
-}
-
-
 module.exports = {
   validateSignupInput,
-  signup,
-  isEmailAvailable
+  signup
 };

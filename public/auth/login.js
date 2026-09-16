@@ -3,60 +3,82 @@
 
   const LOGIN_API = "/api/auth/login";
 
-  function loginGetForm() {
+  function getForm() {
     return document.querySelector("#loginForm");
   }
 
-  function loginGetEmailInput() {
+  function getEmailInput() {
     return document.querySelector("#loginEmail");
   }
 
-  function loginGetPasswordInput() {
+  function getMobileInput() {
+    return document.querySelector("#loginMobile");
+  }
+
+  function getPasswordInput() {
     return document.querySelector("#loginPassword");
   }
 
-  function loginGetMessageElement() {
+  function getMessageElement() {
     return document.querySelector("#loginMessage");
   }
 
-  function loginShowMessage(message, type = "info") {
-    const element = loginGetMessageElement();
+  function showMessage(message, type = "info") {
+    const element = getMessageElement();
     if (!element) return;
+
     element.textContent = String(message || "");
     element.dataset.type = type;
   }
 
-  function loginSetLoading(loading) {
-    const form = loginGetForm();
-    if (!form) return;
+  function getLoginMode() {
+    const mobileField = document.querySelector("#mobileField");
 
-    const button = form.querySelector('button[type="submit"]');
-    if (!button) return;
-
-    button.disabled = loading;
-    button.textContent = loading ? "Signing in..." : "Login";
+    return mobileField && !mobileField.classList.contains("hidden")
+      ? "mobile"
+      : "email";
   }
 
-  function loginValidateInput(email, password) {
-    const safeEmail = String(email || "").trim().toLowerCase();
+  function getIdentifier() {
+    const mode = getLoginMode();
+
+    if (mode === "mobile") {
+      return String(getMobileInput()?.value || "").trim();
+    }
+
+    return String(getEmailInput()?.value || "")
+      .trim()
+      .toLowerCase();
+  }
+
+  function validateLoginInput(identifier, password) {
+    const safeIdentifier = String(identifier || "").trim();
     const safePassword = String(password || "");
 
-    if (!safeEmail) {
-      throw new Error("Email is required.");
+    if (!safeIdentifier) {
+      throw new Error(
+        getLoginMode() === "mobile"
+          ? "Mobile number is required."
+          : "Email is required."
+      );
     }
 
     if (!safePassword) {
       throw new Error("Password is required.");
     }
 
+    if (safePassword.length < 8) {
+      throw new Error("Password must be at least 8 characters.");
+    }
+
     return {
-      email: safeEmail,
+      identifier: safeIdentifier,
       password: safePassword
     };
   }
 
-  async function loginRequest(email, password) {
-    const input = loginValidateInput(email, password);
+  async function loginRequest(identifier, password) {
+    const input = validateLoginInput(identifier, password);
 
     const response = await fetch(LOGIN_API, {
       method: "POST",
@@ -68,54 +90,67 @@
       body: JSON.stringify(input)
     });
 
-    let data = null;
+    let data = {};
 
     try {
       data = await response.json();
     } catch {
-      data = null;
+      data = {};
     }
 
     if (!response.ok) {
       throw new Error(
-        data?.message ||
-        data?.error ||
-        "Invalid email or password."
+        data.error ||
+        data.message ||
+        "Invalid email/mobile number or password."
       );
     }
 
-    const user = data?.user || null;
+    if (data.user) {
+      try {
+        localStorage.setItem(
+          "tnsStudioUser",
+          JSON.stringify(data.user)
+        );
+      } catch {}
 
-    if (window.TNSAuth && user && typeof window.TNSAuth.setLoggedIn === "function") {
-      window.TNSAuth.setLoggedIn(user);
+      if (
+        window.TNSAuth &&
+        typeof window.TNSAuth.setLoggedIn === "function"
+      ) {
+        window.TNSAuth.setLoggedIn(data.user);
+      }
     }
 
     window.dispatchEvent(
       new CustomEvent("tns:login-success", {
-        detail: { user }
+        detail: {
+          user: data.user || null
+        }
       })
     );
 
     return data;
   }
 
-  async function loginHandleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    const emailInput = loginGetEmailInput();
-    const passwordInput = loginGetPasswordInput();
-
-    const email = emailInput ? emailInput.value : "";
-    const password = passwordInput ? passwordInput.value : "";
+    const identifier = getIdentifier();
+    const password = String(
+      getPasswordInput()?.value || ""
+    );
 
     try {
-      loginSetLoading(true);
-      loginShowMessage("Signing in...", "info");
+      showMessage("Signing in...", "info");
 
-      const result = await loginRequest(email, password);
+      const result = await loginRequest(
+        identifier,
+        password
+      );
 
-      loginShowMessage(
-        result?.message || "Login successful.",
+      showMessage(
+        result.message || "Login successful.",
         "success"
       );
 
@@ -123,33 +158,39 @@
         window.location.replace("/index.html");
       }, 300);
     } catch (error) {
-      loginShowMessage(
-        error?.message || "Login failed.",
+      showMessage(
+        error?.message ||
+        "Login failed.",
         "error"
       );
-    } finally {
-      loginSetLoading(false);
     }
   }
 
-  function loginInit() {
-    const form = loginGetForm();
+  function initLogin() {
+    const form = getForm();
+
     if (!form) return;
 
-    if (form.dataset.tnsLoginBound === "1") return;
-    form.dataset.tnsLoginBound = "1";
-    form.addEventListener("submit", loginHandleSubmit);
+    /*
+     * Current TNS Studio login is handled by app.js.
+     * This file only exposes the reusable login functions.
+     * No second submit listener is attached here.
+     */
+
+    window.TNSLogin = {
+      login: loginRequest,
+      validateLoginInput,
+      initLogin
+    };
   }
 
-  window.TNSLogin = {
-    login: loginRequest,
-    validateLoginInput: loginValidateInput,
-    initLogin: loginInit
-  };
-
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", loginInit, { once: true });
+    document.addEventListener(
+      "DOMContentLoaded",
+      initLogin,
+      { once: true }
+    );
   } else {
-    loginInit();
+    initLogin();
   }
 })();

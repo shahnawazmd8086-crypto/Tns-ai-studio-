@@ -4,9 +4,9 @@ const path = require('path');
 const crypto = require('crypto');
 const { signup } = require('./auth/Signup');
 const { login } = require('./auth/Login');
-const { createUser, getUserById, findUserByEmail, findUserByMobile, updatePassword } = require('./auth/Auth');
-const { createSession, getSession, destroySession } = require('./auth/Sessions');
-const { createOtp, verifyOtp } = require('./auth/Otp');
+const Auth = require('./auth/Auth');
+const { createSession, getSession, destroySession, clearExpiredSessions } = require('./auth/Sessions');
+const Otp = require('./auth/Otp');
 const { create: createVideoJob, getJob: getVideoJob } = require('./jobs/video-job');
 const { create: createImageJob, getJob: getImageJob } = require('./jobs/image-job');
 const { create: createVoiceJob, getJob: getVoiceJob } = require('./jobs/voice-job');
@@ -14,49 +14,515 @@ const { registerProvider, getProvider } = require('./providers/provider');
 const MockProvider = require('./providers/mock');
 const Uploads = require('./storage/Uploads');
 const Contact = require('./contact');
+const ProjectStore = require('./storage/Projects');
 
 registerProvider('mock', new MockProvider());
-const PORT = process.env.PORT || 3000;
-const PUBLIC_DIR = path.join(__dirname, '..', 'public');
-const DATA_DIR = path.join(__dirname, 'data');
-const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-const MIME_TYPES = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'application/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml','.mp4':'video/mp4','.webm':'video/webm','.mov':'video/quicktime','.mp3':'audio/mpeg','.wav':'audio/wav','.m4a':'audio/mp4' };
-function sendJson(res,status,data){res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));}
-function readBody(req,limit=5*1024*1024){return new Promise((resolve,reject)=>{let raw='';req.on('data',c=>{raw+=c.toString();if(raw.length>limit){reject(new Error('Request body is too large.'));req.destroy();}});req.on('end',()=>{if(!raw)return resolve({});try{resolve(JSON.parse(raw));}catch{reject(new Error('Invalid JSON request.'));}});req.on('error',reject);});}
-function cookies(req){return Object.fromEntries(String(req.headers.cookie||'').split(';').map(v=>v.trim()).filter(Boolean).map(v=>{const i=v.indexOf('=');return [v.slice(0,i),decodeURIComponent(v.slice(i+1))];}));}
-function currentUser(req){const token=cookies(req).tns_session;const session=getSession(token);return session ? getUserById(session.userId) : null;}
-function requireAuth(req,res){const user=currentUser(req);if(!user){sendJson(res,401,{error:'Authentication required.'});return null;}return user;}
-function safePublicFile(requestPath){const decoded=decodeURIComponent(requestPath.split('?')[0]);const rel=decoded.replace(/^\/+/, '')||'index.html';const full=path.resolve(PUBLIC_DIR,rel);const root=path.resolve(PUBLIC_DIR)+path.sep;return full.startsWith(root)?full:null;}
-function readMultipart(req){return new Promise((resolve,reject)=>{const type=req.headers['content-type']||'';const match=type.match(/boundary=(?:(?:"([^"]+)")|([^;]+))/i);if(!match)return reject(new Error('Multipart form data is required.'));const boundary=Buffer.from(`--${match[1]||match[2]}`);const chunks=[];req.on('data',c=>chunks.push(c));req.on('end',()=>{try{const body=Buffer.concat(chunks);const parts=[];let pos=0;while((pos=body.indexOf(boundary,pos))!==-1){pos+=boundary.length;if(body.slice(pos,pos+2).toString()==='--')break;if(body.slice(pos,pos+2).toString()==='\r\n')pos+=2;const headerEnd=body.indexOf(Buffer.from('\r\n\r\n'),pos);if(headerEnd<0)break;const headers=body.slice(pos,headerEnd).toString();const next=body.indexOf(boundary,headerEnd+4);if(next<0)break;const data=body.slice(headerEnd+4,next-2);const name=(headers.match(/name="([^"]+)"/i)||[])[1];const filename=(headers.match(/filename="([^"]*)"/i)||[])[1];const contentType=(headers.match(/Content-Type:\s*([^\r\n]+)/i)||[])[1]||'application/octet-stream';if(name)parts.push({name,filename,contentType,data});pos=next;}resolve(parts);}catch(e){reject(e);}});req.on('error',reject);});}
-function publicUrl(fileName){return `/uploads/${encodeURIComponent(fileName)}`;}
 
-const server=http.createServer(async(req,res)=>{try{const url=new URL(req.url,`http://${req.headers.host||'localhost'}`);
-if(req.method==='GET'&&url.pathname==='/health')return sendJson(res,200,{ok:true,name:'TNS Studio API'});
-if(req.method==='POST'&&url.pathname==='/api/auth/signup'){const input=await readBody(req,1024*1024);return sendJson(res,201,signup(input));}
-if(req.method==='POST'&&url.pathname==='/api/auth/login'){const input=await readBody(req,1024*1024);const result=login(input);const session=createSession(result.user.id);const maxAge=Math.max(1,Math.floor((Date.parse(session.expiresAt)-Date.now())/1000));res.setHeader('Set-Cookie',`tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}`);return sendJson(res,200,{success:true,message:'Login successful.',user:result.user});}
-if(req.method==='POST'&&url.pathname==='/api/auth/logout'){const token=cookies(req).tns_session;destroySession(token);res.setHeader('Set-Cookie','tns_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0');return sendJson(res,200,{success:true,message:'Logged out successfully.'});}
-if(req.method==='GET'&&url.pathname==='/api/auth/me'){const user=currentUser(req);return sendJson(res,user?200:401,user?{authenticated:true,user}:{authenticated:false});}
-if(req.method==='POST'&&url.pathname==='/api/auth/otp/request'){const input=await readBody(req,1024*1024);if(!input.identifier)throw new Error('Email or mobile number is required.');const otp=createOtp(input.identifier);return sendJson(res,200,{success:true,message:'OTP created. Configure an email/SMS provider for delivery.',otp:otp.code,expiresAt:otp.expiresAt});}
-if(req.method==='POST'&&url.pathname==='/api/auth/otp/verify'){const input=await readBody(req,1024*1024);return sendJson(res,200,verifyOtp(input.identifier,input.code));}
-if(req.method==='POST'&&url.pathname==='/api/auth/otp/login'){const input=await readBody(req,1024*1024);const verified=verifyOtp(input.identifier,input.code);if(!verified.success)throw new Error(verified.message);const existing=findUserByEmail(input.identifier)||findUserByMobile(input.identifier);const user=existing?require('./auth/Auth').sanitizeUser(existing):createUser({mobile:input.identifier,provider:'otp',password:crypto.randomBytes(24).toString('hex')});const session=createSession(user.id);const maxAge=Math.max(1,Math.floor((Date.parse(session.expiresAt)-Date.now())/1000));res.setHeader('Set-Cookie',`tns_session=${session.token}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}`);return sendJson(res,200,{success:true,user});}
-if(req.method==='POST'&&url.pathname==='/api/auth/password/reset'){const input=await readBody(req,1024*1024);if(!input.identifier||!input.newPassword)throw new Error('Identifier and new password are required.');const user=findUserByEmail(input.identifier)||findUserByMobile(input.identifier);if(!user)throw new Error('Account not found.');if(!input.otp || !verifyOtp(input.identifier,input.otp).success)throw new Error('Valid OTP is required.');updatePassword(input.identifier,input.newPassword);return sendJson(res,200,{success:true,message:'Password reset successfully.'});}
-if(req.method==='GET'&&url.pathname==='/api/contact/users'){const me=requireAuth(req,res);if(!me)return;const q=String(url.searchParams.get('q')||'').trim().toLowerCase();const {listUsers}=require('./auth/Auth');const users=listUsers().filter(u=>u.id!==me.id&&(!q||String(u.email||'').toLowerCase().includes(q)||String(u.mobile||'').toLowerCase().includes(q)));return sendJson(res,200,{success:true,users});}
-if(req.method==='POST'&&url.pathname==='/api/contact/match'){const me=requireAuth(req,res);if(!me)return;const input=await readBody(req,1024*1024);const numbers=Array.isArray(input.numbers)?input.numbers.map(v=>String(v||'').replace(/[^0-9+]/g,'')).filter(Boolean):[];const {listUsers}=require('./auth/Auth');const users=listUsers().filter(u=>u.id!==me.id&&u.mobile&&numbers.includes(u.mobile));return sendJson(res,200,{success:true,users});}
-if(req.method==='GET'&&url.pathname==='/api/contact/chats'){const me=requireAuth(req,res);if(!me)return;const other=String(url.searchParams.get('with')||'');if(!other)throw new Error('Contact is required.');return sendJson(res,200,{success:true,messages:Contact.listMessages(me.id,other)});}
-if(req.method==='POST'&&url.pathname==='/api/contact/chats'){const me=requireAuth(req,res);if(!me)return;const input=await readBody(req,1024*1024);if(!input.to)throw new Error('Contact is required.');const message=Contact.addMessage(me.id,input.to,input.text);return sendJson(res,201,{success:true,message});}
-if(req.method==='POST'&&url.pathname==='/api/contact/status'){const me=requireAuth(req,res);if(!me)return;const input=await readBody(req,1024*1024);return sendJson(res,200,{success:true,status:Contact.setStatus(me.id,input.text)});}
-if(req.method==='GET'&&url.pathname==='/api/contact/status'){const me=requireAuth(req,res);if(!me)return;return sendJson(res,200,{success:true,status:Contact.getStatus(me.id)});}
-if(req.method==='POST'&&url.pathname==='/api/uploads/video'){const user=requireAuth(req,res);if(!user)return;const parts=await readMultipart(req);const part=parts.find(p=>p.name==='video'&&p.filename);if(!part)throw new Error('Video file is required.');Uploads.validateUpload(part.filename,part.data.length,{maxFileSize:500*1024*1024});if(!['video/mp4','video/webm','video/quicktime','video/x-msvideo','video/x-matroska','application/octet-stream'].includes(part.contentType)&&!Uploads.isAllowedExtension(part.filename))throw new Error('Unsupported video format.');const safe=Uploads.sanitizeFileName(part.filename);const stored=`${crypto.randomUUID()}-${safe}`;const out=path.join(UPLOAD_DIR,stored);fs.writeFileSync(out,part.data);return sendJson(res,201,{success:true,media:{id:crypto.randomUUID(),originalName:part.filename,fileName:stored,size:part.data.length,url:publicUrl(stored)}});}
-if(req.method==='POST'&&url.pathname==='/api/video/jobs'){const user=requireAuth(req,res);if(!user)return;const input=await readBody(req);const providerName=String(process.env.VIDEO_PROVIDER||'mock').toLowerCase();const provider=getProvider(providerName);const job=await createVideoJob(providerName,input);if(provider&&typeof provider.create==='function'){try{job.providerJob=await provider.create(input);if(job.providerJob?.status==='completed'){job.status='completed';job.result=job.providerJob.result;}}catch(e){job.status='failed';job.error=e.message;}}return sendJson(res,202,job);}
-let m=url.pathname.match(/^\/api\/video\/jobs\/([^/]+)$/);if(req.method==='GET'&&m){if(!requireAuth(req,res))return;const job=await getVideoJob(decodeURIComponent(m[1]));return sendJson(res,job?200:404,job||{error:'Video job not found.'});}
-if(req.method==='POST'&&url.pathname==='/api/image/jobs'){if(!requireAuth(req,res))return;const input=await readBody(req);const providerName=String(process.env.IMAGE_PROVIDER||'mock').toLowerCase();const provider=getProvider(providerName);const job=await createImageJob(providerName,input);if(provider&&typeof provider.createImage==='function'){try{job.providerJob=await provider.createImage(input);if(job.providerJob?.status==='completed'){job.status='completed';job.result=job.providerJob.result;}}catch(e){job.status='failed';job.error=e.message;}}return sendJson(res,202,job);}
-m=url.pathname.match(/^\/api\/image\/jobs\/([^/]+)$/);if(req.method==='GET'&&m){if(!requireAuth(req,res))return;const job=await getImageJob(decodeURIComponent(m[1]));return sendJson(res,job?200:404,job||{error:'Image job not found.'});}
-if(req.method==='POST'&&url.pathname==='/api/voice/jobs'){if(!requireAuth(req,res))return;const input=await readBody(req);const providerName=String(process.env.VOICE_PROVIDER||'mock').toLowerCase();const provider=getProvider(providerName);const job=await createVoiceJob(providerName,input);if(provider&&typeof provider.createVoice==='function'){try{job.providerJob=await provider.createVoice(input);if(job.providerJob?.status==='completed'){job.status='completed';job.result=job.providerJob.result;}}catch(e){job.status='failed';job.error=e.message;}}return sendJson(res,202,job);}
-m=url.pathname.match(/^\/api\/voice\/jobs\/([^/]+)$/);if(req.method==='GET'&&m){if(!requireAuth(req,res))return;const job=await getVoiceJob(decodeURIComponent(m[1]));return sendJson(res,job?200:404,job||{error:'Voice job not found.'});}
-if(req.method==='POST'&&url.pathname==='/api/editor/export'){if(!requireAuth(req,res))return;const input=await readBody(req);if(!input.inputPath)throw new Error('Uploaded video is required.');const source=path.resolve(PUBLIC_DIR,String(input.inputPath).replace(/^\/+/,''));if(!source.startsWith(path.resolve(UPLOAD_DIR)+path.sep)||!fs.existsSync(source))throw new Error('Source video not found.');const outputName=`tns-${crypto.randomUUID()}.mp4`;const output=path.join(UPLOAD_DIR,outputName);const {spawn}=require('child_process');const trimStart=Math.max(0,Number(input.trimStart)||0);const trimDuration=Math.max(0,Number(input.trimDuration)||0);const speed=Math.max(.25,Math.min(4,Number(input.speed)||1));const brightness=Math.max(-1,Math.min(1,Number(input.brightness)||0));const contrast=Math.max(.1,Math.min(3,Number(input.contrast)||1));const volume=Math.max(0,Math.min(1,Number(input.volume) || 1));const quality=Math.max(360,Math.min(2160,Number(input.quality)||1080));const vf=[];if(brightness!==0||contrast!==1)vf.push(`eq=brightness=${brightness}:contrast=${contrast}`);if(input.filter==='grayscale')vf.push('hue=s=0');if(input.filter==='sepia')vf.push('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');if(input.rotate==='90')vf.push('transpose=1');if(input.rotate==='180')vf.push('transpose=1,transpose=1');if(input.rotate==='270')vf.push('transpose=2');vf.push(`scale='if(gt(iw,ih),min(iw,${quality}),-2)':'if(gt(iw,ih),-2,min(ih,${quality}))'`);if(speed!==1)vf.push(`setpts=${(1/speed).toFixed(5)}*PTS`);const args=['-y'];if(trimStart>0)args.push('-ss',String(trimStart));args.push('-i',source);if(trimDuration>0)args.push('-t',String(trimDuration));if(vf.length)args.push('-vf',vf.join(','));if(speed!==1){const factors=[];let x=speed;while(x>2){factors.push(2);x/=2}while(x<.5){factors.push(.5);x/=0.5}factors.push(x);const af=factors.map(f=>`atempo=${f}`).join(',');args.push('-af',volume!==1?`${af},volume=${volume}`:af);}else if(volume!==1){args.push('-af',`volume=${volume}`);}args.push('-c:v','libx264','-preset','veryfast','-crf',quality>=1440?'20':'23','-c:a','aac','-b:a','192k','-movflags','+faststart',output);await new Promise((resolve,reject)=>{const p=spawn('ffmpeg',args);let err='';p.stderr.on('data',d=>err+=d);p.on('close',code=>code===0?resolve():reject(new Error(err.slice(-1800)||'FFmpeg export failed.')));p.on('error',reject)});return sendJson(res,200,{success:true,status:'completed',result:{url:publicUrl(outputName),fileName:outputName}});}
-if(req.method==='GET'&&url.pathname==='/api'){return sendJson(res,200,{name:'TNS Studio API',version:'2.0.0'});}
-if(req.method==='GET'){const file=safePublicFile(url.pathname);if(!file)return sendJson(res,403,{error:'Forbidden.'});let target=file;if(!fs.existsSync(target)||fs.statSync(target).isDirectory())target=path.join(PUBLIC_DIR,'index.html');const ext=path.extname(target).toLowerCase();res.writeHead(200,{'Content-Type':MIME_TYPES[ext]||'application/octet-stream'});return fs.createReadStream(target).pipe(res);}
-return sendJson(res,404,{error:'Not found.'});
-}catch(e){console.error(e);return sendJson(res,400,{error:e.message||'Request failed.'});}});
-server.listen(PORT,()=>console.log(`TNS Studio running on port ${PORT}`));
+const PORT = Number(process.env.PORT) || 3000;
+const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
+const PROJECT_DIR = path.join(__dirname, 'Data', 'projects');
+fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+fs.mkdirSync(PROJECT_DIR, { recursive: true });
+
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp',
+  '.svg': 'image/svg+xml', '.mp4': 'video/mp4', '.webm': 'video/webm', '.mov': 'video/quicktime',
+  '.mp3': 'audio/mpeg', '.wav': 'audio/wav', '.m4a': 'audio/mp4'
+};
+
+const rateBuckets = new Map();
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT = Math.max(30, Number(process.env.API_RATE_LIMIT) || 120);
+
+function sendJson(res, status, data, extraHeaders = {}) {
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...extraHeaders
+  });
+  res.end(JSON.stringify(data));
+}
+
+function setSecurityHeaders(res) {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
+  res.setHeader('Content-Security-Policy', "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; font-src 'self' data:");
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+}
+
+function requestIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return forwarded || req.socket.remoteAddress || 'unknown';
+}
+
+function rateLimit(req, res) {
+  if (!String(req.url || '').startsWith('/api/')) return true;
+  const now = Date.now();
+  const key = requestIp(req);
+  const current = rateBuckets.get(key);
+  if (!current || now - current.startedAt >= RATE_WINDOW_MS) {
+    rateBuckets.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  current.count += 1;
+  if (current.count > RATE_LIMIT) {
+    sendJson(res, 429, { error: 'Too many requests. Please try again later.' }, { 'Retry-After': '60' });
+    return false;
+  }
+  return true;
+}
+
+function isStateChanging(method) { return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method); }
+function sameOriginAllowed(req) {
+  const origin = req.headers.origin;
+  if (!origin) return true;
+  try {
+    const originUrl = new URL(origin);
+    const host = String(req.headers.host || '').split(':')[0];
+    return originUrl.hostname === host || originUrl.hostname === 'localhost' || originUrl.hostname === '127.0.0.1';
+  } catch { return false; }
+}
+
+function readBody(req, limit = 5 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    let finished = false;
+    const fail = (error) => { if (!finished) { finished = true; reject(error); } };
+    req.on('data', (chunk) => {
+      if (finished) return;
+      raw += chunk.toString();
+      if (Buffer.byteLength(raw, 'utf8') > limit) {
+        fail(new Error('Request body is too large.'));
+        req.destroy();
+      }
+    });
+    req.on('end', () => {
+      if (finished) return;
+      finished = true;
+      if (!raw) return resolve({});
+      try { resolve(JSON.parse(raw)); } catch { reject(new Error('Invalid JSON request.')); }
+    });
+    req.on('error', fail);
+  });
+}
+
+function cookies(req) {
+  const result = {};
+  for (const part of String(req.headers.cookie || '').split(';')) {
+    const item = part.trim();
+    if (!item) continue;
+    const index = item.indexOf('=');
+    if (index < 0) continue;
+    const key = item.slice(0, index);
+    const value = item.slice(index + 1);
+    try { result[key] = decodeURIComponent(value); } catch { result[key] = value; }
+  }
+  return result;
+}
+
+function currentUser(req) {
+  const token = cookies(req).tns_session;
+  const session = getSession(token);
+  return session ? Auth.getUserById(session.userId) : null;
+}
+
+function requireAuth(req, res) {
+  const user = currentUser(req);
+  if (!user) { sendJson(res, 401, { error: 'Authentication required.' }); return null; }
+  return user;
+}
+
+function setSessionCookie(req, res, session) {
+  const maxAge = Math.max(1, Math.floor((Date.parse(session.expiresAt) - Date.now()) / 1000));
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  const secure = forwardedProto === 'https' || process.env.NODE_ENV === 'production';
+  res.setHeader('Set-Cookie', `tns_session=${encodeURIComponent(session.token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${secure ? '; Secure' : ''}`);
+}
+
+function clearSessionCookie(req, res) {
+  const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
+  const secure = forwardedProto === 'https' || process.env.NODE_ENV === 'production';
+  res.setHeader('Set-Cookie', `tns_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure ? '; Secure' : ''}`);
+}
+
+function safePublicFile(requestPath) {
+  let decoded;
+  try { decoded = decodeURIComponent(String(requestPath).split('?')[0]); } catch { return null; }
+  const relative = decoded.replace(/^\/+/, '') || 'index.html';
+  const full = path.resolve(PUBLIC_DIR, relative);
+  const root = path.resolve(PUBLIC_DIR) + path.sep;
+  return full.startsWith(root) ? full : null;
+}
+
+function publicUrl(fileName) { return `/uploads/${encodeURIComponent(fileName)}`; }
+
+function safeUploadPathFromUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw) throw new Error('Input video is required.');
+  let pathname;
+  try { pathname = new URL(raw, 'http://localhost').pathname; } catch { throw new Error('Invalid media URL.'); }
+  const prefix = '/uploads/';
+  if (!pathname.startsWith(prefix)) throw new Error('Only uploaded media can be edited.');
+  const fileName = decodeURIComponent(pathname.slice(prefix.length));
+  if (!fileName || fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) throw new Error('Invalid media file.');
+  const full = path.resolve(UPLOAD_DIR, fileName);
+  const root = path.resolve(UPLOAD_DIR) + path.sep;
+  if (!full.startsWith(root) || !fs.existsSync(full) || !fs.statSync(full).isFile()) throw new Error('Uploaded media file was not found.');
+  return full;
+}
+
+function readMultipart(req, maxBytes = 500 * 1024 * 1024) {
+  return new Promise((resolve, reject) => {
+    const type = String(req.headers['content-type'] || '');
+    const match = type.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+    if (!match) return reject(new Error('Multipart form data is required.'));
+    const boundary = Buffer.from(`--${match[1] || match[2]}`);
+    const chunks = [];
+    let total = 0;
+    req.on('data', (chunk) => {
+      total += chunk.length;
+      if (total > maxBytes + 1024 * 1024) { reject(new Error('Upload is too large.')); req.destroy(); return; }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      try {
+        const body = Buffer.concat(chunks);
+        const parts = [];
+        let pos = 0;
+        while ((pos = body.indexOf(boundary, pos)) !== -1) {
+          pos += boundary.length;
+          if (body.slice(pos, pos + 2).toString() === '--') break;
+          if (body.slice(pos, pos + 2).toString() === '\r\n') pos += 2;
+          const headerEnd = body.indexOf(Buffer.from('\r\n\r\n'), pos);
+          if (headerEnd < 0) break;
+          const headers = body.slice(pos, headerEnd).toString();
+          const next = body.indexOf(boundary, headerEnd + 4);
+          if (next < 0) break;
+          const data = body.slice(headerEnd + 4, Math.max(headerEnd + 4, next - 2));
+          const name = (headers.match(/name="([^"]+)"/i) || [])[1];
+          const filename = (headers.match(/filename="([^"]*)"/i) || [])[1];
+          const contentType = (headers.match(/Content-Type:\s*([^\r\n]+)/i) || [])[1] || 'application/octet-stream';
+          if (name) parts.push({ name, filename, contentType, data });
+          pos = next;
+        }
+        resolve(parts);
+      } catch (error) { reject(error); }
+    });
+    req.on('error', reject);
+  });
+}
+
+const server = http.createServer(async (req, res) => {
+  setSecurityHeaders(res);
+  try {
+    if (!rateLimit(req, res)) return;
+    if (isStateChanging(req.method) && !sameOriginAllowed(req)) return sendJson(res, 403, { error: 'Request origin is not allowed.' });
+
+    const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+
+    if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true, name: 'TNS Studio API' });
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/signup') {
+      const input = await readBody(req, 1024 * 1024);
+      const result = signup(input);
+      const session = createSession(result.user.id);
+      setSessionCookie(req, res, session);
+      return sendJson(res, 201, { ...result, message: 'Account created successfully.' });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/login') {
+      const input = await readBody(req, 1024 * 1024);
+      const result = login(input);
+      const session = createSession(result.user.id);
+      setSessionCookie(req, res, session);
+      return sendJson(res, 200, { success: true, message: 'Login successful.', user: result.user });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/logout') {
+      destroySession(cookies(req).tns_session);
+      clearSessionCookie(req, res);
+      return sendJson(res, 200, { success: true, message: 'Logged out successfully.' });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/auth/me') {
+      const user = currentUser(req);
+      return sendJson(res, user ? 200 : 401, user ? { authenticated: true, user } : { authenticated: false });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/otp/request') {
+      const input = await readBody(req, 1024 * 1024);
+      if (!input.identifier) throw new Error('Email or mobile number is required.');
+      const otp = Otp.createOtp(input.identifier, 10 * 60 * 1000, 5);
+      const response = { success: true, message: 'OTP created. Configure an email/SMS provider for delivery.', expiresAt: otp.expiresAt };
+      if (process.env.OTP_EXPOSE_CODE === 'true') response.otp = otp.code;
+      return sendJson(res, 200, response);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/otp/verify') {
+      const input = await readBody(req, 1024 * 1024);
+      return sendJson(res, 200, Otp.verifyOtp(input.identifier, input.code));
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/otp/login') {
+      const input = await readBody(req, 1024 * 1024);
+      const verified = Otp.verifyOtp(input.identifier, input.code);
+      if (!verified.success) return sendJson(res, 400, verified);
+      const identifier = String(input.identifier || '').trim();
+      const existing = identifier.includes('@') ? Auth.findUserByEmail(identifier) : Auth.findUserByMobile(identifier);
+      const user = existing
+        ? Auth.sanitizeUser(existing)
+        : Auth.createUser(identifier.includes('@')
+          ? { email: identifier, provider: 'otp', password: crypto.randomBytes(24).toString('hex') }
+          : { mobile: identifier, provider: 'otp', password: crypto.randomBytes(24).toString('hex') });
+      Otp.removeOtp(identifier);
+      const session = createSession(user.id);
+      setSessionCookie(req, res, session);
+      return sendJson(res, 200, { success: true, message: 'OTP login successful.', user });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/forgot-password') {
+      const input = await readBody(req, 1024 * 1024);
+      if (!input.identifier) throw new Error('Email or mobile number is required.');
+      const exists = String(input.identifier).includes('@') ? Auth.findUserByEmail(input.identifier) : Auth.findUserByMobile(input.identifier);
+      if (!exists) throw new Error('Account not found.');
+      const otp = Otp.createOtp(input.identifier, 10 * 60 * 1000, 5);
+      const response = { success: true, message: 'Password reset OTP created. Configure an email/SMS provider for delivery.', expiresAt: otp.expiresAt };
+      if (process.env.OTP_EXPOSE_CODE === 'true') response.otp = otp.code;
+      return sendJson(res, 200, response);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/password/reset') {
+      const input = await readBody(req, 1024 * 1024);
+      if (!input.identifier || !input.newPassword || !input.otp) throw new Error('Identifier, OTP and new password are required.');
+      const user = String(input.identifier).includes('@') ? Auth.findUserByEmail(input.identifier) : Auth.findUserByMobile(input.identifier);
+      if (!user) throw new Error('Account not found.');
+      const verified = Otp.verifyOtp(input.identifier, input.otp);
+      if (!verified.success) throw new Error(verified.message);
+      Auth.updatePassword(input.identifier, input.newPassword);
+      Otp.removeOtp(input.identifier);
+      return sendJson(res, 200, { success: true, message: 'Password reset successfully.' });
+    }
+
+    let match;
+
+    if (req.method === 'GET' && url.pathname === '/api/projects') {
+      const user = requireAuth(req, res); if (!user) return;
+      const projects = ProjectStore.listProjects(PROJECT_DIR)
+        .filter((p) => p.ownerId === user.id)
+        .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+      return sendJson(res, 200, { success: true, projects });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/projects') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 2 * 1024 * 1024);
+      const project = ProjectStore.saveProject(ProjectStore.createProject({ ...input, ownerId: user.id }), PROJECT_DIR);
+      return sendJson(res, 201, { success: true, project });
+    }
+
+    match = url.pathname.match(/^\/api\/projects\/([^/]+)$/);
+    if (match && req.method === 'GET') {
+      const user = requireAuth(req, res); if (!user) return;
+      const project = ProjectStore.loadProject(decodeURIComponent(match[1]), PROJECT_DIR);
+      if (!project || project.ownerId !== user.id) return sendJson(res, 404, { error: 'Project not found.' });
+      return sendJson(res, 200, { success: true, project });
+    }
+
+    if (match && req.method === 'PUT') {
+      const user = requireAuth(req, res); if (!user) return;
+      const id = decodeURIComponent(match[1]);
+      const existing = ProjectStore.loadProject(id, PROJECT_DIR);
+      if (!existing || existing.ownerId !== user.id) return sendJson(res, 404, { error: 'Project not found.' });
+      const input = await readBody(req, 2 * 1024 * 1024);
+      const project = ProjectStore.updateProject(id, { ...input, ownerId: user.id }, PROJECT_DIR);
+      return sendJson(res, 200, { success: true, project });
+    }
+
+    if (match && req.method === 'DELETE') {
+      const user = requireAuth(req, res); if (!user) return;
+      const id = decodeURIComponent(match[1]);
+      const existing = ProjectStore.loadProject(id, PROJECT_DIR);
+      if (!existing || existing.ownerId !== user.id) return sendJson(res, 404, { error: 'Project not found.' });
+      ProjectStore.deleteProject(id, PROJECT_DIR);
+      return sendJson(res, 200, { success: true });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/contact/users') {
+      const me = requireAuth(req, res); if (!me) return;
+      const q = String(url.searchParams.get('q') || '').trim().toLowerCase();
+      const users = Auth.listUsers().filter((u) => u.id !== me.id && (!q || String(u.email || '').toLowerCase().includes(q) || String(u.mobile || '').includes(q) || String(u.name || '').toLowerCase().includes(q)));
+      return sendJson(res, 200, { success: true, users });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/contact/match') {
+      const me = requireAuth(req, res); if (!me) return;
+      const input = await readBody(req, 1024 * 1024);
+      const numbers = Array.isArray(input.numbers) ? input.numbers.map(Auth.normalizeMobile).filter(Boolean) : [];
+      const users = Auth.listUsers().filter((u) => u.id !== me.id && u.mobile && numbers.includes(u.mobile));
+      return sendJson(res, 200, { success: true, users });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/contact/chats') {
+      const me = requireAuth(req, res); if (!me) return;
+      const other = String(url.searchParams.get('with') || '');
+      if (!other || !Auth.getUserById(other) || other === me.id) throw new Error('Valid contact is required.');
+      return sendJson(res, 200, { success: true, messages: Contact.listMessages(me.id, other) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/contact/chats') {
+      const me = requireAuth(req, res); if (!me) return;
+      const input = await readBody(req, 1024 * 1024);
+      if (!input.to || !Auth.getUserById(input.to) || String(input.to) === me.id) throw new Error('Valid contact is required.');
+      return sendJson(res, 201, { success: true, message: Contact.addMessage(me.id, input.to, input.text) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/contact/status') {
+      const me = requireAuth(req, res); if (!me) return;
+      const input = await readBody(req, 1024 * 1024);
+      return sendJson(res, 200, { success: true, status: Contact.setStatus(me.id, input.text) });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/contact/status') {
+      const me = requireAuth(req, res); if (!me) return;
+      return sendJson(res, 200, { success: true, status: Contact.getStatus(me.id) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/uploads/video') {
+      const user = requireAuth(req, res); if (!user) return;
+      const parts = await readMultipart(req, 500 * 1024 * 1024);
+      const part = parts.find((p) => p.name === 'video' && p.filename);
+      if (!part) throw new Error('Video file is required.');
+      Uploads.validateUpload(part.filename, part.data.length, { maxFileSize: 500 * 1024 * 1024 });
+      if (!part.contentType.startsWith('video/') && !Uploads.isAllowedExtension(part.filename)) throw new Error('Unsupported video format.');
+      const saved = Uploads.saveUpload(part.data, UPLOAD_DIR, part.filename, { maxFileSize: 500 * 1024 * 1024 });
+      return sendJson(res, 201, { success: true, media: { id: saved.id, ownerId: user.id, originalName: saved.originalName, fileName: saved.fileName, size: saved.size, url: publicUrl(saved.fileName) } });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/editor/export') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 2 * 1024 * 1024);
+      const inputPath = safeUploadPathFromUrl(input.inputPath);
+      const quality = [720, 1080, 1440].includes(Number(input.quality)) ? Number(input.quality) : 1080;
+      const outputName = `${crypto.randomUUID()}-export.mp4`;
+      const outputPath = path.join(UPLOAD_DIR, outputName);
+      const { exportMP4 } = require('./editor/export');
+      await exportMP4(inputPath, outputPath, {
+        width: quality,
+        height: Math.round(quality * 16 / 9),
+        fps: 30,
+        trimStart: Math.max(0, Number(input.trimStart) || 0),
+        trimDuration: Number(input.trimDuration) > 0 ? Number(input.trimDuration) : null,
+        brightness: Number(input.brightness) || 0,
+        contrast: Number(input.contrast) || 1,
+        filter: String(input.filter || 'none'),
+        rotate: Number(input.rotate) || 0,
+        speed: Number(input.speed) > 0 ? Number(input.speed) : 1,
+        volume: Number.isFinite(Number(input.volume)) ? Math.max(0, Math.min(1, Number(input.volume))) : 1
+      });
+      return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/video/jobs') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req);
+      const providerName = String(process.env.VIDEO_PROVIDER || 'mock').toLowerCase();
+      const provider = getProvider(providerName);
+      const job = await createVideoJob(providerName, { ...input, ownerId: user.id });
+      if (provider && typeof provider.create === 'function') {
+        try {
+          job.providerJob = await provider.create(input);
+          if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }
+        } catch (error) { job.status = 'failed'; job.error = error.message; }
+      }
+      return sendJson(res, 202, job);
+    }
+
+    match = url.pathname.match(/^\/api\/video\/jobs\/([^/]+)$/);
+    if (req.method === 'GET' && match) {
+      const user = requireAuth(req, res); if (!user) return;
+      const job = await getVideoJob(decodeURIComponent(match[1]));
+      if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Video job not found.' });
+      return sendJson(res, 200, job);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/image/jobs') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req);
+      const providerName = String(process.env.IMAGE_PROVIDER || 'mock').toLowerCase();
+      const provider = getProvider(providerName);
+      const job = await createImageJob(providerName, { ...input, ownerId: user.id });
+      if (provider && typeof provider.createImage === 'function') {
+        try {
+          job.providerJob = await provider.createImage(input);
+          if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }
+        } catch (error) { job.status = 'failed'; job.error = error.message; }
+      }
+      return sendJson(res, 202, job);
+    }
+
+    match = url.pathname.match(/^\/api\/image\/jobs\/([^/]+)$/);
+    if (req.method === 'GET' && match) {
+      const user = requireAuth(req, res); if (!user) return;
+      const job = await getImageJob(decodeURIComponent(match[1]));
+      if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Image job not found.' });
+      return sendJson(res, 200, job);
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/voice/jobs') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req);
+      const providerName = String(process.env.VOICE_PROVIDER || 'mock').toLowerCase();
+      const provider = getProvider(providerName);
+      const job = await createVoiceJob(providerName, { ...input, ownerId: user.id });
+      if (provider && typeof provider.createVoice === 'function') {
+        try {
+          job.providerJob = await provider.createVoice(input);
+          if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }
+        } catch (error) { job.status = 'failed'; job.error = error.message; }
+      }
+      return sendJson(res, 202, job);
+    }
+
+    match = url.pathname.match(/^\/api\/voice\/jobs\/([^/]+)$/);
+    if (req.method === 'GET' && match) {
+      const user = requireAuth(req, res); if (!user) return;
+      const job = await getVoiceJob(decodeURIComponent(match[1]));
+      if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Voice job not found.' });
+      return sendJson(res, 200, job);
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api') return sendJson(res, 200, { name: 'TNS Studio API', version: '3.0.0' });
+
+    if (req.method === 'GET') {
+      const file = safePublicFile(url.pathname);
+      if (!file) return sendJson(res, 403, { error: 'Forbidden.' });
+      let target = file;
+      if (!fs.existsSync(target) || fs.statSync(target).isDirectory()) target = path.join(PUBLIC_DIR, 'index.html');
+      const ext = path.extname(target).toLowerCase();
+      res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+      return fs.createReadStream(target).pipe(res);
+    }
+
+    return sendJson(res, 404, { error: 'Not found.' });
+  } catch (error) {
+    console.error(error);
+    const status = /authentication required/i.test(error.message) ? 401 : 400;
+    return sendJson(res, status, { error: error.message || 'Request failed.' });
+  }
+});
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, bucket] of rateBuckets.entries()) if (now - bucket.startedAt >= RATE_WINDOW_MS) rateBuckets.delete(key);
+  Otp.clearExpiredOtps();
+  clearExpiredSessions();
+}, 60 * 1000).unref();
+
+server.listen(PORT, () => console.log(`TNS Studio running on port ${PORT}`));

@@ -95,67 +95,48 @@ async function convertVideo(
 
 function buildVideoOptions(options = {}) {
   const args = [];
+  const filters = [];
 
-  if (options.width && options.height) {
-    args.push(
-      "-vf",
-      `scale=${Number(options.width)}:${Number(options.height)}:force_original_aspect_ratio=decrease,pad=${Number(options.width)}:${Number(options.height)}:(ow-iw)/2:(oh-ih)/2`
-    );
+  const width = Number(options.width);
+  const height = Number(options.height);
+  if (Number.isFinite(width) && width > 0 && Number.isFinite(height) && height > 0) {
+    filters.push(`scale=${Math.floor(width)}:${Math.floor(height)}:force_original_aspect_ratio=decrease,pad=${Math.floor(width)}:${Math.floor(height)}:(ow-iw)/2:(oh-ih)/2`);
   }
 
-  if (options.fps) {
-    args.push(
-      "-r",
-      String(Number(options.fps))
-    );
+  const brightness = Number(options.brightness);
+  const contrast = Number(options.contrast);
+  if (Number.isFinite(brightness) && Math.abs(brightness) > 0.0001 || Number.isFinite(contrast) && Math.abs(contrast - 1) > 0.0001) {
+    filters.push(`eq=brightness=${Number.isFinite(brightness) ? Math.max(-1, Math.min(1, brightness)) : 0}:contrast=${Number.isFinite(contrast) ? Math.max(0, Math.min(2, contrast)) : 1}`);
   }
 
-  if (options.videoCodec) {
-    args.push(
-      "-c:v",
-      String(options.videoCodec)
-    );
-  } else {
-    args.push(
-      "-c:v",
-      "libx264"
-    );
+  const filter = String(options.filter || 'none').toLowerCase();
+  if (filter === 'grayscale') filters.push('hue=s=0');
+  if (filter === 'sepia') filters.push('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');
+
+  const rotate = Number(options.rotate) || 0;
+  if (rotate === 90) filters.push('transpose=1');
+  else if (rotate === 180) filters.push('transpose=1,transpose=1');
+  else if (rotate === 270) filters.push('transpose=2');
+
+  const speed = Number(options.speed);
+  if (Number.isFinite(speed) && speed > 0 && Math.abs(speed - 1) > 0.0001) filters.push(`setpts=PTS/${Math.max(0.25, Math.min(4, speed))}`);
+
+  if (filters.length) args.push('-vf', filters.join(','));
+  if (options.fps) args.push('-r', String(Math.max(1, Math.min(120, Number(options.fps)))));
+  args.push('-c:v', String(options.videoCodec || 'libx264'));
+  args.push('-pix_fmt', 'yuv420p');
+  args.push('-c:a', String(options.audioCodec || 'aac'));
+  if (options.videoBitrate) args.push('-b:v', String(options.videoBitrate));
+  if (options.audioBitrate) args.push('-b:a', String(options.audioBitrate));
+
+  const volume = Number(options.volume);
+  if (Number.isFinite(volume) && volume >= 0 && volume <= 1 && Math.abs(volume - 1) > 0.0001) {
+    args.push('-af', `volume=${volume}`);
   }
 
-  if (options.audioCodec) {
-    args.push(
-      "-c:a",
-      String(options.audioCodec)
-    );
-  } else {
-    args.push(
-      "-c:a",
-      "aac"
-    );
-  }
-
-  if (options.videoBitrate) {
-    args.push(
-      "-b:v",
-      String(options.videoBitrate)
-    );
-  }
-
-  if (options.audioBitrate) {
-    args.push(
-      "-b:a",
-      String(options.audioBitrate)
-    );
-  }
-
-  args.push(
-    "-movflags",
-    "+faststart"
-  );
-
+  args.push('-movflags', '+faststart');
   return args;
 }
-
 
 /* =========================
    TRIM / CUT
@@ -324,17 +305,32 @@ async function exportMP4(
   output,
   options = {}
 ) {
-  const args = [
-    "-y",
-    "-i",
-    input,
-    ...buildVideoOptions(options),
-    output
-  ];
+  const args = ['-y'];
+  const start = Number(options.trimStart);
+  if (Number.isFinite(start) && start > 0) args.push('-ss', String(start));
+  args.push('-i', input);
+  const duration = Number(options.trimDuration);
+  if (Number.isFinite(duration) && duration > 0) args.push('-t', String(duration));
 
+  const speed = Number(options.speed);
+  if (Number.isFinite(speed) && speed > 0 && Math.abs(speed - 1) > 0.0001) {
+    const safeSpeed = Math.max(0.25, Math.min(4, speed));
+    const videoOptions = { ...options, speed: safeSpeed };
+    args.push(...buildVideoOptions(videoOptions));
+    const atempo = [];
+    let remaining = safeSpeed;
+    while (remaining < 0.5) { atempo.push('atempo=0.5'); remaining /= 0.5; }
+    while (remaining > 2) { atempo.push('atempo=2'); remaining /= 2; }
+    atempo.push(`atempo=${remaining}`);
+    const volume = Number(options.volume);
+    if (Number.isFinite(volume) && volume >= 0 && volume <= 1 && Math.abs(volume - 1) > 0.0001) atempo.push(`volume=${volume}`);
+    args.push('-af', atempo.join(','));
+  } else {
+    args.push(...buildVideoOptions(options));
+  }
+  args.push(output);
   return runFFmpeg(args, options);
 }
-
 
 /* =========================
    CONCATENATE VIDEOS

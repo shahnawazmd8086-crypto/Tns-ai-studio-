@@ -1,4 +1,4 @@
-# TNS AI Studio
+# TNS Studio
 
 TNS AI Studio is a mobile-first AI video creation and editing platform.
 
@@ -25,7 +25,7 @@ The project is designed to support AI video generation, video editing, AI voice,
 
 ## Supported Video Categories
 
-TNS AI Studio is designed for different types of videos, including:
+TNS Studio is designed for different types of videos, including:
 
 - Realistic videos
 - Garden Jugaad DIY
@@ -40,7 +40,7 @@ TNS AI Studio is designed for different types of videos, including:
 
 ## Locked Character System
 
-TNS AI Studio supports an idea-wise locked character system.
+TNS Studio supports an idea-wise locked character system.
 
 ### Rule
 

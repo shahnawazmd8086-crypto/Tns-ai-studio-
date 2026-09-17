@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = path.join(__dirname, 'Data');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
 const STATUS_FILE = path.join(DATA_DIR, 'statuses.json');
 

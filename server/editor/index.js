@@ -5,7 +5,7 @@ const exportTools = require("./export");
 
 function getEditorInfo() {
   return {
-    name: "TNS AI Studio Editor",
+    name: "TNS Studio Editor",
     version: "1.0.0",
     status: "ready",
     modules: {

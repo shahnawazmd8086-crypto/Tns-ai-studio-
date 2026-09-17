@@ -21,7 +21,8 @@ function createProject(input = {}) {
 
   return {
     id: input.id || crypto.randomUUID(),
-    name: input.name || "Untitled Project",
+    ownerId: input.ownerId ? String(input.ownerId) : null,
+    name: String(input.name || "Untitled Project").slice(0, 200),
     description: input.description || "",
     format: input.format || "9:16",
     duration: Number(input.duration) || 0,
@@ -62,9 +63,10 @@ function saveProject(
   const safeProject =
     createProject(project);
 
+  const safeId = String(safeProject.id).replace(/[^a-zA-Z0-9_-]/g, "_");
   const filePath = path.join(
     resolvedDirectory,
-    `${safeProject.id}.json`
+    `${safeId}.json`
   );
 
   fs.writeFileSync(
@@ -94,9 +96,10 @@ function loadProject(
   const resolvedDirectory =
     path.resolve(directory);
 
+  const safeId = String(projectId).replace(/[^a-zA-Z0-9_-]/g, "_");
   const filePath = path.join(
     resolvedDirectory,
-    `${String(projectId)}.json`
+    `${safeId}.json`
   );
 
   if (!fs.existsSync(filePath)) {
@@ -157,9 +160,10 @@ function deleteProject(
   const resolvedDirectory =
     path.resolve(directory);
 
+  const safeId = String(projectId).replace(/[^a-zA-Z0-9_-]/g, "_");
   const filePath = path.join(
     resolvedDirectory,
-    `${String(projectId)}.json`
+    `${safeId}.json`
   );
 
   if (!fs.existsSync(filePath)) {

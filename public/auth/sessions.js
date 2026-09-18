@@ -1,5 +1,5 @@
 const SESSION_STORAGE_KEY =
-  "tns_ai_studio_session";
+  "tns_studio_session";
 
 
 function getSession() {
@@ -161,7 +161,7 @@ function requireSession() {
     !isSessionValid()
   ) {
     window.location.href =
-      "/auth/login.html";
+      "/";
 
     return false;
   }

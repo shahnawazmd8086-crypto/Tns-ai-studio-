@@ -1,4 +1,4 @@
-const AUTH_STORAGE_KEY = "tns_ai_studio_auth";
+const AUTH_STORAGE_KEY = "tns_studio_auth";
 
 
 function getAuthState() {
@@ -89,7 +89,7 @@ function logout() {
 function requireLogin() {
   if (!isLoggedIn()) {
     window.location.href =
-      "/auth/login.html";
+      "/";
 
     return false;
   }

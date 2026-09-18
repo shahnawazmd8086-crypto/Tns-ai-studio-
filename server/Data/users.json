@@ -1,10 +1,1 @@
-{
-  "test@example.com": {
-    "id": "dbd9399c-dc0f-4489-9556-82cf030d0910",
-    "email": "test@example.com",
-    "passwordHash": "scrypt:2bdcd985b3ef4b7173e99d9bebc7fe78:460ff7b94afc54746f505b3a2edd2879aa6e3712243894a5a8cffe05068ad17486dbbda37a2d7df9a807dc0845368b60018163a9d07d4a4b1092ad64dd896a4f",
-    "provider": "password",
-    "createdAt": "2026-09-15T18:14:27.038Z",
-    "updatedAt": "2026-09-15T18:14:27.038Z"
-  }
-}
+[]

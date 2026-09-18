@@ -13,6 +13,7 @@ async function create(provider = "mock", input = {}) {
     status: "queued",
     progress: 0,
     input,
+    ownerId: input?.ownerId || null,
     result: null,
     error: null,
     createdAt: new Date().toISOString(),

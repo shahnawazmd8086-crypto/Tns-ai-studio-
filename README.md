@@ -1,157 +1,25 @@
 # TNS Studio
 
-TNS AI Studio is a mobile-first AI video creation and editing platform.
+TNS Studio is an India-origin, globally available creator platform for AI video, AI images, video editing, and TNS Contact.
 
-The project is designed to support AI video generation, video editing, AI voice, character consistency, multiple languages, long-video workflows, and future AI provider integrations.
+## Current base
 
-## Main Features
+- TNS Studio branding and reusable logo asset
+- Email + mobile/password authentication
+- Server-side scrypt password hashing
+- HTTP-only session cookies
+- OTP request/verify/login foundation with attempt limits
+- Password reset endpoint foundation
+- Language selection foundation
+- AI video/image/voice provider architecture with a mock provider for development
+- Video upload and FFmpeg export foundation
+- TNS Contact foundation: registered-user contacts, chat, status, and call UI hooks
+- Responsive mobile-first interface
 
-- AI video creation
-- Realistic video generation workflow
-- Garden Jugaad DIY video creation
-- Cartoon and animation video creation
-- Cinematic video creation
-- Story video creation
-- YouTube Shorts and Reels support
-- AI voice workflow
-- Multiple language selection
-- Locked character consistency
-- Video upload and preview
-- Video editing tools
-- Project save and load
-- Mobile-first interface
-- Modular backend architecture
-- Future AI provider support
+## Production integrations still required
 
-## Supported Video Categories
+The base intentionally does not fake external services. Before public production launch, configure a persistent database/storage layer, real email/SMS OTP delivery, Google OAuth, real AI providers, and production WebRTC signaling/media infrastructure for voice/video calls.
 
-TNS Studio is designed for different types of videos, including:
+## Data compatibility
 
-- Realistic videos
-- Garden Jugaad DIY
-- Cartoon / Animation
-- Cinematic videos
-- Story videos
-- YouTube Shorts
-- Reels
-- Educational videos
-- Promotional videos
-- Creative videos
-
-## Locked Character System
-
-TNS Studio supports an idea-wise locked character system.
-
-### Rule
-
-One idea = one locked character.
-
-The same character should remain consistent from the first scene to the final scene.
-
-The following details should remain unchanged:
-
-- Face
-- Person identity
-- Age
-- Gender
-- Hairstyle
-- Hair color
-- Facial features
-- Body type
-- Clothing
-- Clothing colors
-- Footwear
-- Gloves
-- Accessories
-
-Only the following can change:
-
-- Pose
-- Body position
-- Facial expression
-- Hand movement
-- Action
-
-A new video idea can use a completely different character.
-
-## AI Voice
-
-The AI Voice Studio is designed to support:
-
-- Multiple languages
-- Different voice styles
-- Natural speaking
-- Storytelling
-- Professional voice
-- Energetic voice
-- Adjustable speaking speed
-- Dialogue and script preparation
-
-Actual AI voice generation requires a connected AI voice provider.
-
-## Language Support
-
-The interface is designed so additional languages can be added in the future.
-
-The actual AI generation and voice languages depend on the connected AI providers.
-
-## Video Editing
-
-The editor architecture is designed for essential video editing operations such as:
-
-- Trim
-- Cut
-- Split
-- Merge
-- Crop
-- Resize
-- Rotate
-- Speed control
-- Text
-- Captions
-- Music
-- Volume
-- Effects
-- Export
-
-Advanced editing and production export require a proper media-processing backend such as FFmpeg or WebCodecs.
-
-## Long Video Workflow
-
-Long videos can be created using multiple scenes.
-
-The planned workflow is:
-
-1. Create the video idea.
-2. Generate the production plan.
-3. Create individual scenes.
-4. Keep the character consistent across scenes.
-5. Generate the required video segments.
-6. Generate or prepare voice.
-7. Combine the segments.
-8. Apply editing operations.
-9. Export the final video.
-
-## Project Structure
-
-```text
-TNS AI Studio
-├── package.json
-├── README.md
-├── public/
-│   ├── index.html
-│   ├── style.css
-│   └── app.js
-└── server/
-    ├── server.js
-    ├── ffmpeg-worker.js
-    ├── jobs/
-    │   ├── video-job.js
-    │   └── voice-job.js
-    ├── providers/
-    │   ├── provider.js
-    │   └── mock.js
-    └── editor/
-        ├── timeline.js
-        ├── video-tools.js
-        └── export.js
+The server uses the case-sensitive `server/Data` directory. `Auth.js` can read a legacy lowercase `server/data/users.json` store when the canonical store is empty, which prevents existing Render accounts from being silently lost during the case-fix migration.

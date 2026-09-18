@@ -8,7 +8,7 @@ const TNSLanguageEN = {
   direction: "ltr",
 
   translations: {
-    appName: "TNS AI Studio",
+    appName: "TNS Studio",
 
     common: {
       home: "Home",
@@ -64,7 +64,7 @@ const TNSLanguageEN = {
     },
 
     dashboard: {
-      title: "TNS AI Studio",
+      title: "TNS Studio",
       subtitle:
         "Create realistic AI videos, images and voice content.",
       createVideo: "Create AI Video",

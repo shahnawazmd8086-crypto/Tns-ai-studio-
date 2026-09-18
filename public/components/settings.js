@@ -1,6 +1,6 @@
 const TNSSettingsComponent = {
   STORAGE_KEY:
-    "tns_ai_studio_settings",
+    "tns_studio_settings",
 
   defaults: {
     theme: "system",

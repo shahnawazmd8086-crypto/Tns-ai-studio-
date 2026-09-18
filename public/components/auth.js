@@ -54,7 +54,7 @@ const TNSAuthComponent = {
 
     if (!auth) {
       window.location.href =
-        "/auth/login.html";
+        "/";
 
       return false;
     }
@@ -115,7 +115,7 @@ const TNSAuthComponent = {
         this.logout();
 
         window.location.href =
-          "/auth/login.html";
+          "/";
       }
     );
 

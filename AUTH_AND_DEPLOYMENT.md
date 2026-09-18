@@ -1,35 +1,19 @@
-# TNS v6 — Login and Deployment
+# TNS Studio — Authentication and Deployment Notes
 
-## Current mode
-- Email/password gate is a LOCAL PROTOTYPE only.
-- Guest Mode is available.
-- No OTP provider is required right now.
-- Do not treat the local password field as production authentication.
+TNS Studio is designed as an India-origin product with worldwide availability.
 
-## Production authentication
-Before public launch, replace the local gate with server-side auth:
-- password hashing (Argon2id/bcrypt)
-- secure, HttpOnly, SameSite cookies
-- email verification / password reset
-- CSRF protection
-- rate limits and login lockout
-- optional phone OTP later
-- database-backed users and projects
+## Authentication
 
-## Deployment
-The Node server is ready for a Node-compatible web service. Set environment variables on the host, not in the browser.
+- Passwords are hashed server-side with Node.js `scrypt`.
+- Sessions are stored server-side and exposed to the browser only through an HttpOnly cookie.
+- Production cookies use `Secure` when deployed behind HTTPS.
+- OTPs expire and are limited to five attempts by default.
+- OTP codes are not returned by the API unless `OTP_EXPOSE_CODE=true` is explicitly enabled for development/testing.
 
-Required for real AI generation:
-- TNS_VIDEO_PROVIDER
-- TNS_VIDEO_API_KEY
-- TNS_VIDEO_API_BASE
-- TNS_VIDEO_MODEL
+## Persistent storage
 
-For production video editing:
-- install FFmpeg on an isolated worker
-- use private object storage
-- use a queue and persistent database
-- return signed URLs for completed files
+The current base uses local filesystem storage so the project can run without a database. This is suitable for development and controlled testing, not a final worldwide production deployment. Use a persistent database and object storage before public launch.
 
-## Important
-The current mock provider does not generate a real video. It exists to validate the job flow until a real provider adapter and credentials are supplied.
+## External services
+
+Configure real providers for Google OAuth, OTP delivery, AI generation, and TNS Contact voice/video calling. The code does not claim these external services are live when they are not configured.

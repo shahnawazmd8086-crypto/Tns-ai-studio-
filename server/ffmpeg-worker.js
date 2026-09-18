@@ -315,7 +315,7 @@ async function exportMP4(
   const speed = Number(options.speed);
   if (Number.isFinite(speed) && speed > 0 && Math.abs(speed - 1) > 0.0001) {
     const safeSpeed = Math.max(0.25, Math.min(4, speed));
-    const videoOptions = { ...options, speed: safeSpeed };
+    const videoOptions = { ...options, speed: safeSpeed, volume: 1 };
     args.push(...buildVideoOptions(videoOptions));
     const atempo = [];
     let remaining = safeSpeed;

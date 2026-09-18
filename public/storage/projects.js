@@ -1,227 +1,396 @@
-const TNSProjectStorage = {
-  storageKey: "tns_ai_studio_projects",
+const TNSProjectsComponent = {
+  state: {
+    projects: [],
+    currentProjectId: null,
+    isLoading: false,
+    error: null
+  },
 
-  getAll() {
+  getState() {
+    return {
+      ...this.state,
+      projects: [...this.state.projects]
+    };
+  },
+
+  validateProjectName(name) {
+    const value =
+      String(name || "").trim();
+
+    if (!value) {
+      throw new Error(
+        "Project name is required."
+      );
+    }
+
+    if (value.length > 200) {
+      throw new Error(
+        "Project name is too long."
+      );
+    }
+
+    return value;
+  },
+
+  async createProject(
+    name,
+    data = {}
+  ) {
+    const projectName =
+      this.validateProjectName(name);
+
+    this.state.isLoading = true;
+    this.state.error = null;
+    this.emitChange();
+
     try {
-      const data =
-        localStorage.getItem(
-          this.storageKey
+      const response =
+        await fetch(
+          "/api/projects",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+            body: JSON.stringify({
+              name: projectName,
+              ...data
+            })
+          }
         );
 
-      if (!data) {
-        return [];
+      let result = null;
+
+      try {
+        result =
+          await response.json();
+      } catch (error) {
+        result = null;
       }
 
-      const projects =
-        JSON.parse(data);
+      if (!response.ok) {
+        throw new Error(
+          result?.message ||
+            "Unable to create project."
+        );
+      }
 
-      return Array.isArray(projects)
-        ? projects
-        : [];
+      const project =
+        result?.project ||
+        result;
+
+      if (project) {
+        this.state.projects.push(
+          project
+        );
+
+        this.state.currentProjectId =
+          project.id || null;
+      }
+
+      return result;
     } catch (error) {
-      return [];
+      this.state.error =
+        error.message ||
+        "Project creation failed.";
+
+      throw error;
+    } finally {
+      this.state.isLoading = false;
+      this.emitChange();
     }
   },
 
-  save(project = {}) {
-    const projects =
-      this.getAll();
+  async loadProjects() {
+    this.state.isLoading = true;
+    this.state.error = null;
+    this.emitChange();
 
-    const now =
-      new Date().toISOString();
+    try {
+      const response =
+        await fetch(
+          "/api/projects"
+        );
 
-    const item = {
-      id:
-        project.id ||
-        crypto.randomUUID(),
+      let result = null;
 
-      name:
-        project.name ||
-        "Untitled Project",
+      try {
+        result =
+          await response.json();
+      } catch (error) {
+        result = null;
+      }
 
-      description:
-        project.description || "",
+      if (!response.ok) {
+        throw new Error(
+          result?.message ||
+            "Unable to load projects."
+        );
+      }
 
-      type:
-        project.type || "video",
+      this.state.projects =
+        Array.isArray(
+          result?.projects
+        )
+          ? result.projects
+          : Array.isArray(result)
+            ? result
+            : [];
 
-      thumbnail:
-        project.thumbnail || "",
+      return this.state.projects;
+    } catch (error) {
+      this.state.error =
+        error.message ||
+        "Unable to load projects.";
 
-      duration:
-        Number(project.duration) || 0,
-
-      aspectRatio:
-        project.aspectRatio ||
-        "16:9",
-
-      quality:
-        project.quality ||
-        "HD",
-
-      timeline:
-        Array.isArray(project.timeline)
-          ? project.timeline
-          : [],
-
-      media:
-        Array.isArray(project.media)
-          ? project.media
-          : [],
-
-      createdAt:
-        project.createdAt || now,
-
-      updatedAt:
-        project.updatedAt || now
-    };
-
-    projects.push(item);
-
-    localStorage.setItem(
-      this.storageKey,
-      JSON.stringify(projects)
-    );
-
-    return item;
+      throw error;
+    } finally {
+      this.state.isLoading = false;
+      this.emitChange();
+    }
   },
 
-  getById(id) {
+  async getProject(
+    projectId
+  ) {
+    const id =
+      String(projectId || "").trim();
+
     if (!id) {
-      return null;
+      throw new Error(
+        "Project ID is required."
+      );
+    }
+
+    const response =
+      await fetch(
+        `/api/projects/${encodeURIComponent(
+          id
+        )}`
+      );
+
+    let result = null;
+
+    try {
+      result =
+        await response.json();
+    } catch (error) {
+      result = null;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+          "Unable to load project."
+      );
     }
 
     return (
-      this.getAll().find(
-        (project) =>
-          project.id === String(id)
-      ) || null
+      result?.project ||
+      result
     );
   },
 
-  update(id, changes = {}) {
+  async updateProject(
+    projectId,
+    updates = {}
+  ) {
+    const id =
+      String(projectId || "").trim();
+
     if (!id) {
-      return null;
+      throw new Error(
+        "Project ID is required."
+      );
     }
 
-    const projects =
-      this.getAll();
-
-    const index =
-      projects.findIndex(
-        (project) =>
-          project.id === String(id)
+    const response =
+      await fetch(
+        `/api/projects/${encodeURIComponent(
+          id
+        )}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+          body:
+            JSON.stringify(updates)
+        }
       );
 
-    if (index === -1) {
-      return null;
+    let result = null;
+
+    try {
+      result =
+        await response.json();
+    } catch (error) {
+      result = null;
     }
 
-    projects[index] = {
-      ...projects[index],
-      ...changes,
-      id: projects[index].id,
-      updatedAt:
-        new Date().toISOString()
-    };
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+          "Unable to update project."
+      );
+    }
 
-    localStorage.setItem(
-      this.storageKey,
-      JSON.stringify(projects)
-    );
+    const updatedProject =
+      result?.project ||
+      result;
 
-    return projects[index];
+    const index =
+      this.state.projects.findIndex(
+        (project) =>
+          project.id === id
+      );
+
+    if (index !== -1) {
+      this.state.projects[index] =
+        updatedProject;
+    }
+
+    this.emitChange();
+
+    return updatedProject;
   },
 
-  remove(id) {
+  async deleteProject(
+    projectId
+  ) {
+    const id =
+      String(projectId || "").trim();
+
     if (!id) {
-      return false;
+      throw new Error(
+        "Project ID is required."
+      );
     }
 
-    const projects =
-      this.getAll();
+    const response =
+      await fetch(
+        `/api/projects/${encodeURIComponent(
+          id
+        )}`,
+        {
+          method: "DELETE"
+        }
+      );
 
-    const filtered =
-      projects.filter(
+    let result = null;
+
+    try {
+      result =
+        await response.json();
+    } catch (error) {
+      result = null;
+    }
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+          "Unable to delete project."
+      );
+    }
+
+    this.state.projects =
+      this.state.projects.filter(
         (project) =>
-          project.id !== String(id)
+          project.id !== id
       );
 
     if (
-      filtered.length ===
-      projects.length
+      this.state.currentProjectId ===
+      id
     ) {
-      return false;
+      this.state.currentProjectId =
+        null;
     }
 
-    localStorage.setItem(
-      this.storageKey,
-      JSON.stringify(filtered)
-    );
+    this.emitChange();
 
-    return true;
+    return (
+      result || {
+        success: true
+      }
+    );
   },
 
-  duplicate(id) {
+  selectProject(projectId) {
+    const id =
+      String(projectId || "").trim();
+
     const project =
-      this.getById(id);
+      this.state.projects.find(
+        (item) =>
+          item.id === id
+      );
 
     if (!project) {
       return null;
     }
 
-    const now =
-      new Date().toISOString();
+    this.state.currentProjectId =
+      id;
 
-    const copy = {
-      ...project,
-      id: crypto.randomUUID(),
-      name:
-        `${project.name} Copy`,
-      createdAt: now,
-      updatedAt: now,
-      timeline:
-        Array.isArray(project.timeline)
-          ? [...project.timeline]
-          : [],
-      media:
-        Array.isArray(project.media)
-          ? [...project.media]
-          : []
-    };
+    this.emitChange();
 
-    const projects =
-      this.getAll();
-
-    projects.push(copy);
-
-    localStorage.setItem(
-      this.storageKey,
-      JSON.stringify(projects)
-    );
-
-    return copy;
+    return project;
   },
 
-  count() {
-    return this.getAll().length;
+  getCurrentProject() {
+    if (
+      !this.state.currentProjectId
+    ) {
+      return null;
+    }
+
+    return (
+      this.state.projects.find(
+        (project) =>
+          project.id ===
+          this.state.currentProjectId
+      ) || null
+    );
   },
 
-  clear() {
-    localStorage.removeItem(
-      this.storageKey
-    );
+  clearSelection() {
+    this.state.currentProjectId =
+      null;
+
+    this.emitChange();
 
     return true;
   },
 
-  exists(id) {
-    return Boolean(
-      this.getById(id)
+  reset() {
+    this.state = {
+      projects: [],
+      currentProjectId: null,
+      isLoading: false,
+      error: null
+    };
+
+    this.emitChange();
+
+    return this.getState();
+  },
+
+  emitChange() {
+    window.dispatchEvent(
+      new CustomEvent(
+        "tns:projects-change",
+        {
+          detail:
+            this.getState()
+        }
+      )
     );
   }
 };
 
 
-window.TNSProjectStorage =
-  TNSProjectStorage;
+window.TNSProjectsComponent =
+  TNSProjectsComponent;

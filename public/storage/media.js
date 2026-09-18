@@ -1,5 +1,5 @@
 const TNSMediaStorage = {
-  storageKey: "tns_ai_studio_media",
+  storageKey: "tns_studio_media",
 
   getAll() {
     try {

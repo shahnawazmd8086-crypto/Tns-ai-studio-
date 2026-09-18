@@ -1,5 +1,5 @@
 const TNSAIConfig = {
-  appName: "TNS AI Studio",
+  appName: "TNS Studio",
 
   defaultProvider: "mock",
 

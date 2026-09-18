@@ -1,5 +1,5 @@
 const TNSAppConfig = {
-  name: "TNS AI Studio",
+  name: "TNS Studio",
   version: "1.0.0",
   environment: "development",
 

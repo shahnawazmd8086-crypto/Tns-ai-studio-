@@ -53,3 +53,28 @@ $$('.contact-tab').forEach(b=>b.addEventListener('click',async()=>{$$('.contact-
 $('#newGroupBtn')?.addEventListener('click',()=>{const name=prompt('Group name');if(name?.trim()){const groups=JSON.parse(localStorage.getItem('tnsStudioGroups')||'[]');groups.unshift({name:name.trim(),createdAt:new Date().toISOString()});localStorage.setItem('tnsStudioGroups',JSON.stringify(groups.slice(0,50)));toast('Group created on this device')}});
 async function boot(){try{const d=await json('/api/auth/me');if(d.user){setUser(d.user);if(localStorage.getItem('tnsStudioLanguage')){showAuthScreens(null);$('#app').classList.remove('hidden');bootDashboard()}else startLanguage()}else showAuthScreens('authScreen')}catch{showAuthScreens('authScreen')}renderLanguages()}
 boot();
+
+/* ===== TNS STUDIO DASHBOARD EXTRA ACTIONS ===== */
+function openDashboardExtra(type){
+  const title=$('#extraTitle'), eyebrow=$('#extraEyebrow'), box=$('#extraContent');
+  if(!title||!eyebrow||!box)return;
+  const content={
+    voice:{
+      eyebrow:'AI CREATION',title:'AI Voice',
+      html:'<div class="extra-box"><h3>🎙️ AI Voice Workspace</h3><p>Create voice content from text. The voice API is connected on the server; production voice output still depends on the configured voice provider.</p><button class="primary wide" id="voiceApiStart">Open Voice Workspace</button><p id="voiceApiStatus" class="status"></p></div>'
+    },
+    help:{
+      eyebrow:'SUPPORT',title:'Help & Support',
+      html:'<div class="extra-box"><h3>❓ TNS Studio Support</h3><p>Use the available creator tools, editor, projects and TNS Contact sections from the Home screen. More dedicated support options can be added without changing the main dashboard.</p></div>'
+    },
+    premium:{
+      eyebrow:'TNS STUDIO',title:'Premium',
+      html:'<div class="extra-box"><h3>★ TNS Studio Premium</h3><p>Premium is reserved for future paid creator features, higher limits and additional tools. No payment or subscription is being claimed as active in this dashboard build.</p></div>'
+    }
+  }[type];
+  if(!content)return;
+  eyebrow.textContent=content.eyebrow;title.textContent=content.title;box.innerHTML=content.html;
+  showPanel('dashboardExtras');
+}
+$$('[data-dashboard-extra]').forEach(b=>b.addEventListener('click',()=>openDashboardExtra(b.dataset.dashboardExtra)));
+

@@ -28,9 +28,69 @@
 <div id="app" class="hidden">
 <header class="topbar"><div class="brand-area"><img class="logo-mini" src="/assets/tns-studio-mark.svg" alt="TNS Studio"><div><strong>TNS Studio</strong><small>CREATE • EDIT • INSPIRE</small></div></div><div class="top-actions"><button id="searchBtn" class="icon-btn" title="Search">⌕</button><button id="notifyBtn" class="icon-btn">♢</button><span id="userBadge" class="badge">Guest</span><button id="themeBtn" class="icon-btn">☼</button><button id="logoutBtn" class="ghost-btn">Logout</button></div></header>
 <main>
-<section id="dashboard" class="panel active"><div class="dashboard-title"><p class="eyebrow">YOUR CREATIVE WORKSPACE</p><h1>Welcome to My TNS Studio</h1><p class="muted">Create, edit and connect — all in one clean workspace.</p></div>
-<div class="feature-grid"><button class="feature glass" data-open="generate"><span>🎥</span><b>AI Video</b><small>Turn ideas into videos</small></button><button class="feature glass" data-open="image"><span>🖼️</span><b>AI Image</b><small>Create visuals from prompts</small></button><button class="feature glass" data-open="editor"><span>✂️</span><b>Edit Video</b><small>Complete editing workspace</small></button><button class="feature glass" data-open="contact"><span>💬</span><b>TNS Contact</b><small>Chat, contacts & calls</small></button></div>
-<div class="dashboard-row"><div class="card glass grow"><div class="section-head"><div><p class="eyebrow">YOUR WORK</p><h2>Recent Projects</h2></div><button class="link-btn" data-open="projects">View all</button></div><div id="recentProjects" class="recent-grid"></div></div><div class="card glass premium-card"><p class="eyebrow">TNS STUDIO</p><h2>Made for creators.</h2><p class="muted">Keep your workflow simple, polished and ready for HD export.</p><button class="secondary wide" data-open="settings">Studio Settings</button></div></div></section>
+<section id="dashboard" class="panel active">
+  <div class="premium-home">
+    <div class="premium-home-head">
+      <div>
+        <p class="eyebrow">TNS STUDIO</p>
+        <h1>Welcome to your studio</h1>
+        <p class="muted">Create, edit, connect and manage your work.</p>
+      </div>
+      <span class="studio-status">● READY</span>
+    </div>
+
+    <div class="app-icon-grid">
+      <button class="studio-app-icon glass" data-open="generate">
+        <span class="app-icon ai-video">🎥</span><b>AI Video</b><small>Create videos</small>
+      </button>
+      <button class="studio-app-icon glass" data-open="image">
+        <span class="app-icon ai-image">🖼️</span><b>AI Image</b><small>Create images</small>
+      </button>
+      <button class="studio-app-icon glass" data-open="editor">
+        <span class="app-icon edit-video">✂️</span><b>Edit Video</b><small>Edit & export</small>
+      </button>
+      <button class="studio-app-icon glass" data-open="contact">
+        <span class="app-icon tns-contact">💬</span><b>TNS Contact</b><small>Chat & calls</small>
+      </button>
+      <button class="studio-app-icon glass" data-open="projects">
+        <span class="app-icon projects">📁</span><b>Projects</b><small>Your creations</small>
+      </button>
+      <button class="studio-app-icon glass" data-dashboard-extra="voice">
+        <span class="app-icon ai-voice">🎙️</span><b>AI Voice</b><small>Voice workspace</small>
+      </button>
+      <button class="studio-app-icon glass create-icon" data-open="editor">
+        <span class="app-icon create-plus">＋</span><b>Create</b><small>Start creating</small>
+      </button>
+      <button class="studio-app-icon glass" data-open="settings">
+        <span class="app-icon settings">⚙️</span><b>Settings</b><small>Studio controls</small>
+      </button>
+      <button class="studio-app-icon glass" data-dashboard-extra="help">
+        <span class="app-icon help">?</span><b>Help & Support</b><small>Get assistance</small>
+      </button>
+      <button class="studio-app-icon glass premium-icon" data-dashboard-extra="premium">
+        <span class="app-icon premium">★</span><b>Premium</b><small>Upgrade studio</small>
+      </button>
+    </div>
+
+    <div class="dashboard-quick-row">
+      <button class="quick-work glass" data-open="projects">
+        <span>📂</span><div><b>Recent Projects</b><small>Open your saved creations</small></div><strong>→</strong>
+      </button>
+      <button class="quick-work glass" data-open="settings">
+        <span>⚙️</span><div><b>Studio Settings</b><small>Quality, ratio and theme</small></div><strong>→</strong>
+      </button>
+    </div>
+
+    <div class="dashboard-welcome glass">
+      <div>
+        <p class="eyebrow">YOUR CREATIVE HOME</p>
+        <h2>Everything you need in one place.</h2>
+        <p class="muted">Choose any studio app above to start working.</p>
+      </div>
+      <button class="primary" data-open="editor">Start Creating →</button>
+    </div>
+  </div>
+</section>
 <section id="generate" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">AI CREATION</p><h2>AI Video</h2></div><button class="back-btn" data-open="dashboard">← Home</button></div><textarea id="idea" rows="7" placeholder="Describe the video you want to create..."></textarea><div class="grid2"><div><label>Duration</label><select id="duration"><option value="10">10 seconds</option><option value="30">30 seconds</option><option value="60">60 seconds</option></select></div><div><label>Format</label><select id="format"><option>9:16</option><option>16:9</option><option>1:1</option></select></div><div><label>Style</label><select id="style"><option>Photorealistic</option><option>Cinematic</option><option>Realistic Smartphone</option></select></div><div><label>Quality</label><select id="videoQuality"><option>HD</option><option>Full HD</option></select></div></div><button id="generateBtn" class="primary wide">Generate AI Video</button><div id="jobBox" class="status">Ready.</div><div id="videoResult"></div></div></section>
 <section id="image" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">AI CREATION</p><h2>AI Image</h2></div><button class="back-btn" data-open="dashboard">← Home</button></div><textarea id="imagePrompt" rows="6" placeholder="Describe your image..."></textarea><div class="grid2"><div><label>Style</label><select id="imageStyle"><option>Photorealistic</option><option>Cinematic</option><option>Illustration</option></select></div><div><label>Ratio</label><select id="imageRatio"><option>9:16</option><option>16:9</option><option>1:1</option></select></div></div><button id="generateImageBtn" class="primary wide">Generate Image</button><div id="imageStatus" class="status">Ready.</div><div id="imagePreviewBox" class="image-preview-box"><span class="muted">Your generated image will appear here.</span></div><a id="imageDownload" class="download-btn hidden" download="tns-studio-image.svg">⬇ Download Image</a></div></section>
 <section id="editor" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">FULL VIDEO WORKSPACE</p><h2>Edit Video</h2></div><button class="back-btn" data-open="dashboard">← Home</button></div><label class="upload-btn">📁 Import Video<input id="videoFile" type="file" accept="video/*"></label><video id="preview" class="preview" controls playsinline></video><div class="timeline-head"><span>Timeline</span><span id="timelineTime">00:00</span></div><div id="timeline" class="timeline"><span class="muted">Import a video to start editing.</span></div>
@@ -41,6 +101,15 @@
 <section id="contact" class="panel"><div class="card glass contact-shell"><div class="section-head"><div><p class="eyebrow">COMMUNICATION</p><h2>TNS Contact</h2><p class="muted">Your contacts, chats, groups, status and calls in one place.</p></div><button class="back-btn" data-open="dashboard">← Home</button></div><div class="contact-grid"><aside class="contact-sidebar"><div class="contact-tabs"><button class="contact-tab active" data-contact-tab="chats">💬 Chats</button><button class="contact-tab" data-contact-tab="contacts">👥 Contacts</button><button class="contact-tab" data-contact-tab="status">◉ Status</button><button class="contact-tab" data-contact-tab="calls">📞 Calls</button></div><button id="contactPermission" class="secondary wide">📱 Sync Phone Contacts</button><button id="newGroupBtn" class="secondary wide">👥 New Group</button><input id="contactSearch" placeholder="⌕ Search TNS users"><div id="contactList" class="contact-list"></div><div id="contactSectionNote" class="status"></div></aside><section class="chat-panel"><div id="chatEmpty" class="chat-empty"><div class="contact-icon">💬</div><h3>Select a TNS Contact</h3><p class="muted">Only people registered with TNS Studio can appear here.</p></div><div id="chatView" class="hidden"><div class="chat-head"><div><b id="chatName">Contact</b><small id="chatPresence">TNS Studio user</small></div><div class="chat-actions"><button id="voiceCallBtn">📞</button><button id="videoCallBtn">🎥</button></div></div><div id="messages" class="messages"></div><form id="messageForm" class="message-form"><input id="messageInput" maxlength="4000" placeholder="Type a message…"><button class="primary" type="submit">➤</button></form></div></section></div></div></section>
 <section id="projects" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">YOUR WORK</p><h2>My Projects</h2></div><button id="clearBtn" class="secondary">Clear Local Projects</button></div><div id="projectList"></div></div></section>
 <section id="settings" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">PREFERENCES</p><h2>Settings</h2></div><button class="back-btn" data-open="dashboard">← Home</button></div><div class="settings-grid"><div><label>Theme</label><select id="settingTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select></div><div><label>Default Quality</label><select id="settingQuality"><option>HD</option><option>Full HD</option><option>4K</option></select></div><div><label>Default Aspect Ratio</label><select id="settingRatio"><option>9:16</option><option>16:9</option><option>1:1</option></select></div></div><p class="status">Language, theme and creator preferences are saved on this device.</p></div></section>
+<section id="dashboardExtras" class="panel">
+  <div class="card glass">
+    <div class="section-head">
+      <div><p id="extraEyebrow" class="eyebrow">TNS STUDIO</p><h2 id="extraTitle">Studio</h2></div>
+      <button class="back-btn" data-open="dashboard">← Home</button>
+    </div>
+    <div id="extraContent" class="extra-content"></div>
+  </div>
+</section>
 </main><nav class="bottom-nav"><button data-open="dashboard">⌂<small>Home</small></button><button data-open="generate">🎥<small>AI Video</small></button><button class="plus" data-open="editor">＋</button><button data-open="contact">💬<small>Contact</small></button><button data-open="projects">📁<small>Projects</small></button></nav></div>
 <script src="/app.js"></script>
 </body></html>

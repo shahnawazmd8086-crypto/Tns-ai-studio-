@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   verify:
-    name: Verify TNS AI Studio
+    name: Verify TNS Studio
     runs-on: ubuntu-latest
 
     steps:
@@ -43,4 +43,5 @@ jobs:
 
       - name: Final verification
         run: |
-          echo "TNS AI Studio verification completed successfully."
+          
+echo "TNS Studio verification completed successfully."

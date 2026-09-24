@@ -1,0 +1,12 @@
+node_modules/
+public/uploads/*
+!public/uploads/.gitkeep
+server/Data/*.tmp
+server/Data/*.bak
+server/Data/contacts.json
+server/Data/statuses.json
+server/Data/users.json
+server/Data/sessions.json
+server/Data/media-index.json
+server/Data/projects/
+server/Data/*.log

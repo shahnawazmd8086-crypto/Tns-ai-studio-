@@ -1,20 +1,21 @@
 const $=s=>document.querySelector(s);const $$=s=>[...document.querySelectorAll(s)];
-const LANGS=[['English','EN','en'],['Hindi','हि','hi'],['Spanish','ES','es'],['French','FR','fr'],['German','DE','de'],['Portuguese','PT','pt'],['Japanese','日','ja'],['Korean','한','ko'],['Arabic','ع','ar'],['Bengali','বা','bn'],['Tamil','த','ta'],['Telugu','తె','te']];
-let selectedLang=null,otpIdentifier=null,currentMedia=null,currentContact=null;
+const LANGS=(window.TNSLanguageRegistry||[]).map(x=>[x.nativeName||x.name,(x.nativeName||x.name).slice(0,2),x.code,x.name,x.rtl]);
+let selectedLang=null,otpIdentifier=null,currentMedia=null,currentContact=null,authenticatedUser=null;
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function msg(id,text,type='info'){const e=$(id);if(!e)return;e.textContent=text;e.dataset.type=type}
 async function json(url,options={}){const r=await fetch(url,{credentials:'include',...options});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error||d.message||'Request failed.');return d}
 function showPanel(id){$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='projects')renderProjects();if(id==='contact')loadContacts();}
 $$('[data-open]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.open)));
 function showAuthScreens(which){['authScreen','otpScreen','languageScreen'].forEach(id=>$( '#'+id).classList.toggle('hidden',id!==which))}
-function currentUser(){return window.TNSAuth?.getCurrentUser?.()||JSON.parse(localStorage.getItem('tnsStudioUser')||'null')}
-function setUser(u){try{localStorage.setItem('tnsStudioUser',JSON.stringify(u));window.TNSAuth?.setLoggedIn?.(u)}catch{}}
-function projectKey(){const u=currentUser();return 'tnsStudioProjects_'+(u?.email||u?.mobile||'guest').replace(/[^a-z0-9@._+-]/gi,'_')}
+function currentUser(){return authenticatedUser}
+function setUser(u){authenticatedUser=u||null;window.TNSAuth?.setLoggedIn?.(u||null)}
+function projectKey(){const u=currentUser();return 'tnsStudioProjects_'+(u?.id||'guest').replace(/[^a-z0-9_-]/gi,'_')}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderLanguages(filter=''){const q=filter.toLowerCase();const grid=$('#languageGrid');grid.innerHTML=LANGS.filter(x=>x[0].toLowerCase().includes(q)).map(x=>`<button class="language-option ${selectedLang===x[2]?'selected':''}" data-lang="${x[2]}"><span class="lang-icon">${x[1]}</span><span><b>${x[0]}</b><small>${x[2].toUpperCase()}</small></span></button>`).join('');$$('.language-option').forEach(b=>b.addEventListener('click',()=>{selectedLang=b.dataset.lang;localStorage.setItem('tnsStudioLanguage',selectedLang);renderLanguages($('#languageSearch').value);$('#continueLanguage').disabled=false}))}
+function renderLanguages(filter=''){const q=filter.toLowerCase();const grid=$('#languageGrid');grid.innerHTML=LANGS.filter(x=>x[0].toLowerCase().includes(q)||x[3].toLowerCase().includes(q)||x[2].toLowerCase().includes(q)).map(x=>`<button class="language-option ${selectedLang===x[2]?'selected':''}" data-lang="${x[2]}"><span class="lang-icon">${escapeHtml(x[1])}</span><span><b>${escapeHtml(x[3])}</b><small>${escapeHtml(x[0])} · ${x[2].toUpperCase()}</small></span></button>`).join('');$$('.language-option').forEach(b=>b.addEventListener('click',()=>{selectedLang=b.dataset.lang;localStorage.setItem('tnsStudioLanguage',selectedLang);applyLanguageMeta(selectedLang);renderLanguages($('#languageSearch').value);$('#continueLanguage').disabled=false}))}
 function startLanguage(){selectedLang=localStorage.getItem('tnsStudioLanguage');renderLanguages();$('#continueLanguage').disabled=!selectedLang;showAuthScreens('languageScreen')}
 $('#languageSearch')?.addEventListener('input',e=>renderLanguages(e.target.value));$('#continueLanguage')?.addEventListener('click',()=>{showAuthScreens(null);$('#languageScreen').classList.add('hidden');$('#app').classList.remove('hidden');showPanel('dashboard');bootDashboard()});
-function bootDashboard(){const u=currentUser();$('#userBadge').textContent=u?.email||u?.mobile||'Creator';loadSettings();renderProjects()}
+function bootDashboard(){loadSettings();applyLanguageMeta(localStorage.getItem('tnsStudioLanguage')||'en');renderProjects()}
+function applyLanguageMeta(code){const item=(window.TNSLanguageRegistry||[]).find(x=>x.code===code);document.documentElement.lang=code||'en';document.documentElement.dir=item?.rtl?'rtl':'ltr'}
 $$('.auth-mode').forEach(b=>b.addEventListener('click',()=>{$$('.auth-mode').forEach(x=>x.classList.remove('active'));b.classList.add('active');const mobile=b.dataset.authMode==='mobile';$('#emailField').classList.toggle('hidden',mobile);$('#mobileField').classList.toggle('hidden',!mobile)}));
 function togglePassword(id){const i=$(id);if(i)i.type=i.type==='password'?'text':'password'}
 $('#showPassword')?.addEventListener('click',()=>togglePassword('#loginPassword'));
@@ -28,9 +29,20 @@ async function requestOtp(){const mobile=!$('#mobileField').classList.contains('
 $('#otpRequestBtn')?.addEventListener('click',requestOtp);
 $('#verifyOtpBtn')?.addEventListener('click',async()=>{try{const d=await json('/api/auth/otp/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:otpIdentifier,code:$('#otpCode').value})});setUser(d.user);toast('OTP verified');startLanguage()}catch(err){msg('#otpMessage',err.message,'error')}});$('#backToLogin')?.addEventListener('click',()=>showAuthScreens('authScreen'));
 function loadSettings(){const s=JSON.parse(localStorage.getItem('tnsStudioSettings')||'{}');$('#settingTheme').value=s.theme||'dark';$('#settingQuality').value=s.quality||'HD';$('#settingRatio').value=s.ratio||'9:16';applyTheme($('#settingTheme').value)}
+const MODULE_SETTINGS={
+  'ai-video':{title:'AI Video Settings',items:['Default duration','Default style','Quality','AI provider','Character consistency']},
+  'ai-image':{title:'AI Image Settings',items:['Default style','Aspect ratio','Quality','AI provider','Reference images']},
+  'edit-video':{title:'Edit Video Settings',items:['Auto-save','Preview quality','Export quality','Audio defaults','AI editing tools']},
+  contact:{title:'TNS Contact Settings',items:['Privacy','App lock','Notifications','Chat settings','Call settings']},
+  projects:{title:'Projects Settings',items:['Auto-save','Cloud storage','Project privacy','Default project format']}
+};
+function openModuleSettings(key){const item=MODULE_SETTINGS[key];if(!item)return;showPanel('settings');$('#settingsTitle').textContent=item.title;const box=$('#moduleSettingsBox');box.classList.remove('hidden');box.innerHTML='<div class="module-settings-list">'+item.items.map((x)=>`<div class="module-setting-row"><div><b>${escapeHtml(x)}</b><small>Configure ${escapeHtml(x.toLowerCase())} for this feature.</small></div><button class="secondary" type="button">Configure</button></div>`).join('')+'</div>'}
+$$('.module-settings-btn').forEach(b=>b.addEventListener('click',()=>openModuleSettings(b.dataset.moduleSettings)));
 function saveSettings(){const s={theme:$('#settingTheme').value,quality:$('#settingQuality').value,ratio:$('#settingRatio').value};localStorage.setItem('tnsStudioSettings',JSON.stringify(s));applyTheme(s.theme)}function applyTheme(v){document.body.classList.toggle('light',v==='light');if(v==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme:light)').matches)}
-$('#settingTheme')?.addEventListener('change',saveSettings);$('#settingQuality')?.addEventListener('change',saveSettings);$('#settingRatio')?.addEventListener('change',saveSettings);$('#themeBtn')?.addEventListener('click',()=>{$('#settingTheme').value=document.body.classList.contains('light')?'dark':'light';saveSettings()});
-$('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}localStorage.removeItem('tnsStudioUser');window.TNSAuth?.logout?.();location.reload()});
+$('#settingTheme')?.addEventListener('change',saveSettings);$('#settingQuality')?.addEventListener('change',saveSettings);$('#settingRatio')?.addEventListener('change',saveSettings);
+$('#globalSettingsBtn')?.addEventListener('click',()=>showPanel('settings'));
+$('#changeLanguageBtn')?.addEventListener('click',()=>startLanguage());
+$('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}authenticatedUser=null;window.TNSAuth?.logout?.();localStorage.removeItem('tnsStudioLanguage');location.reload()});
 $('#generateBtn')?.addEventListener('click',async()=>{const idea=$('#idea').value.trim();if(!idea)return msg('#jobBox','Describe your video first.','error');msg('#jobBox','Creating your video…');try{const d=await json('/api/video/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:idea,duration:Number($('#duration').value),format:$('#format').value,style:$('#style').value,quality:$('#videoQuality').value})});if(d.status==='completed'&&d.result?.url){$('#videoResult').innerHTML=`<video controls playsinline src="${d.result.url}"></video><a class="download-btn" href="${d.result.url}" download="tns-studio-ai-video.mp4">⬇ Download HD Video</a>`;msg('#jobBox','Video ready.','success');saveProject('AI Video',idea)}else msg('#jobBox','Video job created.','success')}catch(err){msg('#jobBox',err.message,'error')}});
 $('#generateImageBtn')?.addEventListener('click',async()=>{const prompt=$('#imagePrompt').value.trim();if(!prompt)return msg('#imageStatus','Describe your image first.','error');msg('#imageStatus','Generating image…');try{const d=await json('/api/image/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt,style:$('#imageStyle').value,ratio:$('#imageRatio').value})});const url=d.result?.url;if(!url)throw Error('Image generation did not return an image.');$('#imagePreviewBox').innerHTML=`<img src="${url}" alt="Generated by TNS Studio">`;const a=$('#imageDownload');a.href=url;a.classList.remove('hidden');msg('#imageStatus','Image ready.','success');saveProject('AI Image',prompt)}catch(err){msg('#imageStatus',err.message,'error')}});
 $('#videoFile')?.addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;msg('#editStatus','Uploading video…');const fd=new FormData();fd.append('video',file);try{const d=await fetch('/api/uploads/video',{method:'POST',body:fd,credentials:'include'});const r=await d.json();if(!d.ok)throw Error(r.error||'Upload failed.');currentMedia=r.media;$('#preview').src=r.media.url;$('#preview').load();$('#timeline').innerHTML=`<div class="clip">${escapeHtml(r.media.originalName)} • ${(r.media.size/1048576).toFixed(1)} MB</div>`;msg('#editStatus','Video imported. You can preview and edit it.','success')}catch(err){msg('#editStatus',err.message,'error')}});
@@ -53,28 +65,3 @@ $$('.contact-tab').forEach(b=>b.addEventListener('click',async()=>{$$('.contact-
 $('#newGroupBtn')?.addEventListener('click',()=>{const name=prompt('Group name');if(name?.trim()){const groups=JSON.parse(localStorage.getItem('tnsStudioGroups')||'[]');groups.unshift({name:name.trim(),createdAt:new Date().toISOString()});localStorage.setItem('tnsStudioGroups',JSON.stringify(groups.slice(0,50)));toast('Group created on this device')}});
 async function boot(){try{const d=await json('/api/auth/me');if(d.user){setUser(d.user);if(localStorage.getItem('tnsStudioLanguage')){showAuthScreens(null);$('#app').classList.remove('hidden');bootDashboard()}else startLanguage()}else showAuthScreens('authScreen')}catch{showAuthScreens('authScreen')}renderLanguages()}
 boot();
-
-/* ===== TNS STUDIO DASHBOARD EXTRA ACTIONS ===== */
-function openDashboardExtra(type){
-  const title=$('#extraTitle'), eyebrow=$('#extraEyebrow'), box=$('#extraContent');
-  if(!title||!eyebrow||!box)return;
-  const content={
-    voice:{
-      eyebrow:'AI CREATION',title:'AI Voice',
-      html:'<div class="extra-box"><h3>🎙️ AI Voice Workspace</h3><p>Create voice content from text. The voice API is connected on the server; production voice output still depends on the configured voice provider.</p><button class="primary wide" id="voiceApiStart">Open Voice Workspace</button><p id="voiceApiStatus" class="status"></p></div>'
-    },
-    help:{
-      eyebrow:'SUPPORT',title:'Help & Support',
-      html:'<div class="extra-box"><h3>❓ TNS Studio Support</h3><p>Use the available creator tools, editor, projects and TNS Contact sections from the Home screen. More dedicated support options can be added without changing the main dashboard.</p></div>'
-    },
-    premium:{
-      eyebrow:'TNS STUDIO',title:'Premium',
-      html:'<div class="extra-box"><h3>★ TNS Studio Premium</h3><p>Premium is reserved for future paid creator features, higher limits and additional tools. No payment or subscription is being claimed as active in this dashboard build.</p></div>'
-    }
-  }[type];
-  if(!content)return;
-  eyebrow.textContent=content.eyebrow;title.textContent=content.title;box.innerHTML=content.html;
-  showPanel('dashboardExtras');
-}
-$$('[data-dashboard-extra]').forEach(b=>b.addEventListener('click',()=>openDashboardExtra(b.dataset.dashboardExtra)));
-

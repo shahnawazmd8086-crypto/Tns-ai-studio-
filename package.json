@@ -1,10 +1,16 @@
 {
-  "name":"tns-studio",
-  "version":"9.0.0",
-  "private":true,
-  "description":"TNS Studio — AI creation, video editing and creator communication studio",
-  "main":"server/server.js",
-  "scripts":{"start":"node server/server.js"},
-  "engines":{"node":">=18"},
-  "dependencies":{}
+  "name": "tns-studio",
+  "version": "11.0.0",
+  "private": true,
+  "description": "TNS Studio \u2014 AI creation, video editing and creator communication studio",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "test": "node tests/smoke.js",
+    "syntax": "node tests/syntax.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {}
 }

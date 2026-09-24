@@ -11,6 +11,10 @@
     return document.querySelector("#signupEmail");
   }
 
+  function signupGetMobileInput() {
+    return document.querySelector("#signupMobile");
+  }
+
   function signupGetPasswordInput() {
     return document.querySelector("#signupPassword");
   }
@@ -41,12 +45,15 @@
     button.textContent = loading ? "Creating account..." : "Sign Up";
   }
 
-  function signupValidateInput(email, password, confirmPassword) {
+  function signupValidateInput(email, mobile, password, confirmPassword) {
     const safeEmail = String(email || "").trim().toLowerCase();
+    const safeMobile = String(mobile || "").replace(/[^0-9+]/g, "");
     const safePassword = String(password || "");
     const safeConfirmPassword = String(confirmPassword || "");
 
-    if (!safeEmail) throw new Error("Email is required.");
+    if (!safeEmail && !safeMobile) throw new Error("Email or mobile number is required.");
+    if (safeEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(safeEmail)) throw new Error("Please enter a valid email address.");
+    if (safeMobile && !/^\+?[1-9][0-9]{7,14}$/.test(safeMobile)) throw new Error("Please enter a valid mobile number in international format.");
     if (!safePassword) throw new Error("Password is required.");
 
     if (safePassword.length < 8 || !/[A-Z]/.test(safePassword) || !/[a-z]/.test(safePassword) || !/[0-9]/.test(safePassword) || !/[^A-Za-z0-9]/.test(safePassword)) {
@@ -57,11 +64,11 @@
       throw new Error("Passwords do not match.");
     }
 
-    return { email: safeEmail, password: safePassword };
+    return { email: safeEmail || null, mobile: safeMobile || null, password: safePassword };
   }
 
-  async function signupRequest(email, password, confirmPassword) {
-    const input = signupValidateInput(email, password, confirmPassword);
+  async function signupRequest(email, mobile, password, confirmPassword) {
+    const input = signupValidateInput(email, mobile, password, confirmPassword);
 
     const response = await fetch(SIGNUP_API, {
       method: "POST",
@@ -100,6 +107,7 @@
     event.preventDefault();
 
     const emailInput = signupGetEmailInput();
+    const mobileInput = signupGetMobileInput();
     const passwordInput = signupGetPasswordInput();
     const confirmInput = signupGetConfirmPasswordInput();
 
@@ -109,6 +117,7 @@
 
       const result = await signupRequest(
         emailInput?.value || "",
+        mobileInput?.value || "",
         passwordInput?.value || "",
         confirmInput?.value || ""
       );

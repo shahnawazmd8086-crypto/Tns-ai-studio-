@@ -1,123 +1,52 @@
-const AUTH_STORAGE_KEY = "tns_studio_auth";
-
+// Client auth helper. The server HttpOnly session cookie is authoritative.
+let memoryUser = null;
 
 function getAuthState() {
-  try {
-    const data =
-      localStorage.getItem(
-        AUTH_STORAGE_KEY
-      );
-
-    if (!data) {
-      return null;
-    }
-
-    return JSON.parse(data);
-  } catch (error) {
-    return null;
-  }
+  return memoryUser ? { user: { ...memoryUser } } : null;
 }
-
 
 function saveAuthState(state) {
-  localStorage.setItem(
-    AUTH_STORAGE_KEY,
-    JSON.stringify(state)
-  );
-
-  return state;
+  memoryUser = state && state.user ? { ...state.user } : null;
+  return getAuthState();
 }
-
 
 function clearAuthState() {
-  localStorage.removeItem(
-    AUTH_STORAGE_KEY
-  );
+  memoryUser = null;
 }
-
 
 function isLoggedIn() {
-  const state =
-    getAuthState();
-
-  return Boolean(
-    state &&
-    state.loggedIn === true &&
-    state.user
-  );
+  return Boolean(memoryUser);
 }
-
 
 function getCurrentUser() {
-  const state =
-    getAuthState();
-
-  if (!state || !state.user) {
-    return null;
-  }
-
-  return state.user;
+  return memoryUser ? { ...memoryUser } : null;
 }
-
 
 function setLoggedIn(user) {
-  if (!user) {
-    throw new Error(
-      "User data is required."
-    );
-  }
-
-  return saveAuthState({
-    loggedIn: true,
-    user,
-    loginTime:
-      new Date().toISOString()
-  });
+  if (!user) throw new Error('User data is required.');
+  memoryUser = { ...user };
+  return getCurrentUser();
 }
-
 
 function logout() {
   clearAuthState();
-
-  return {
-    success: true,
-    message: "Logged out successfully."
-  };
+  return { success: true, message: 'Logged out successfully.' };
 }
-
 
 function requireLogin() {
   if (!isLoggedIn()) {
-    window.location.href =
-      "/";
-
+    window.location.href = '/';
     return false;
   }
-
   return true;
 }
 
-
 function redirectIfLoggedIn() {
   if (isLoggedIn()) {
-    window.location.href =
-      "/index.html";
-
+    window.location.href = '/index.html';
     return true;
   }
-
   return false;
 }
 
-
-window.TNSAuth = {
-  getAuthState,
-  saveAuthState,
-  clearAuthState,
-  isLoggedIn,
-  getCurrentUser,
-  setLoggedIn,
-  logout,
-  requireLogin,
-  redirectIfLoggedIn
-};
+window.TNSAuth = { getAuthState, saveAuthState, clearAuthState, isLoggedIn, getCurrentUser, setLoggedIn, logout, requireLogin, redirectIfLoggedIn };

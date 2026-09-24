@@ -12,11 +12,15 @@ const { create: createImageJob, getJob: getImageJob } = require('./jobs/image-jo
 const { create: createVoiceJob, getJob: getVoiceJob } = require('./jobs/voice-job');
 const { registerProvider, getProvider } = require('./providers/provider');
 const MockProvider = require('./providers/mock');
+const HttpProvider = require('./providers/http');
 const Uploads = require('./storage/Uploads');
 const Contact = require('./contact');
 const ProjectStore = require('./storage/Projects');
+const MediaAccess = require('./storage/MediaAccess');
+const GlobalConfig = require('./config/Global-config');
 
 registerProvider('mock', new MockProvider());
+registerProvider('http', new HttpProvider({ name: 'http' }));
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
@@ -34,8 +38,11 @@ const MIME_TYPES = {
 };
 
 const rateBuckets = new Map();
+const authBuckets = new Map();
 const RATE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT = Math.max(30, Number(process.env.API_RATE_LIMIT) || 120);
+const AUTH_RATE_WINDOW_MS = 60 * 1000;
+const SESSION_TIMEOUT_MINUTES = Math.max(1, Number(process.env.SESSION_TIMEOUT_MINUTES) || GlobalConfig.auth.sessionTimeoutMinutes);
 
 function sendJson(res, status, data, extraHeaders = {}) {
   res.writeHead(status, {
@@ -77,6 +84,19 @@ function rateLimit(req, res) {
     return false;
   }
   return true;
+}
+
+
+function authRateLimit(req, identifier, limit = 10) {
+  const key = `${requestIp(req)}|${String(identifier || '').trim().toLowerCase()}`;
+  const now = Date.now();
+  const current = authBuckets.get(key);
+  if (!current || now - current.startedAt >= AUTH_RATE_WINDOW_MS) {
+    authBuckets.set(key, { startedAt: now, count: 1 });
+    return true;
+  }
+  current.count += 1;
+  return current.count <= limit;
 }
 
 function isStateChanging(method) { return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method); }
@@ -128,7 +148,7 @@ function cookies(req) {
 }
 
 function currentUser(req) {
-  const token = cookies(req).tns_session;
+  const token = getSessionToken(req);
   const session = getSession(token);
   return session ? Auth.getUserById(session.userId) : null;
 }
@@ -139,17 +159,32 @@ function requireAuth(req, res) {
   return user;
 }
 
+function sessionCookieName() {
+  return process.env.NODE_ENV === 'production' ? '__Host-tns_session' : 'tns_session';
+}
+
+function sessionCookieAttributes(secure) {
+  return `HttpOnly; SameSite=Strict; Path=/; Max-Age=${secure ? '' : ''}`;
+}
+
+function getSessionToken(req) {
+  const c = cookies(req);
+  return c[sessionCookieName()] || c.tns_session || null;
+}
+
 function setSessionCookie(req, res, session) {
   const maxAge = Math.max(1, Math.floor((Date.parse(session.expiresAt) - Date.now()) / 1000));
   const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
   const secure = forwardedProto === 'https' || process.env.NODE_ENV === 'production';
-  res.setHeader('Set-Cookie', `tns_session=${encodeURIComponent(session.token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=${maxAge}${secure ? '; Secure' : ''}`);
+  const prefix = sessionCookieName();
+  res.setHeader('Set-Cookie', `${prefix}=${encodeURIComponent(session.token)}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${maxAge}${secure ? '; Secure' : ''}`);
 }
 
 function clearSessionCookie(req, res) {
   const forwardedProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim().toLowerCase();
   const secure = forwardedProto === 'https' || process.env.NODE_ENV === 'production';
-  res.setHeader('Set-Cookie', `tns_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure ? '; Secure' : ''}`);
+  const prefix = sessionCookieName();
+  res.setHeader('Set-Cookie', `${prefix}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure ? '; Secure' : ''}`);
 }
 
 function safePublicFile(requestPath) {
@@ -232,22 +267,24 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/auth/signup') {
       const input = await readBody(req, 1024 * 1024);
       const result = signup(input);
-      const session = createSession(result.user.id);
+      const session = createSession(result.user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
       setSessionCookie(req, res, session);
       return sendJson(res, 201, { ...result, message: 'Account created successfully.' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/login') {
       const input = await readBody(req, 1024 * 1024);
+      if (!authRateLimit(req, input.identifier, 8)) return sendJson(res, 429, { error: 'Too many login attempts. Please try again later.' }, { 'Retry-After': '60' });
       const result = login(input);
-      const session = createSession(result.user.id);
+      const session = createSession(result.user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
       setSessionCookie(req, res, session);
       return sendJson(res, 200, { success: true, message: 'Login successful.', user: result.user });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/logout') {
-      destroySession(cookies(req).tns_session);
+      destroySession(getSessionToken(req));
       clearSessionCookie(req, res);
+      res.setHeader('Clear-Site-Data', '"cache", "storage"');
       return sendJson(res, 200, { success: true, message: 'Logged out successfully.' });
     }
 
@@ -259,6 +296,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/auth/otp/request') {
       const input = await readBody(req, 1024 * 1024);
       if (!input.identifier) throw new Error('Email or mobile number is required.');
+      if (!authRateLimit(req, input.identifier, 5)) return sendJson(res, 429, { error: 'Too many OTP requests. Please try again later.' }, { 'Retry-After': '60' });
       const otp = Otp.createOtp(input.identifier, 10 * 60 * 1000, 5);
       const response = { success: true, message: 'OTP created. Configure an email/SMS provider for delivery.', expiresAt: otp.expiresAt };
       if (process.env.OTP_EXPOSE_CODE === 'true') response.otp = otp.code;
@@ -282,7 +320,7 @@ const server = http.createServer(async (req, res) => {
           ? { email: identifier, provider: 'otp', password: crypto.randomBytes(24).toString('hex') }
           : { mobile: identifier, provider: 'otp', password: crypto.randomBytes(24).toString('hex') });
       Otp.removeOtp(identifier);
-      const session = createSession(user.id);
+      const session = createSession(user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
       setSessionCookie(req, res, session);
       return sendJson(res, 200, { success: true, message: 'OTP login successful.', user });
     }
@@ -290,10 +328,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/auth/forgot-password') {
       const input = await readBody(req, 1024 * 1024);
       if (!input.identifier) throw new Error('Email or mobile number is required.');
+      if (!authRateLimit(req, input.identifier, 5)) return sendJson(res, 429, { error: 'Too many password reset requests. Please try again later.' }, { 'Retry-After': '60' });
       const exists = String(input.identifier).includes('@') ? Auth.findUserByEmail(input.identifier) : Auth.findUserByMobile(input.identifier);
-      if (!exists) throw new Error('Account not found.');
+      if (!exists) return sendJson(res, 200, { success: true, message: 'If an account exists, reset instructions will be sent through the configured channel.' });
       const otp = Otp.createOtp(input.identifier, 10 * 60 * 1000, 5);
-      const response = { success: true, message: 'Password reset OTP created. Configure an email/SMS provider for delivery.', expiresAt: otp.expiresAt };
+      const response = { success: true, message: 'If an account exists, reset instructions will be sent through the configured channel.', expiresAt: otp.expiresAt };
       if (process.env.OTP_EXPOSE_CODE === 'true') response.otp = otp.code;
       return sendJson(res, 200, response);
     }
@@ -402,6 +441,7 @@ const server = http.createServer(async (req, res) => {
       Uploads.validateUpload(part.filename, part.data.length, { maxFileSize: 500 * 1024 * 1024 });
       if (!part.contentType.startsWith('video/') && !Uploads.isAllowedExtension(part.filename)) throw new Error('Unsupported video format.');
       const saved = Uploads.saveUpload(part.data, UPLOAD_DIR, part.filename, { maxFileSize: 500 * 1024 * 1024 });
+      MediaAccess.register(saved.fileName, user.id, { originalName: saved.originalName, createdAt: saved.createdAt });
       return sendJson(res, 201, { success: true, media: { id: saved.id, ownerId: user.id, originalName: saved.originalName, fileName: saved.fileName, size: saved.size, url: publicUrl(saved.fileName) } });
     }
 
@@ -409,6 +449,8 @@ const server = http.createServer(async (req, res) => {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req, 2 * 1024 * 1024);
       const inputPath = safeUploadPathFromUrl(input.inputPath);
+      const inputFileName = path.basename(inputPath);
+      if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
       const quality = [720, 1080, 1440].includes(Number(input.quality)) ? Number(input.quality) : 1080;
       const outputName = `${crypto.randomUUID()}-export.mp4`;
       const outputPath = path.join(UPLOAD_DIR, outputName);
@@ -426,14 +468,17 @@ const server = http.createServer(async (req, res) => {
         speed: Number(input.speed) > 0 ? Number(input.speed) : 1,
         volume: Number.isFinite(Number(input.volume)) ? Math.max(0, Math.min(1, Number(input.volume))) : 1
       });
+      MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio export' });
       return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/video/jobs') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);
-      const providerName = String(process.env.VIDEO_PROVIDER || 'mock').toLowerCase();
+      const providerName = String(process.env.VIDEO_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
+      if (!providerName || (process.env.NODE_ENV === 'production' && providerName === 'mock')) return sendJson(res, 503, { error: 'A real video provider is not configured for production.' });
       const provider = getProvider(providerName);
+      if (!provider) return sendJson(res, 503, { error: 'Configured video provider is unavailable.' });
       const job = await createVideoJob(providerName, { ...input, ownerId: user.id });
       if (provider && typeof provider.create === 'function') {
         try {
@@ -455,8 +500,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/image/jobs') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);
-      const providerName = String(process.env.IMAGE_PROVIDER || 'mock').toLowerCase();
+      const providerName = String(process.env.IMAGE_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
+      if (!providerName || (process.env.NODE_ENV === 'production' && providerName === 'mock')) return sendJson(res, 503, { error: 'A real image provider is not configured for production.' });
       const provider = getProvider(providerName);
+      if (!provider) return sendJson(res, 503, { error: 'Configured image provider is unavailable.' });
       const job = await createImageJob(providerName, { ...input, ownerId: user.id });
       if (provider && typeof provider.createImage === 'function') {
         try {
@@ -478,8 +525,10 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/voice/jobs') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);
-      const providerName = String(process.env.VOICE_PROVIDER || 'mock').toLowerCase();
+      const providerName = String(process.env.VOICE_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
+      if (!providerName || (process.env.NODE_ENV === 'production' && providerName === 'mock')) return sendJson(res, 503, { error: 'A real voice provider is not configured for production.' });
       const provider = getProvider(providerName);
+      if (!provider) return sendJson(res, 503, { error: 'Configured voice provider is unavailable.' });
       const job = await createVoiceJob(providerName, { ...input, ownerId: user.id });
       if (provider && typeof provider.createVoice === 'function') {
         try {
@@ -499,6 +548,19 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === 'GET' && url.pathname === '/api') return sendJson(res, 200, { name: 'TNS Studio API', version: '3.0.0' });
+
+    if (req.method === 'GET' && url.pathname.startsWith('/uploads/')) {
+      const user = requireAuth(req, res); if (!user) return;
+      const fileName = decodeURIComponent(url.pathname.slice('/uploads/'.length));
+      if (!fileName || fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) return sendJson(res, 404, { error: 'Media not found.' });
+      if (!MediaAccess.canAccess(fileName, user.id)) return sendJson(res, 404, { error: 'Media not found.' });
+      const target = path.resolve(UPLOAD_DIR, fileName);
+      const root = path.resolve(UPLOAD_DIR) + path.sep;
+      if (!target.startsWith(root) || !fs.existsSync(target) || !fs.statSync(target).isFile()) return sendJson(res, 404, { error: 'Media not found.' });
+      const ext = path.extname(target).toLowerCase();
+      res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream', 'Cache-Control': 'private, no-store' });
+      return fs.createReadStream(target).pipe(res);
+    }
 
     if (req.method === 'GET') {
       const file = safePublicFile(url.pathname);

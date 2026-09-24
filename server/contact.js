@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const SecureStore = require('./utils/SecureStore');
 
 const DATA_DIR = path.join(__dirname, 'Data');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
@@ -8,11 +9,11 @@ const STATUS_FILE = path.join(DATA_DIR, 'statuses.json');
 
 function ensure() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(CONTACTS_FILE)) fs.writeFileSync(CONTACTS_FILE, '{}');
-  if (!fs.existsSync(STATUS_FILE)) fs.writeFileSync(STATUS_FILE, '{}');
+  if (!fs.existsSync(CONTACTS_FILE)) fs.writeFileSync(CONTACTS_FILE, SecureStore.encode({}));
+  if (!fs.existsSync(STATUS_FILE)) fs.writeFileSync(STATUS_FILE, SecureStore.encode({}));
 }
-function read(file) { ensure(); try { return JSON.parse(fs.readFileSync(file, 'utf8')) || {}; } catch { return {}; } }
-function write(file, value) { ensure(); const tmp = `${file}.tmp`; fs.writeFileSync(tmp, JSON.stringify(value, null, 2)); fs.renameSync(tmp, file); }
+function read(file) { ensure(); try { return SecureStore.decode(fs.readFileSync(file, 'utf8')) || {}; } catch { return {}; } }
+function write(file, value) { ensure(); const tmp = `${file}.tmp`; fs.writeFileSync(tmp, SecureStore.encode(value)); fs.renameSync(tmp, file); }
 function key(a,b){ return [String(a),String(b)].sort().join('__'); }
 function listMessages(a,b){ const db=read(CONTACTS_FILE); return Array.isArray(db[key(a,b)]) ? db[key(a,b)] : []; }
 function addMessage(from,to,text){

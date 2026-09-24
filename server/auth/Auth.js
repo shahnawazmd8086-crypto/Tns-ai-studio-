@@ -74,20 +74,31 @@ function validatePassword(password) {
 
 function hashPassword(password) {
   const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(String(password), salt, 64).toString('hex');
-  return `scrypt:${salt}:${hash}`;
+  const hash = crypto.scryptSync(String(password), salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }).toString('hex');
+  return `scrypt:32768:8:1:${salt}:${hash}`;
 }
 
 function verifyHash(password, stored) {
   const parts = String(stored || '').split(':');
-  if (parts.length !== 3 || parts[0] !== 'scrypt' || !/^[0-9a-f]+$/i.test(parts[1]) || !/^[0-9a-f]+$/i.test(parts[2])) return false;
-  try {
-    const derived = crypto.scryptSync(String(password), parts[1], 64);
-    const expected = Buffer.from(parts[2], 'hex');
-    return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
-  } catch {
-    return false;
+  if (parts.length === 6 && parts[0] === 'scrypt') {
+    try {
+      const N = Number(parts[1]); const r = Number(parts[2]); const p = Number(parts[3]);
+      if (!Number.isInteger(N) || !Number.isInteger(r) || !Number.isInteger(p) || N < 32768 || r < 8 || p < 1) return false;
+      if (!/^[0-9a-f]+$/i.test(parts[4]) || !/^[0-9a-f]+$/i.test(parts[5])) return false;
+      const derived = crypto.scryptSync(String(password), parts[4], 64, { N, r, p, maxmem: 64 * 1024 * 1024 });
+      const expected = Buffer.from(parts[5], 'hex');
+      return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
+    } catch { return false; }
   }
+  // Legacy scrypt hashes are accepted for migration only; new passwords always use the stronger format.
+  if (parts.length === 3 && parts[0] === 'scrypt' && /^[0-9a-f]+$/i.test(parts[1]) && /^[0-9a-f]+$/i.test(parts[2])) {
+    try {
+      const derived = crypto.scryptSync(String(password), parts[1], 64);
+      const expected = Buffer.from(parts[2], 'hex');
+      return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
+    } catch { return false; }
+  }
+  return false;
 }
 
 function createUser(input = {}) {

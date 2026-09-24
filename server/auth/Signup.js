@@ -16,9 +16,9 @@ function validateSignupInput(input = {}) {
   const password = String(input.password || '');
   const name = String(input.name || '').trim();
 
-  if (!email) throw new Error('Email is required.');
-  if (!validateEmail(email)) throw new Error('Please enter a valid email address.');
-  if (mobile && !validateMobile(mobile)) throw new Error('Please enter a valid mobile number.');
+  if (!email && !mobile) throw new Error('Email or mobile number is required.');
+  if (email && !validateEmail(email)) throw new Error('Please enter a valid email address.');
+  if (mobile && !validateMobile(mobile)) throw new Error('Please enter a valid mobile number in international format.');
   if (!password) throw new Error('Password is required.');
   if (!validatePassword(password)) throw new Error('Password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
 

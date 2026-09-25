@@ -254,6 +254,29 @@ function readMultipart(req, maxBytes = 500 * 1024 * 1024) {
   });
 }
 
+async function refreshProviderJob(provider, job, type, updateJob) {
+  if (!job || !job.providerJob || !provider || typeof provider.getStatus !== 'function') return job;
+  const current = String(job.status || '').toLowerCase();
+  if (['completed', 'failed', 'cancelled', 'canceled'].includes(current)) return job;
+  try {
+    const providerState = await provider.getStatus(type, job.providerJob);
+    if (!providerState) return job;
+    const status = String(providerState.status || providerState.state || '').toLowerCase();
+    const progress = Number(providerState.progress ?? providerState.percent ?? job.progress ?? 0);
+    const patch = { providerJob: { ...job.providerJob, ...providerState }, progress: Number.isFinite(progress) ? Math.max(0, Math.min(100, progress)) : job.progress };
+    if (['completed', 'complete', 'succeeded', 'success'].includes(status)) {
+      patch.status = 'completed'; patch.progress = 100;
+      patch.result = providerState.result || providerState.output || providerState.data || job.result || null;
+    } else if (['failed', 'error', 'cancelled', 'canceled'].includes(status)) {
+      patch.status = status === 'cancelled' || status === 'canceled' ? 'cancelled' : 'failed';
+      patch.error = providerState.error || providerState.message || `${type} provider job failed.`;
+    } else if (status) {
+      patch.status = ['processing', 'running', 'in_progress'].includes(status) ? 'processing' : status;
+    }
+    return await updateJob(job.id, patch);
+  } catch (error) { return job; }
+}
+
 const server = http.createServer(async (req, res) => {
   setSecurityHeaders(res);
   try {
@@ -494,7 +517,9 @@ const server = http.createServer(async (req, res) => {
       const user = requireAuth(req, res); if (!user) return;
       const job = await getVideoJob(decodeURIComponent(match[1]));
       if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Video job not found.' });
-      return sendJson(res, 200, job);
+      const provider = getProvider(job.provider);
+      const refreshed = await refreshProviderJob(provider, job, 'video', require('./jobs/video-job').update);
+      return sendJson(res, 200, refreshed || job);
     }
 
     if (req.method === 'POST' && url.pathname === '/api/image/jobs') {
@@ -519,7 +544,9 @@ const server = http.createServer(async (req, res) => {
       const user = requireAuth(req, res); if (!user) return;
       const job = await getImageJob(decodeURIComponent(match[1]));
       if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Image job not found.' });
-      return sendJson(res, 200, job);
+      const provider = getProvider(job.provider);
+      const refreshed = await refreshProviderJob(provider, job, 'image', require('./jobs/image-job').update);
+      return sendJson(res, 200, refreshed || job);
     }
 
     if (req.method === 'POST' && url.pathname === '/api/voice/jobs') {
@@ -544,7 +571,9 @@ const server = http.createServer(async (req, res) => {
       const user = requireAuth(req, res); if (!user) return;
       const job = await getVoiceJob(decodeURIComponent(match[1]));
       if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Voice job not found.' });
-      return sendJson(res, 200, job);
+      const provider = getProvider(job.provider);
+      const refreshed = await refreshProviderJob(provider, job, 'voice', require('./jobs/voice-job').update);
+      return sendJson(res, 200, refreshed || job);
     }
 
     if (req.method === 'GET' && url.pathname === '/api') return sendJson(res, 200, { name: 'TNS Studio API', version: '3.0.0' });

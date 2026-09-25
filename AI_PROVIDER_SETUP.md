@@ -13,6 +13,9 @@ Set:
 - `TNS_VIDEO_PROVIDER_URL=...`
 - `TNS_IMAGE_PROVIDER_URL=...`
 - `TNS_VOICE_PROVIDER_URL=...`
+- `TNS_VIDEO_PROVIDER_STATUS_URL=...` (optional; use `{jobId}` or `{id}` for the provider job ID)
+- `TNS_IMAGE_PROVIDER_STATUS_URL=...` (optional; use `{jobId}` or `{id}` for the provider job ID)
+- `TNS_VOICE_PROVIDER_STATUS_URL=...` (optional; use `{jobId}` or `{id}` for the provider job ID)
 - `TNS_AI_PROVIDER_API_KEY=...` (only if the selected provider requires a bearer key)
 
 The configured endpoints should return JSON describing the created job/result. This adapter is intentionally provider-neutral so TNS Studio can later use a commercial provider or a self-hosted TNS AI engine without redesigning the app.

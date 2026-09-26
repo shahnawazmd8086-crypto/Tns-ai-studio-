@@ -56,8 +56,8 @@
     if (safeMobile && !/^\+?[1-9][0-9]{7,14}$/.test(safeMobile)) throw new Error("Please enter a valid mobile number in international format.");
     if (!safePassword) throw new Error("Password is required.");
 
-    if (safePassword.length < 8 || !/[A-Z]/.test(safePassword) || !/[a-z]/.test(safePassword) || !/[0-9]/.test(safePassword) || !/[^A-Za-z0-9]/.test(safePassword)) {
-      throw new Error("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+    if (safePassword.length < 8) {
+      throw new Error("Password must be at least 8 characters long.");
     }
 
     if (safePassword !== safeConfirmPassword) {

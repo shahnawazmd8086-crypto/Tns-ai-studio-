@@ -20,7 +20,7 @@ function validateSignupInput(input = {}) {
   if (email && !validateEmail(email)) throw new Error('Please enter a valid email address.');
   if (mobile && !validateMobile(mobile)) throw new Error('Please enter a valid mobile number in international format.');
   if (!password) throw new Error('Password is required.');
-  if (!validatePassword(password)) throw new Error('Password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
+  if (!validatePassword(password)) throw new Error('Password must be at least 8 characters long.');
 
   return { email, mobile: mobile || null, password, name };
 }

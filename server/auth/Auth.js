@@ -68,8 +68,7 @@ function normalizeMobile(mobile) { return String(mobile || '').replace(/[^0-9+]/
 function validateEmail(email) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email)); }
 function validateMobile(mobile) { return /^\+?[1-9][0-9]{7,14}$/.test(normalizeMobile(mobile)); }
 function validatePassword(password) {
-  if (typeof password !== 'string' || password.length < 8) return false;
-  return /[A-Z]/.test(password) && /[a-z]/.test(password) && /[0-9]/.test(password) && /[^A-Za-z0-9]/.test(password);
+  return typeof password === 'string' && password.length >= 8;
 }
 
 function hashPassword(password) {
@@ -108,7 +107,7 @@ function createUser(input = {}) {
   if (!email && !mobile) throw new Error('Email or mobile number is required.');
   if (email && !validateEmail(email)) throw new Error('Please enter a valid email address.');
   if (mobile && !validateMobile(mobile)) throw new Error('Please enter a valid mobile number.');
-  if (input.provider !== 'otp' && !validatePassword(password)) throw new Error('Password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
+  if (input.provider !== 'otp' && !validatePassword(password)) throw new Error('Password must be at least 8 characters long.');
   const users = readUsers();
   if (users.some((u) => (email && u.email === email) || (mobile && u.mobile === mobile))) throw new Error('Account already exists.');
   const now = new Date().toISOString();
@@ -127,7 +126,7 @@ function verifyPassword(identifier, password) {
   return Boolean(user && verifyHash(password, user.passwordHash));
 }
 function updatePassword(identifier, newPassword) {
-  if (!validatePassword(String(newPassword || ''))) throw new Error('Password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
+  if (!validatePassword(String(newPassword || ''))) throw new Error('Password must be at least 8 characters long.');
   const value = String(identifier || '').trim();
   const users = readUsers();
   const user = users.find((u) => (value.includes('@') ? u.email === normalizeEmail(value) : u.mobile === normalizeMobile(value)));

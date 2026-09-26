@@ -27,14 +27,7 @@ function changePassword(identifier, currentPassword, newPassword) {
 
 function verifyPasswordStrength(password) {
   const value = String(password || '');
-  const checks = {
-    minLength: value.length >= 8,
-    hasUppercase: /[A-Z]/.test(value),
-    hasLowercase: /[a-z]/.test(value),
-    hasNumber: /[0-9]/.test(value),
-    hasSpecialCharacter: /[^A-Za-z0-9]/.test(value)
-  };
-  return { strong: Object.values(checks).every(Boolean), checks };
+  return { strong: value.length >= 8, checks: { minLength: value.length >= 8 } };
 }
 
 function isPasswordValid(password) { return validatePassword(String(password || '')); }

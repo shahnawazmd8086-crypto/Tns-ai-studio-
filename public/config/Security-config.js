@@ -11,10 +11,10 @@ const TNSSecurityConfig = {
 
   password: {
     minimumLength: 8,
-    requireUppercase: true,
-    requireLowercase: true,
-    requireNumber: true,
-    requireSpecialCharacter: true
+    requireUppercase: false,
+    requireLowercase: false,
+    requireNumber: false,
+    requireSpecialCharacter: false
   },
 
   session: {
@@ -66,46 +66,7 @@ const TNSSecurityConfig = {
   },
 
   isPasswordStrong(password) {
-    if (typeof password !== "string") {
-      return false;
-    }
-
-    if (
-      password.length <
-      this.password.minimumLength
-    ) {
-      return false;
-    }
-
-    if (
-      this.password.requireUppercase &&
-      !/[A-Z]/.test(password)
-    ) {
-      return false;
-    }
-
-    if (
-      this.password.requireLowercase &&
-      !/[a-z]/.test(password)
-    ) {
-      return false;
-    }
-
-    if (
-      this.password.requireNumber &&
-      !/[0-9]/.test(password)
-    ) {
-      return false;
-    }
-
-    if (
-      this.password.requireSpecialCharacter &&
-      !/[^A-Za-z0-9]/.test(password)
-    ) {
-      return false;
-    }
-
-    return true;
+    return typeof password === 'string' && password.length >= this.password.minimumLength;
   },
 
   isUploadSizeAllowed(sizeInBytes) {

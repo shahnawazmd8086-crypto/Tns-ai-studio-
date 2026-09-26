@@ -431,6 +431,24 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true, users });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/contact/settings') {
+      const me = requireAuth(req, res); if (!me) return;
+      const other = String(url.searchParams.get('with') || '');
+      if (!other || !Auth.getUserById(other) || other === me.id) throw new Error('Valid contact is required.');
+      return sendJson(res, 200, { success: true, settings: Contact.getContactSettings(me.id, other) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/contact/settings') {
+      const me = requireAuth(req, res); if (!me) return;
+      const input = await readBody(req, 1024 * 1024);
+      const other = String(input.contactId || '');
+      if (!other || !Auth.getUserById(other) || other === me.id) throw new Error('Valid contact is required.');
+      if (!Auth.verifyPassword(me.email || me.mobile, String(input.password || ''))) throw new Error('Incorrect TNS Studio password.');
+      if (input.action === 'unlockCheck') return sendJson(res, 200, { success: true, unlocked: true });
+      if (!['toggleLock','toggleHide'].includes(input.action)) throw new Error('Invalid contact security action.');
+      return sendJson(res, 200, { success: true, ...Contact.updateContactSettings(me.id, other, input.action) });
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/contact/chats') {
       const me = requireAuth(req, res); if (!me) return;
       const other = String(url.searchParams.get('with') || '');
@@ -493,6 +511,17 @@ const server = http.createServer(async (req, res) => {
       });
       MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio export' });
       return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/chat') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req);
+      const providerName = String(process.env.TNS_AI_PROVIDER || '').toLowerCase();
+      if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
+      const provider = getProvider(providerName);
+      if (!provider || typeof provider.chat !== 'function') return sendJson(res, 503, { error: 'Configured TNS AI provider does not support chat.' });
+      const result = await provider.chat({ message: String(input.message || ''), userId: user.id });
+      return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/video/jobs') {

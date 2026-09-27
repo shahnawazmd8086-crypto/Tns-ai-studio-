@@ -9,6 +9,17 @@ const {
   muteVideo,
   exportMP4,
   concatVideos,
+  splitVideo,
+  cropVideo,
+  flipVideo,
+  reverseVideo,
+  freezeFrame,
+  blurVideo,
+  stabilizeVideo,
+  cleanNoise: cleanNoiseFFmpeg,
+  chromaKeyVideo,
+  textOverlay,
+  autoReframe,
   runCustom
 } = require("../ffmpeg-worker");
 
@@ -150,6 +161,21 @@ async function mergeVideos(
 }
 
 
+async function split(input, outputA, outputB, splitAt) {
+  return splitVideo(path.resolve(String(input)), getOutputPath(outputA), getOutputPath(outputB), splitAt);
+}
+async function crop(input, output, options = {}) { return cropVideo(path.resolve(String(input)), getOutputPath(output), options); }
+async function flip(input, output, direction = 'horizontal') { return flipVideo(path.resolve(String(input)), getOutputPath(output), direction); }
+async function reverse(input, output) { return reverseVideo(path.resolve(String(input)), getOutputPath(output)); }
+async function freeze(input, output, duration = 2) { return freezeFrame(path.resolve(String(input)), getOutputPath(output), duration); }
+async function blur(input, output, strength = 8) { return blurVideo(path.resolve(String(input)), getOutputPath(output), strength); }
+async function stabilize(input, output) { return stabilizeVideo(path.resolve(String(input)), getOutputPath(output)); }
+async function cleanNoise(input, output, amount = 12) { return cleanNoiseFFmpeg(path.resolve(String(input)), getOutputPath(output), amount); }
+async function chromaKey(input, output, options = {}) { return chromaKeyVideo(path.resolve(String(input)), getOutputPath(output), options); }
+async function addText(input, output, text, options = {}) { return textOverlay(path.resolve(String(input)), getOutputPath(output), text, options); }
+async function reframe(input, output, width, height) { return autoReframe(path.resolve(String(input)), getOutputPath(output), width, height); }
+
+
 async function customFFmpeg(
   args = [],
   options = {}
@@ -187,6 +213,17 @@ module.exports = {
   mute,
   exportVideo,
   mergeVideos,
+  split,
+  crop,
+  flip,
+  reverse,
+  freeze,
+  blur,
+  stabilize,
+  cleanNoise,
+  chromaKey,
+  addText,
+  reframe,
   customFFmpeg,
   getSupportedTools
 };

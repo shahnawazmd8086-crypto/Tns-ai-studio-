@@ -1,4 +1,4 @@
-const { spawn } = require("child_process");
+const { spawn, execFile } = require("child_process");
 
 
 function runFFmpeg(args = [], options = {}) {
@@ -71,6 +71,28 @@ function runFFmpeg(args = [], options = {}) {
   });
 }
 
+
+
+
+function synthesizeSpeech(text, output, options = {}) {
+  return new Promise((resolve, reject) => {
+    const clean = String(text || '').trim();
+    if (!clean) return reject(new Error('TTS text is required.'));
+    const voice = String(options.voice || 'en').replace(/[^a-zA-Z0-9_-]/g,'') || 'en';
+    const speed = Math.max(80, Math.min(260, Number(options.speed)||165));
+    execFile(options.espeakPath || process.env.ESPEAK_PATH || 'espeak', ['-v', voice, '-s', String(speed), '-w', output, clean], (error, stdout, stderr) => {
+      if (error) return reject(new Error(`TTS failed: ${stderr || error.message}`));
+      resolve({ code: 0, stdout, stderr });
+    });
+  });
+}
+
+async function backgroundReplace(input, background, output, options = {}) {
+  const color = String(options.color || '0x00ff00').replace(/[^0-9a-fx]/gi,'') || '0x00ff00';
+  const similarity = Math.max(0.01, Math.min(0.9, safeNumber(options.similarity,0.1)));
+  const blend = Math.max(0, Math.min(1, safeNumber(options.blend,0.05)));
+  return runFFmpeg(['-y','-i',background,'-i',input,'-filter_complex',`[0:v]scale=iw:ih[bg];[1:v]chromakey=${color}:${similarity}:${blend}[fg];[bg][fg]overlay=shortest=1[v]`,'-map','[v]','-map','1:a?','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',output],options);
+}
 
 /* =========================
    COMMON VIDEO OPERATIONS
@@ -473,6 +495,152 @@ async function autoReframe(input, output, width, height) {
   return runFFmpeg(['-y', '-i', input, '-vf', filter, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
 }
 
+
+
+/* =========================
+   COMPLETE EDITOR TOOLKIT
+========================= */
+
+async function filterVideo(input, output, videoFilter, options = {}) {
+  if (!videoFilter) throw new Error('Video filter is required.');
+  return runFFmpeg(['-y','-i',input,'-vf',videoFilter,'-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',output], options);
+}
+
+async function filterAudio(input, output, audioFilter, options = {}) {
+  if (!audioFilter) throw new Error('Audio filter is required.');
+  return runFFmpeg(['-y','-i',input,'-af',audioFilter,'-c:v','copy','-c:a','aac','-movflags','+faststart',output], options);
+}
+
+async function transitionVideo(inputA, inputB, output, options = {}) {
+  const duration = Math.max(0.1, Math.min(5, safeNumber(options.duration, 1)));
+  const args=['-y','-i',inputA,'-i',inputB,'-filter_complex',`[0:v]fade=t=out:st=${Math.max(0, safeNumber(options.offset,1)-duration)}:d=${duration},setpts=PTS-STARTPTS[v0];[1:v]fade=t=in:st=0:d=${duration},setpts=PTS-STARTPTS[v1];[v0][0:a][v1][1:a]concat=n=2:v=1:a=1[v][a]`,'-map','[v]','-map','[a]','-c:v','libx264','-pix_fmt','yuv420p','-c:a','aac','-movflags','+faststart',output];
+  return runFFmpeg(args, options);
+}
+
+async function addDrawText(input, output, text, options = {}) {
+  const safeText = escapeFilterText(text);
+  if (!safeText.trim()) throw new Error('Text is required.');
+  const size = Math.max(10, Math.min(220, Math.floor(safeNumber(options.fontSize, 48))));
+  const x = options.x === undefined ? '(w-text_w)/2' : String(options.x);
+  const y = options.y === undefined ? '(h-text_h)/2' : String(options.y);
+  const color = String(options.color || 'white').replace(/[^a-zA-Z0-9#]/g,'') || 'white';
+  const border = Math.max(0, Math.min(20, Math.floor(safeNumber(options.borderWidth, 2))));
+  const shadow = Math.max(0, Math.min(20, Math.floor(safeNumber(options.shadow, 2))));
+  const start = Math.max(0, safeNumber(options.start, 0));
+  const duration = safeNumber(options.duration, 0);
+  const enable = duration > 0 ? `:enable='between(t,${start},${start+duration})'` : '';
+  const filter = `drawtext=text='${safeText}':fontcolor=${color}:fontsize=${size}:borderw=${border}:bordercolor=black:shadowx=${shadow}:shadowy=${shadow}:x=${x}:y=${y}${enable}`;
+  return filterVideo(input, output, filter, options);
+}
+
+async function addShape(input, output, options = {}) {
+  const x = Math.max(0, Math.floor(safeNumber(options.x, 40)));
+  const y = Math.max(0, Math.floor(safeNumber(options.y, 40)));
+  const w = Math.max(2, Math.floor(safeNumber(options.width, 240)));
+  const h = Math.max(2, Math.floor(safeNumber(options.height, 120)));
+  const color = String(options.color || 'white@0.65').replace(/[^a-zA-Z0-9@#.,]/g,'') || 'white@0.65';
+  const thickness = options.fill === false ? Math.max(1, Math.floor(safeNumber(options.thickness, 5))) : 'fill';
+  return filterVideo(input, output, `drawbox=x=${x}:y=${y}:w=${w}:h=${h}:color=${color}:t=${thickness}`);
+}
+
+async function addVignette(input, output, strength = 0.5) {
+  const angle = Math.max(0.1, Math.min(1, safeNumber(strength, 0.5)));
+  return filterVideo(input, output, `vignette=angle=${angle}:mode=forward`);
+}
+
+async function colorAdjust(input, output, options = {}) {
+  const saturation = Math.max(0, Math.min(3, safeNumber(options.saturation, 1)));
+  const brightness = Math.max(-1, Math.min(1, safeNumber(options.brightness, 0)));
+  const contrast = Math.max(0, Math.min(3, safeNumber(options.contrast, 1)));
+  const gamma = Math.max(0.1, Math.min(3, safeNumber(options.gamma, 1)));
+  const hue = safeNumber(options.hue, 0);
+  const filter = `eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}:gamma=${gamma},hue=h=${hue}`;
+  return filterVideo(input, output, filter);
+}
+
+async function colorBalance(input, output, options = {}) {
+  const rs = Math.max(-1, Math.min(1, safeNumber(options.rs, 0)));
+  const gs = Math.max(-1, Math.min(1, safeNumber(options.gs, 0)));
+  const bs = Math.max(-1, Math.min(1, safeNumber(options.bs, 0)));
+  return filterVideo(input, output, `colorbalance=rs=${rs}:gs=${gs}:bs=${bs}`);
+}
+
+async function panZoom(input, output, options = {}) {
+  const scale = Math.max(1, Math.min(3, safeNumber(options.scale, 1.15)));
+  return filterVideo(input, output, `scale=iw*${scale}:ih*${scale},crop=iw/${scale}:ih/${scale}:x=(iw-ow)/2:y=(ih-oh)/2`);
+}
+
+async function keyframeZoom(input, output, options = {}) {
+  const zoom = Math.max(1, Math.min(2.5, safeNumber(options.zoom, 1.2)));
+  return filterVideo(input, output, `zoompan=z='min(zoom+0.001,${zoom})':d=1:s=${Math.max(2, Math.floor(safeNumber(options.width,1080)))}x${Math.max(2,Math.floor(safeNumber(options.height,1920)))}:fps=${Math.max(1,Math.floor(safeNumber(options.fps,30)))}`);
+}
+
+async function silenceRemove(input, output, options = {}) {
+  const start = Math.max(0, Math.min(1, safeNumber(options.startThreshold, 0.02)));
+  const stop = Math.max(0, Math.min(1, safeNumber(options.stopThreshold, 0.02)));
+  return filterAudio(input, output, `silenceremove=stop_periods=-1:stop_duration=${Math.max(0.05,safeNumber(options.minSilence,0.35))}:stop_threshold=${Math.max(0.0001,stop)}:start_periods=1:start_duration=${Math.max(0.02,safeNumber(options.minStartSilence,0.15))}:start_threshold=${Math.max(0.0001,start)}`);
+}
+
+async function voiceEnhance(input, output) {
+  return filterAudio(input, output, 'highpass=f=70,lowpass=f=12000,afftdn=nf=-25,loudnorm=I=-16:TP=-1.5:LRA=11');
+}
+
+async function enhanceVideo(input, output, options = {}) {
+  const width = Math.max(2, Math.floor(safeNumber(options.width, 1920)));
+  const height = Math.max(2, Math.floor(safeNumber(options.height, 1080)));
+  return filterVideo(input, output, `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,unsharp=5:5:1.0:5:5:0`);
+}
+
+async function faceBlur(input, output, options = {}) {
+  const w = Math.max(2, Math.floor(safeNumber(options.width, 240)));
+  const h = Math.max(2, Math.floor(safeNumber(options.height, 240)));
+  const x = Math.max(0, Math.floor(safeNumber(options.x, 40)));
+  const y = Math.max(0, Math.floor(safeNumber(options.y, 40)));
+  return filterVideo(input, output, `[0:v]split[base][blur];[blur]crop=${w}:${h}:${x}:${y},boxblur=12:2[face];[base][face]overlay=${x}:${y}`);
+}
+
+async function objectRemove(input, output, options = {}) {
+  const w = Math.max(2, Math.floor(safeNumber(options.width, 120)));
+  const h = Math.max(2, Math.floor(safeNumber(options.height, 120)));
+  const x = Math.max(0, Math.floor(safeNumber(options.x, 0)));
+  const y = Math.max(0, Math.floor(safeNumber(options.y, 0)));
+  return filterVideo(input, output, `delogo=x=${x}:y=${y}:w=${w}:h=${h}:show=0`);
+}
+
+async function rotateVideo(input, output, degrees = 0) {
+  return filterVideo(input, output, `rotate=${safeNumber(degrees,0)}*PI/180:fillcolor=black@0`);
+}
+
+async function audioFade(input, output, options = {}) {
+  const inD = Math.max(0, safeNumber(options.fadeIn, 1));
+  const outD = Math.max(0, safeNumber(options.fadeOut, 1));
+  const duration = Math.max(inD + outD + 0.1, safeNumber(options.totalDuration, 0));
+  const filters=[];
+  if(inD) filters.push(`afade=t=in:st=0:d=${inD}`);
+  if(outD && duration) filters.push(`afade=t=out:st=${Math.max(0,duration-outD)}:d=${outD}`);
+  return filterAudio(input, output, filters.join(','));
+}
+
+async function beatSync(input, output, options = {}) {
+  const bpm = Math.max(40, Math.min(240, safeNumber(options.bpm, 120)));
+  const beat = 60 / bpm;
+  const factor = Math.max(0.5, Math.min(2, safeNumber(options.speed, 1)));
+  return filterVideo(input, output, `setpts=PTS/${factor}`);
+}
+
+async function sceneDetect(input, output, options = {}) {
+  const threshold = Math.max(0.05, Math.min(0.9, safeNumber(options.threshold, 0.35)));
+  return filterVideo(input, output, `select='gt(scene,${threshold})',setpts=N/FRAME_RATE/TB`);
+}
+
+async function smartCut(input, output, options = {}) {
+  return silenceRemove(input, output, options);
+}
+
+async function sceneExtend(input, output, duration = 2) {
+  return freezeFrame(input, output, duration);
+}
+
 /* =========================
    CUSTOM COMMAND
 ========================= */
@@ -504,5 +672,28 @@ module.exports = {
   chromaKeyVideo,
   textOverlay,
   autoReframe,
+  filterVideo,
+  filterAudio,
+  transitionVideo,
+  addDrawText,
+  addShape,
+  addVignette,
+  colorAdjust,
+  colorBalance,
+  panZoom,
+  keyframeZoom,
+  silenceRemove,
+  voiceEnhance,
+  enhanceVideo,
+  faceBlur,
+  objectRemove,
+  rotateVideo,
+  audioFade,
+  beatSync,
+  sceneDetect,
+  smartCut,
+  sceneExtend,
+  synthesizeSpeech,
+  backgroundReplace,
   runCustom
 };

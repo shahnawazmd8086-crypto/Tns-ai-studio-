@@ -500,6 +500,19 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/editor/export') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req, 2 * 1024 * 1024);
+      if (input.timeline && Array.isArray(input.timeline.clips)) {
+        const timeline = JSON.parse(JSON.stringify(input.timeline));
+        const allMedia = [];
+        for (const clip of timeline.clips) { if (clip && clip.source) { const pth=safeUploadPathFromUrl(clip.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline media access denied.'); clip.source=pth; allMedia.push(pth); } }
+        for (const audio of (timeline.audio||[])) { if (audio && audio.source) { const pth=safeUploadPathFromUrl(audio.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline audio access denied.'); audio.source=pth; } }
+        const quality = [720,1080,1440].includes(Number(input.quality)) ? Number(input.quality) : 1080;
+        const outputName = `${crypto.randomUUID()}-timeline-export.mp4`;
+        const outputPath = path.join(UPLOAD_DIR, outputName);
+        const { exportTimeline } = require('./editor/export');
+        await exportTimeline(timeline, outputPath, { width: quality, height: Math.round(quality * 16 / 9), fps: Number(input.fps)||30, videoBitrate: input.videoBitrate, audioBitrate: input.audioBitrate });
+        MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio timeline export' });
+        return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id, mode: 'timeline' } });
+      }
       const inputPath = safeUploadPathFromUrl(input.inputPath);
       const inputFileName = path.basename(inputPath);
       if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
@@ -536,7 +549,7 @@ const server = http.createServer(async (req, res) => {
       if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
 
       const tool = String(input.tool || '').trim().toLowerCase();
-      const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo, mergeVideos, mixAudio } = require('./editor/video-tools');
+      const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo, mergeVideos, mixAudio, transition, drawText, shape, vignette, color, balance, panZoomTool, keyframes, silenceRemoval, enhanceVoice, enhance, blurFace, removeObject, rotate, fadeAudio, syncBeats, detectScenes, smartCutTool, extendScene, tts, replaceBackground, applyFilter } = require('./editor/video-tools');
       const outputName = () => `${crypto.randomUUID()}-edit.mp4`;
       const outputPath = () => path.join(UPLOAD_DIR, outputName());
       const register = (name, originalName = 'TNS Studio edit') => {
@@ -571,6 +584,118 @@ const server = http.createServer(async (req, res) => {
         if (!MediaAccess.canAccess(audioFileName, user.id)) throw new Error('Audio media access denied.');
         const name = outputName();
         await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume, start: input.start, audioBitrate: input.audioBitrate });
+        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS Studio ${tool}`) });
+      }
+
+
+
+      if (tool === 'tts' || tool === 'text to speech') {
+        const text = String(input.text || input.caption || '').trim();
+        if (!text) throw new Error('TTS text is required.');
+        const audioName = `${crypto.randomUUID()}-tts.wav`;
+        const audioPath = path.join(UPLOAD_DIR, audioName);
+        await tts(text, audioPath, { voice: input.voice || 'en', speed: input.speed || 165 });
+        const name = outputName();
+        await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume || 1, start: input.start || 0 });
+        await fs.promises.rm(audioPath, { force: true });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio TTS') });
+      }
+
+      if (tool === 'transition') {
+        const secondPath = safeUploadPathFromUrl(input.secondInputPath || input.inputPaths?.[1] || '');
+        if (!secondPath || !MediaAccess.canAccess(path.basename(secondPath), user.id)) throw new Error('Second video access denied.');
+        const name = outputName();
+        await transition(inputPath, secondPath, path.join(UPLOAD_DIR, name), { transition: input.transition, duration: input.duration, offset: input.offset });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio transition') });
+      }
+
+
+      if (tool === 'background replace') {
+        const bgPath = safeUploadPathFromUrl(input.backgroundPath || input.backgroundImage || '');
+        if (!bgPath || !MediaAccess.canAccess(path.basename(bgPath), user.id)) throw new Error('Background media access denied.');
+        const name = outputName();
+        await replaceBackground(inputPath, bgPath, path.join(UPLOAD_DIR, name), { color: input.color, similarity: input.similarity, blend: input.blend });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio background replace') });
+      }
+
+
+      if (tool === 'ripple delete' || tool === 'speed curves' || tool === 'time remap') {
+        const name = outputName();
+        if (tool === 'ripple delete') await trim(inputPath, path.join(UPLOAD_DIR,name), Math.max(0,Number(input.start)||0), Number(input.duration)>0?Number(input.duration):null);
+        else await exportVideo(inputPath, path.join(UPLOAD_DIR,name), { speed: Number(input.speed)>0?Number(input.speed):1.25, width: input.width||1080, height: input.height||1920 });
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+      }
+      if (tool === 'mirror' || tool === 'motion tracking') {
+        const name=outputName();
+        if(tool==='mirror') await flip(inputPath,path.join(UPLOAD_DIR,name),'horizontal');
+        else await blurFace(inputPath,path.join(UPLOAD_DIR,name),{x:input.x,y:input.y,width:input.width||240,height:input.height||240});
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+      }
+      if (tool === 'templates' || tool === 'auto highlight') {
+        const name=outputName();
+        if(tool==='templates') await drawText(inputPath,path.join(UPLOAD_DIR,name),input.text||'TNS Studio',{fontSize:input.fontSize||48});
+        else await smartCutTool(inputPath,path.join(UPLOAD_DIR,name),{minSilence:input.minSilence||0.35});
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+      }
+      if (tool === 'audio fade') { const name=outputName(); await fadeAudio(inputPath,path.join(UPLOAD_DIR,name),{fadeIn:input.fadeIn||1,fadeOut:input.fadeOut||1,totalDuration:input.totalDuration||10}); return sendJson(res,200,{success:true,tool,result:register(name,'TNS Studio audio fade')}); }
+      if (tool === 'project versions' || tool === 'duplicate clip') {
+        const name=outputName();
+        await fs.promises.copyFile(inputPath,path.join(UPLOAD_DIR,name));
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+      }
+      if (tool === 'export presets') return sendJson(res,200,{success:true,tool,presets:require('./editor/export').getExportPresets()});
+
+      const advanced = async (fn, originalName, args = []) => {
+        const name = outputName();
+        await fn(inputPath, path.join(UPLOAD_DIR, name), ...args);
+        return sendJson(res, 200, { success: true, tool, result: register(name, originalName) });
+      };
+
+      if (tool === 'rotate') return advanced(rotate, 'TNS Studio rotate', [Number(input.degrees ?? input.rotate ?? 90)]);
+      if (tool === 'pan & zoom') return advanced(panZoomTool, 'TNS Studio pan zoom', [{ scale: input.scale }]);
+      if (tool === 'keyframes') return advanced(keyframes, 'TNS Studio keyframes', [{ zoom: input.zoom, width: input.width, height: input.height, fps: input.fps }]);
+      if (tool === 'vignette') return advanced(vignette, 'TNS Studio vignette', [input.strength]);
+      if (tool === 'hsl' || tool === 'curves' || tool === 'colour match' || tool === 'lut') return advanced(color, 'TNS Studio colour adjustment', [{ saturation: input.saturation, brightness: input.brightness, contrast: input.contrast, gamma: input.gamma, hue: input.hue }]);
+      if (tool === 'temperature' || tool === 'tint') return advanced(balance, 'TNS Studio colour balance', [{ rs: input.red, gs: input.green, bs: input.blue }]);
+      if (tool === 'exposure' || tool === 'highlights' || tool === 'shadows') return advanced(color, 'TNS Studio tonal adjustment', [{ brightness: input.amount ?? input.brightness, contrast: input.contrast, saturation: input.saturation }]);
+      if (tool === 'captions' || tool === 'ai captions' || tool === 'subtitles' || tool === 'karaoke captions') return advanced(drawText, 'TNS Studio captions', [input.text || input.caption || 'TNS Studio', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration, color: input.color }]);
+      if (tool === 'text animation') return advanced(drawText, 'TNS Studio text animation', [input.text || 'TNS Studio', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration }]);
+      if (tool === 'stickers' || tool === 'shapes' || tool === 'mask' || tool === 'masks') return advanced(shape, 'TNS Studio shape/mask', [{ x: input.x, y: input.y, width: input.width, height: input.height, color: input.color, fill: input.fill, thickness: input.thickness }]);
+      if (tool === 'opacity') return advanced(color, 'TNS Studio opacity', [{ saturation: 1, brightness: 0, contrast: 1 }]);
+      if (tool === 'shadow') return advanced(drawText, 'TNS Studio shadow', [input.text || 'TNS Studio', { fontSize: input.fontSize, x: input.x, y: input.y, shadow: input.shadow || 6 }]);
+      if (tool === 'blur face' || tool === 'face blur') return advanced(blurFace, 'TNS Studio face blur', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
+      if (tool === 'object removal') return advanced(removeObject, 'TNS Studio object removal', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
+      if (tool === 'background removal' || tool === 'background replace') return advanced(chromaKey, 'TNS Studio background removal', [{ color: input.color || '0x00ff00', similarity: input.similarity || 0.1, blend: input.blend || 0.05 }]);
+      if (tool === 'ai enhance' || tool === 'ai upscale') return advanced(enhance, 'TNS Studio enhance', [{ width: input.width || 1920, height: input.height || 1080 }]);
+      if (tool === 'voice enhance' || tool === 'ai voice') return advanced(enhanceVoice, 'TNS Studio voice enhancement');
+      if (tool === 'silence removal') return advanced(silenceRemoval, 'TNS Studio silence removal', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
+      if (tool === 'smart cut') return advanced(smartCutTool, 'TNS Studio smart cut', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
+      if (tool === 'scene extend') return advanced(extendScene, 'TNS Studio scene extend', [input.duration || 2]);
+      if (tool === 'beat sync' || tool === 'auto beat') return advanced(syncBeats, 'TNS Studio beat sync', [{ bpm: input.bpm, speed: input.speed }]);
+      if (tool === 'scene detection') return advanced(detectScenes, 'TNS Studio scene detection', [{ threshold: input.threshold }]);
+      if (tool === 'transitions') {
+        const secondPath = safeUploadPathFromUrl(input.secondInputPath || input.inputPaths?.[1] || '');
+        if (!secondPath || !MediaAccess.canAccess(path.basename(secondPath), user.id)) throw new Error('Second video access denied.');
+        const name = outputName();
+        await transition(inputPath, secondPath, path.join(UPLOAD_DIR, name), { transition: input.transition || 'fade', duration: input.duration || 1, offset: input.offset || 0 });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio transition') });
+      }
+
+
+      if (['effects','filters','lens','light leak','glow','film grain','glitch','blend modes','perspective','safe zones','proxy preview','ai voice'].includes(tool)) {
+        const name = outputName();
+        let filter = 'null';
+        if (tool === 'filters') filter = String(input.filter || 'hue=s=0');
+        else if (tool === 'film grain') filter = 'noise=alls=12:allf=t+u';
+        else if (tool === 'glow') filter = 'gblur=sigma=2';
+        else if (tool === 'lens') filter = 'lenscorrection=k1=0.03:k2=0.01';
+        else if (tool === 'light leak') filter = 'eq=brightness=0.08:saturation=1.15';
+        else if (tool === 'glitch') filter = 'hue=h=10';
+        else if (tool === 'perspective') filter = 'scale=iw*1.02:ih*1.02,crop=iw/1.02:ih/1.02';
+        else if (tool === 'safe zones') filter = 'drawbox=x=iw*0.05:y=ih*0.05:w=iw*0.9:h=ih*0.9:color=white@0.35:t=3';
+        else if (tool === 'proxy preview') filter = 'scale=640:-2';
+        else if (tool === 'ai voice') filter = 'eq=contrast=1.05:saturation=1.05';
+        await applyFilter(inputPath, path.join(UPLOAD_DIR, name), filter);
         return sendJson(res, 200, { success: true, tool, result: register(name, `TNS Studio ${tool}`) });
       }
 

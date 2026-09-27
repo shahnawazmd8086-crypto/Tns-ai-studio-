@@ -70,7 +70,20 @@ async function exportMP4(
       videoBitrate:
         options.videoBitrate || "8M",
       audioBitrate:
-        options.audioBitrate || "192k"
+        options.audioBitrate || "192k",
+      trimStart: options.trimStart || 0,
+      trimDuration: options.trimDuration || null,
+      brightness: options.brightness || 0,
+      contrast: options.contrast || 1,
+      filter: options.filter || 'none',
+      rotate: options.rotate || 0,
+      speed: options.speed || 1,
+      volume: options.volume ?? 1,
+      saturation: options.saturation ?? 1,
+      sharpness: options.sharpness || 0,
+      fadeIn: options.fadeIn || 0,
+      fadeOut: options.fadeOut || 0,
+      totalDuration: options.trimDuration || 0
     }
   );
 }

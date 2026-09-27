@@ -167,18 +167,16 @@ async function customFFmpeg(
 
 function getSupportedTools() {
   return [
-    "convert",
-    "trim",
-    "resize",
-    "normalizeSound",
-    "extractSound",
-    "mute",
-    "exportVideo",
-    "mergeVideos",
-    "customFFmpeg"
+    "Trim","Cut","Split","Merge","Ripple Delete","Duplicate Clip","Freeze Frame","Reverse","Speed","Speed Curves","Time Remap","Scene Detection",
+    "Crop","Resize","Rotate","Flip","Mirror","Auto Reframe","Pan & Zoom","Keyframes","Motion Tracking","Stabilization","Perspective",
+    "Text","Fonts","Templates","Captions","AI Captions","Subtitles","Karaoke Captions","Text Animation","Stickers","Shapes",
+    "Effects","Transitions","Blur","Vignette","Glitch","Glow","Film Grain","Lens","Light Leak","Blend Modes",
+    "Brightness","Contrast","Saturation","HSL","Curves","Sharpness","Temperature","Tint","Exposure","Highlights","Shadows","Colour Match","LUT",
+    "Music","SFX","Extract Audio","Voice Over","Voice Recorder","TTS","Volume","Normalize Audio","Noise Cleanup","Silence Removal","Audio Fade","Voice Enhance",
+    "Background Removal","Background Replace","AI Enhance","AI Upscale","AI Voice","Object Removal","Smart Cut","Beat Sync","Scene Extend","Face Blur","Auto Highlight",
+    "Masks","Chroma Key","Opacity","Shadow","Proxy Preview","Project Versions","Safe Zones","Export Presets"
   ];
 }
-
 
 module.exports = {
   convert,

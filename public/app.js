@@ -73,6 +73,26 @@ $('#generateImageBtn')?.addEventListener('click',async()=>{const prompt=$('#imag
 $('#videoFile')?.addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;msg('#editStatus','Uploading video…');const fd=new FormData();fd.append('video',file);try{const d=await fetch('/api/uploads/video',{method:'POST',body:fd,credentials:'include'});const r=await d.json();if(!d.ok)throw Error(r.error||'Upload failed.');currentMedia=r.media;$('#preview').src=r.media.url;$('#preview').load();$('#timeline').innerHTML=`<div class="clip">${escapeHtml(r.media.originalName)} • ${(r.media.size/1048576).toFixed(1)} MB</div>`;msg('#editStatus','Video imported. You can preview and edit it.','success')}catch(err){msg('#editStatus',err.message,'error')}});
 let editorClips=[];
 $('#mergeFiles')?.addEventListener('change',async e=>{const files=[...e.target.files];if(files.length<2)return msg('#editStatus','Select at least 2 video clips to merge.','error');msg('#editStatus','Uploading clips…');try{editorClips=[];for(const file of files){const fd=new FormData();fd.append('video',file);const r=await fetch('/api/uploads/video',{method:'POST',body:fd,credentials:'include'});const d=await r.json();if(!r.ok)throw Error(d.error||`Upload failed: ${file.name}`);editorClips.push(d.media)}$('#timeline').innerHTML=editorClips.map((m,i)=>`<div class="clip">${i+1}. ${escapeHtml(m.originalName)} • ${(m.size/1048576).toFixed(1)} MB</div>`).join('');msg('#editStatus',`${editorClips.length} clips ready. Tap Merge.`,'success')}catch(err){msg('#editStatus',err.message,'error')}});
+let editorVoiceRecorder=null; let editorVoiceChunks=[]; let editorVoiceStream=null;
+$('#recordEditorVoice')?.addEventListener('click',async()=>{
+  const btn=$('#recordEditorVoice');
+  try{
+    if(editorVoiceRecorder && editorVoiceRecorder.state==='recording'){editorVoiceRecorder.stop();btn.textContent='🎙️ Record Voice Over';return;}
+    if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw Error('Voice recording is not supported in this browser.');
+    editorVoiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
+    editorVoiceChunks=[]; editorVoiceRecorder=new MediaRecorder(editorVoiceStream);
+    editorVoiceRecorder.ondataavailable=e=>{if(e.data.size) editorVoiceChunks.push(e.data);};
+    editorVoiceRecorder.onstop=async()=>{
+      editorVoiceStream?.getTracks().forEach(t=>t.stop());
+      const blob=new Blob(editorVoiceChunks,{type:editorVoiceRecorder.mimeType||'audio/webm'});
+      const ext=(blob.type.includes('mp4')||blob.type.includes('m4a'))?'m4a':(blob.type.includes('ogg')?'ogg':'webm');
+      const fd=new FormData();fd.append('file',blob,`tns-voice-over.${ext}`);
+      try{msg('#editStatus','Uploading recorded voice-over…');const r=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const d=await r.json();if(!r.ok)throw Error(d.error||'Voice upload failed.');window.editorAudio=d.media;msg('#editStatus','Voice-over recorded and ready. Tap Voice Over.','success');}catch(err){msg('#editStatus',err.message,'error');}
+    };
+    editorVoiceRecorder.start();btn.textContent='⏹ Stop Recording';msg('#editStatus','Recording voice-over… speak now.','success');
+  }catch(err){msg('#editStatus',err.message,'error');}
+});
+
 $('#audioFile')?.addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;msg('#editStatus','Uploading audio…');try{const fd=new FormData();fd.append('file',file);const r=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const d=await r.json();if(!r.ok)throw Error(d.error||'Audio upload failed.');window.editorAudio=d.media;msg('#editStatus',`${file.name} ready. Tap Music, SFX or Voice Over.`,'success')}catch(err){msg('#editStatus',err.message,'error')}});
 $('#preview')?.addEventListener('timeupdate',()=>{const v=$('#preview');const s=Math.floor(v.currentTime||0);$('#timelineTime').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`});$('#volume')?.addEventListener('input',e=>$('#preview').volume=Number(e.target.value));
 $$('[data-tool]').forEach(b=>b.addEventListener('click',()=>msg('#toolMessage',`${b.dataset.tool} tool selected. Use the controls above for core edits; advanced tools can be expanded as the project grows.`)));
@@ -361,63 +381,59 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     const setStatus=(text,cls='')=>{if(status){status.textContent=text;status.className=`status ${cls}`.trim();}};
     const value=(id,fallback='')=>document.getElementById(id)?.value ?? fallback;
     const numeric=(id,fallback=0)=>Number(value(id,fallback));
+    const ask=(label,def='')=>prompt(label,String(def));
     let body={inputPath:currentMedia.url,tool};
-    if(tool==='Merge'){ if(!window.editorClips?.length && !editorClips.length) return msg('#editStatus','Add at least 2 video clips first.','error'); body.inputPaths=(window.editorClips||editorClips).map(m=>m.url); }
-    if(['Music','SFX','Voice Over','Voice Recorder'].includes(tool)){ if(!window.editorAudio) return msg('#editStatus','Add an audio file first.','error'); body.audioPath=window.editorAudio.url; }
-
-    if(tool==='Split') body.splitAt=Number(prompt('Split video at which time (seconds)?',String(Math.max(1,Math.floor(numeric('trimStart',0)+1)))))||0;
-    if(tool==='Crop') { body.width=Number(prompt('Crop width (px)', '720'))||720; body.height=Number(prompt('Crop height (px)', '1280'))||1280; body.x=Number(prompt('Crop X (px)', '0'))||0; body.y=Number(prompt('Crop Y (px)', '0'))||0; }
-    if(tool==='Resize') { body.width=Number(prompt('Output width (px)', '1080'))||1080; body.height=Number(prompt('Output height (px)', '1920'))||1920; }
-    if(tool==='Flip') body.direction=(prompt('Flip direction: horizontal or vertical','horizontal')||'horizontal').toLowerCase();
-    if(tool==='Freeze Frame') body.duration=Number(prompt('Freeze last frame for how many seconds?','2'))||2;
-    if(tool==='Blur') body.strength=Number(prompt('Blur strength (1-32)','8'))||8;
-    if(tool==='Noise Cleanup') body.amount=Number(prompt('Noise cleanup strength (1-97)','12'))||12;
-    if(tool==='Chroma Key'||tool==='Green Screen') { body.color=prompt('Key color (hex, e.g. 0x00ff00)','0x00ff00')||'0x00ff00'; body.similarity=Number(prompt('Similarity (0.01-0.9)','0.1'))||0.1; }
-    if(tool==='Text') { body.text=prompt('Text to place on the video','TNS Studio')||''; body.fontSize=Number(prompt('Font size','48'))||48; }
-    if(tool==='Auto Reframe') { body.width=Number(prompt('Target width','1080'))||1080; body.height=Number(prompt('Target height','1920'))||1920; }
-    if(tool==='Trim'||tool==='Cut') { body.start=numeric('trimStart',0); body.duration=numeric('trimDuration',0); }
-
-    // These are already part of the real export pipeline.
-    const exportTools={
-      'Speed':{speed:numeric('speed',1)},
-      'Rotate':{rotate:numeric('rotate',0)},
-      'Brightness':{brightness:numeric('brightness',0)},
-      'Contrast':{contrast:numeric('contrast',1)},
-      'Saturation':{saturation:numeric('saturation',1)},
-      'Sharpness':{sharpness:numeric('sharpness',0)},
-      'Volume':{volume:numeric('volume',1)},
-      'Filter':{filter:value('filter','none')},
-      'Fade In':{fadeIn:numeric('fadeIn',0)},
-      'Fade Out':{fadeOut:numeric('fadeOut',0)},
-      'Normalize Audio':null,
-      'Mute':null
-    };
+    const clips=window.editorClips||editorClips||[];
+    if(['Merge','Transitions','Transition'].includes(tool)) {
+      if(clips.length<2) return msg('#editStatus','Add at least 2 video clips first.','error');
+      body.inputPaths=clips.map(m=>m.url); body.secondInputPath=clips[1].url;
+    }
+    if(['Music','SFX','Voice Over','Voice Recorder','Audio Overlay'].includes(tool)) {
+      if(!window.editorAudio) return msg('#editStatus','Add an audio file first.','error');
+      body.audioPath=window.editorAudio.url;
+    }
+    if(tool==='Split') body.splitAt=Number(ask('Split video at which time (seconds)?',Math.max(1,Math.floor(numeric('trimStart',0)+1))))||0;
+    if(tool==='Crop'){body.width=Number(ask('Crop width (px)','720'))||720;body.height=Number(ask('Crop height (px)','1280'))||1280;body.x=Number(ask('Crop X (px)','0'))||0;body.y=Number(ask('Crop Y (px)','0'))||0;}
+    if(tool==='Resize'){body.width=Number(ask('Output width (px)','1080'))||1080;body.height=Number(ask('Output height (px)','1920'))||1920;}
+    if(tool==='Rotate'||tool==='Mirror'){body.degrees=Number(ask('Rotation degrees (0/90/180/270)','90'))||90;if(tool==='Mirror') body.tool='flip';body.direction='horizontal';}
+    if(tool==='Flip') body.direction=(ask('Flip direction: horizontal or vertical','horizontal')||'horizontal').toLowerCase();
+    if(tool==='Freeze Frame'||tool==='Scene Extend'){body.duration=Number(ask('Duration in seconds','2'))||2;}
+    if(tool==='Blur'){body.strength=Number(ask('Blur strength (1-32)','8'))||8;}
+    if(tool==='Noise Cleanup'){body.amount=Number(ask('Noise cleanup strength (1-97)','12'))||12;}
+    if(tool==='Chroma Key'||tool==='Green Screen'||tool==='Background Removal'||tool==='Background Replace'){body.color=ask('Key color (hex, e.g. 0x00ff00)','0x00ff00')||'0x00ff00';body.similarity=Number(ask('Similarity (0.01-0.9)','0.1'))||0.1;body.blend=Number(ask('Blend (0-1)','0.05'))||0.05;}
+    if(['Text','Captions','AI Captions','Subtitles','Karaoke Captions','Text Animation','Fonts','Templates','Shadow','TTS'].includes(tool)){body.text=ask('Text / caption','TNS Studio')||'';body.fontSize=Number(ask('Font size','48'))||48;body.start=Number(ask('Start time (sec)','0'))||0;body.duration=Number(ask('Duration (0 = full video)','0'))||0;}
+    if(['Stickers','Shapes','Masks'].includes(tool)){body.x=Number(ask('X position','40'))||40;body.y=Number(ask('Y position','40'))||40;body.width=Number(ask('Width','240'))||240;body.height=Number(ask('Height','120'))||120;body.color=ask('Color','white@0.65')||'white@0.65';}
+    if(['Keyframes','Pan & Zoom'].includes(tool)){body.zoom=Number(ask('Zoom scale','1.2'))||1.2;body.width=Number(value('exportQuality',1080))||1080;body.height=Math.round(body.width*16/9);body.fps=30;}
+    if(tool==='Speed Curves'){body.speed=Number(ask('Speed factor','1.25'))||1.25;body.tool='speed';}
+    if(tool==='Time Remap'){body.speed=Number(ask('Time-remap speed factor','1.25'))||1.25;body.tool='speed';}
+    if(tool==='Scene Detection'){body.threshold=Number(ask('Scene threshold (0.05-0.9)','0.35'))||0.35;}
+    if(tool==='Beat Sync'||tool==='Auto Beat'){body.bpm=Number(ask('BPM','120'))||120;body.speed=Number(ask('Sync speed factor','1'))||1;}
+    if(['HSL','Curves','Colour Match','Exposure','Highlights','Shadows','Temperature','Tint'].includes(tool)){body.amount=Number(ask('Adjustment amount','0.1'))||0.1;body.saturation=1+((tool==='HSL')?body.amount:0);body.brightness=(tool==='Exposure')?body.amount:0;body.contrast=1+(tool==='Curves'?body.amount:0);body.gamma=1-(tool==='Highlights'?body.amount:0);body.rs=(tool==='Temperature')?body.amount:0;body.bs=(tool==='Tint')?body.amount:0;}
+    if(tool==='Vignette') body.strength=Number(ask('Vignette strength (0.1-1)','0.5'))||0.5;
+    if(tool==='Object Removal'||tool==='Face Blur'||tool==='Motion Tracking'){body.x=Number(ask('Region X','40'))||40;body.y=Number(ask('Region Y','40'))||40;body.width=Number(ask('Region width','240'))||240;body.height=Number(ask('Region height','240'))||240;if(tool==='Motion Tracking') body.tool='face blur';}
+    if(['AI Enhance','AI Upscale'].includes(tool)){body.width=Number(ask('Target width','1920'))||1920;body.height=Number(ask('Target height','1080'))||1080;}
+    if(tool==='Silence Removal'||tool==='Smart Cut'){body.minSilence=Number(ask('Minimum silence (seconds)','0.35'))||0.35;}
+    if(tool==='Voice Enhance'||tool==='AI Voice') body.tool='voice enhance';
+    if(tool==='Opacity'){body.amount=Number(ask('Opacity 0-1','0.8'))||0.8;body.tool='opacity';}
+    if(tool==='Volume') body.volume=Math.max(0,Math.min(1,numeric('volume',1)));
+    if(tool==='Audio Fade'){body.fadeIn=Number(ask('Fade in seconds','1'))||1;body.fadeOut=Number(ask('Fade out seconds','1'))||1;body.totalDuration=Number(ask('Video duration seconds','10'))||10;}
+    if(tool==='Transitions'||tool==='Transition'){body.tool='transitions';body.transition=ask('Transition: fade, wipeleft, wiperight, slideleft, slideright, dissolve','fade')||'fade';body.duration=Number(ask('Transition duration seconds','1'))||1;body.offset=Number(ask('Transition offset seconds','0'))||0;}
+    if(tool==='Background Replace'){body.backgroundPath=ask('Paste uploaded background media URL','')||'';}
+    if(tool==='Audio Fade'){body.fadeIn=Number(ask('Fade in seconds','1'))||1;body.fadeOut=Number(ask('Fade out seconds','1'))||1;body.totalDuration=Number(ask('Video duration seconds','10'))||10;}
+    if(tool==='Extract Audio') body.tool='extract audio';
+    if(tool==='Normalize Audio') body.tool='normalize audio';
+    if(tool==='Mute') body.tool='mute';
+    if(tool==='Export Presets') return document.getElementById('openExportFromEditor')?.click();
 
     try{
       setStatus(`${tool}: processing…`);
       let data;
-      if(Object.prototype.hasOwnProperty.call(exportTools,tool) && !['Normalize Audio','Mute'].includes(tool)){
-        const d=await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputPath:currentMedia.url,...exportTools[tool],quality:Number(value('exportQuality',1080))||1080})});
-        data={result:d.result};
-      }else{
-        if(tool==='Normalize Audio') body.tool='normalize audio';
-        if(tool==='Mute') body.tool='mute';
-        data=await json('/api/editor/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      }
-
-      if(data.results?.length){
-        const links=data.results.map((r,i)=>{const a=document.createElement('a');a.href=r.url;a.download=r.fileName;a.textContent=`Download part ${i+1}`;a.className='download-btn';return a;});
-        const box=document.getElementById('toolMessage');
-        if(box){box.textContent='Split complete.';box.replaceChildren(document.createTextNode('Split complete — '),...links.flatMap((a,i)=>i?[document.createTextNode(' '),a]:[a]));}
-        currentMedia={...currentMedia,...data.results[0],originalName:data.results[0].fileName};
-        document.getElementById('preview').src=currentMedia.url;
-        document.getElementById('preview').load();
-      }else if(data.result){
-        currentMedia={...currentMedia,...data.result,originalName:data.result.fileName};
-        document.getElementById('preview').src=currentMedia.url;
-        document.getElementById('preview').load();
-        setStatus(`${tool} complete. Preview updated.`);
-      }
+      const directExport={'Speed':{speed:numeric('speed',1)},'Rotate':{rotate:numeric('rotate',0)},'Brightness':{brightness:numeric('brightness',0)},'Contrast':{contrast:numeric('contrast',1)},'Saturation':{saturation:numeric('saturation',1)},'Sharpness':{sharpness:numeric('sharpness',0)},'Volume':{volume:numeric('volume',1)},'Fade In':{fadeIn:numeric('fadeIn',0)},'Fade Out':{fadeOut:numeric('fadeOut',0)}};
+      if(Object.prototype.hasOwnProperty.call(directExport,tool)){
+        const d=await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputPath:currentMedia.url,...directExport[tool],quality:Number(value('exportQuality',1080))||1080})});data={result:d.result};
+      }else data=await json('/api/editor/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      if(data.results?.length){const links=data.results.map((r,i)=>{const a=document.createElement('a');a.href=r.url;a.download=r.fileName;a.textContent=`Download part ${i+1}`;a.className='download-btn';return a;});const box=document.getElementById('toolMessage');if(box){box.textContent='Operation complete — ';links.forEach(a=>box.appendChild(a));}currentMedia={...currentMedia,...data.results[0],originalName:data.results[0].fileName};document.getElementById('preview').src=currentMedia.url;document.getElementById('preview').load();}
+      else if(data.result){currentMedia={...currentMedia,...data.result,originalName:data.result.fileName};document.getElementById('preview').src=currentMedia.url;document.getElementById('preview').load();setStatus(`${tool} complete. Preview updated.`);}
       msg('#editStatus',`${tool} completed successfully.`,'success');
     }catch(err){setStatus(`${tool} failed: ${err.message}`,'error');msg('#editStatus',err.message,'error');}
   }

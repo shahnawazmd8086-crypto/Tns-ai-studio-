@@ -6,7 +6,8 @@ const {
   mergeVideos,
   resize,
   normalizeSound,
-  mute
+  mute,
+  customFFmpeg
 } = require("./video-tools");
 
 
@@ -207,6 +208,63 @@ async function removeAudio(
 }
 
 
+async function exportTimeline(timeline = {}, output, options = {}) {
+  const clips = Array.isArray(timeline.clips) ? timeline.clips.filter(c => c && c.source) : [];
+  if (!clips.length) throw new Error('Timeline must contain at least one media clip.');
+  const outputPath = ensureOutput(output);
+  const width = Math.max(2, Number(options.width) || 1080);
+  const height = Math.max(2, Number(options.height) || 1920);
+  const fps = Math.max(1, Number(options.fps) || 30);
+  const args = ['-y'];
+  const active = [...clips].sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
+  let previousEnd = 0;
+  active.forEach(c => {
+    const source = ensureFile(c.source, 'Timeline media');
+    const start = Math.max(0, Number(c.start)||0);
+    const gap = Math.max(0, start - previousEnd);
+    const duration = Math.max(0.1, Number(c.duration)||3);
+    const trimStart = Math.max(0, Number(c.trimStart)||0);
+    if (c.type === 'image') args.push('-loop','1','-t',String(duration + gap),'-i',source);
+    else {
+      if (trimStart > 0) args.push('-ss',String(trimStart));
+      if (duration > 0) args.push('-t',String(duration));
+      args.push('-i',source);
+    }
+    c.__gap = gap;
+    previousEnd = Math.max(previousEnd, start + duration);
+  });
+  const filters=[];
+  active.forEach((c,i)=>{
+    const trimStart=Math.max(0,Number(c.trimStart)||0);
+    const duration=Number(c.duration)>0?Number(c.duration):0;
+    const base=`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},setpts=PTS-STARTPTS`;
+    const out=`v${i}`;
+    const gap = Math.max(0, Number(c.__gap)||0);
+    const gapFilter = gap > 0 ? `,tpad=start_mode=add:start_duration=${gap}` : '';
+    filters.push(`${base}${duration>0?`,trim=duration=${duration}`:''}${gapFilter}[${out}]`);
+  });
+  filters.push(active.map((_,i)=>`[v${i}]`).join('')+`concat=n=${active.length}:v=1:a=0,format=yuv420p[vout]`);
+  const audioInputs=[];
+  const audioItems=Array.isArray(timeline.audio)?timeline.audio.filter(a=>a&&a.source):[];
+  audioItems.forEach((a,idx)=>{
+    const inputIndex=active.length+idx;
+    args.push('-i',ensureFile(a.source,'Timeline audio'));
+    const start=Math.max(0,Number(a.start)||0);
+    const vol=Math.max(0,Math.min(3,Number(a.volume??1)));
+    filters.push(`[${inputIndex}:a]volume=${vol},adelay=${Math.round(start*1000)}:all=1[a${idx}]`);
+    audioInputs.push(`[a${idx}]`);
+  });
+  if(audioInputs.length) filters.push(`${audioInputs.join('')}amix=inputs=${audioInputs.length}:duration=longest:dropout_transition=2[aout]`);
+  args.push('-filter_complex',filters.join(';'),'-map','[vout]');
+  if(audioInputs.length) args.push('-map','[aout]');
+  else args.push('-an');
+  args.push('-c:v','libx264','-pix_fmt','yuv420p','-r',String(fps),'-b:v',String(options.videoBitrate||'8M'));
+  if(audioInputs.length) args.push('-c:a','aac','-b:a',String(options.audioBitrate||'192k'));
+  args.push('-movflags','+faststart',outputPath);
+  return customFFmpeg(args);
+}
+
+
 function getExportPresets() {
   return {
     shorts: {
@@ -255,6 +313,7 @@ module.exports = {
   exportMP4,
   exportHD,
   exportShorts,
+  exportTimeline,
   merge,
   resizeVideo,
   normalizeAudio,

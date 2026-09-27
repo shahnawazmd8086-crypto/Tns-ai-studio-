@@ -21,7 +21,9 @@ const {
   chromaKeyVideo,
   textOverlay,
   autoReframe,
-  runCustom
+  runCustom,
+  synthesizeSpeech, backgroundReplace,
+  filterVideo, filterAudio, transitionVideo, addDrawText, addShape, addVignette, colorAdjust, colorBalance, panZoom, keyframeZoom, silenceRemove, voiceEnhance, enhanceVideo, faceBlur, objectRemove, rotateVideo, audioFade, beatSync, sceneDetect, smartCut, sceneExtend
 } = require("../ffmpeg-worker");
 
 
@@ -197,6 +199,32 @@ async function customFFmpeg(
 }
 
 
+async function applyFilter(input, output, filter, options = {}) { return filterVideo(path.resolve(String(input)), getOutputPath(output), filter, options); }
+async function applyAudioFilter(input, output, filter, options = {}) { return filterAudio(path.resolve(String(input)), getOutputPath(output), filter, options); }
+async function transition(inputA, inputB, output, options = {}) { return transitionVideo(path.resolve(String(inputA)), path.resolve(String(inputB)), getOutputPath(output), options); }
+async function drawText(input, output, text, options = {}) { return addDrawText(path.resolve(String(input)), getOutputPath(output), text, options); }
+async function shape(input, output, options = {}) { return addShape(path.resolve(String(input)), getOutputPath(output), options); }
+async function vignette(input, output, strength) { return addVignette(path.resolve(String(input)), getOutputPath(output), strength); }
+async function color(input, output, options = {}) { return colorAdjust(path.resolve(String(input)), getOutputPath(output), options); }
+async function balance(input, output, options = {}) { return colorBalance(path.resolve(String(input)), getOutputPath(output), options); }
+async function panZoomTool(input, output, options = {}) { return panZoom(path.resolve(String(input)), getOutputPath(output), options); }
+async function keyframes(input, output, options = {}) { return keyframeZoom(path.resolve(String(input)), getOutputPath(output), options); }
+async function silenceRemoval(input, output, options = {}) { return silenceRemove(path.resolve(String(input)), getOutputPath(output), options); }
+async function enhanceVoice(input, output) { return voiceEnhance(path.resolve(String(input)), getOutputPath(output)); }
+async function enhance(input, output, options = {}) { return enhanceVideo(path.resolve(String(input)), getOutputPath(output), options); }
+async function blurFace(input, output, options = {}) { return faceBlur(path.resolve(String(input)), getOutputPath(output), options); }
+async function removeObject(input, output, options = {}) { return objectRemove(path.resolve(String(input)), getOutputPath(output), options); }
+async function rotate(input, output, degrees) { return rotateVideo(path.resolve(String(input)), getOutputPath(output), degrees); }
+async function fadeAudio(input, output, options = {}) { return audioFade(path.resolve(String(input)), getOutputPath(output), options); }
+async function syncBeats(input, output, options = {}) { return beatSync(path.resolve(String(input)), getOutputPath(output), options); }
+async function detectScenes(input, output, options = {}) { return sceneDetect(path.resolve(String(input)), getOutputPath(output), options); }
+async function smartCutTool(input, output, options = {}) { return smartCut(path.resolve(String(input)), getOutputPath(output), options); }
+async function extendScene(input, output, duration) { return sceneExtend(path.resolve(String(input)), getOutputPath(output), duration); }
+
+async function tts(text, output, options = {}) { return synthesizeSpeech(text, getOutputPath(output), options); }
+async function replaceBackground(input, background, output, options = {}) { return backgroundReplace(path.resolve(String(input)), path.resolve(String(background)), getOutputPath(output), options); }
+
+
 function getSupportedTools() {
   return [
     "Trim","Cut","Split","Merge","Ripple Delete","Duplicate Clip","Freeze Frame","Reverse","Speed","Speed Curves","Time Remap","Scene Detection",
@@ -232,5 +260,7 @@ module.exports = {
   addText,
   reframe,
   customFFmpeg,
+  tts, replaceBackground,
+  applyFilter, applyAudioFilter, transition, drawText, shape, vignette, color, balance, panZoomTool, keyframes, silenceRemoval, enhanceVoice, enhance, blurFace, removeObject, rotate, fadeAudio, syncBeats, detectScenes, smartCutTool, extendScene,
   getSupportedTools
 };

@@ -347,6 +347,19 @@ async function exportMP4(
    CONCATENATE VIDEOS
 ========================= */
 
+async function mixAudioIntoVideo(inputVideo, inputAudio, output, options = {}) {
+  const volume = Math.max(0, Math.min(3, safeNumber(options.volume, 1)));
+  const originalVolume = Math.max(0, Math.min(3, safeNumber(options.originalVolume, 1)));
+  const start = Math.max(0, safeNumber(options.start, 0));
+  const args = ['-y', '-i', inputVideo];
+  if (start > 0) args.push('-ss', String(start));
+  args.push('-i', inputAudio);
+  const filter = `[0:a]volume=${originalVolume}[base];[1:a]volume=${volume}[overlay];[base][overlay]amix=inputs=2:duration=first:dropout_transition=2,aresample=async=1[aud]`;
+  args.push('-filter_complex', filter, '-map', '0:v:0', '-map', '[aud]', '-c:v', 'copy', '-c:a', 'aac', '-b:a', String(options.audioBitrate || '192k'), '-movflags', '+faststart', output);
+  return runFFmpeg(args);
+}
+
+
 async function concatVideos(
   listFile,
   output
@@ -479,6 +492,7 @@ module.exports = {
   muteVideo,
   exportMP4,
   concatVideos,
+  mixAudioIntoVideo,
   splitVideo,
   cropVideo,
   flipVideo,

@@ -536,13 +536,43 @@ const server = http.createServer(async (req, res) => {
       if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
 
       const tool = String(input.tool || '').trim().toLowerCase();
-      const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo } = require('./editor/video-tools');
+      const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo, mergeVideos, mixAudio } = require('./editor/video-tools');
       const outputName = () => `${crypto.randomUUID()}-edit.mp4`;
       const outputPath = () => path.join(UPLOAD_DIR, outputName());
       const register = (name, originalName = 'TNS Studio edit') => {
         MediaAccess.register(name, user.id, { originalName, createdAt: new Date().toISOString() });
         return { fileName: name, url: publicUrl(name), ownerId: user.id };
       };
+
+      if (tool === 'merge') {
+        const paths = Array.isArray(input.inputPaths) ? input.inputPaths : [];
+        if (paths.length < 2 || paths.length > 20) throw new Error('Merge requires 2 to 20 video clips.');
+        const resolved = paths.map((value) => safeUploadPathFromUrl(value));
+        for (const filePath of resolved) {
+          const fileName = path.basename(filePath);
+          if (!MediaAccess.canAccess(fileName, user.id)) throw new Error('Media access denied.');
+        }
+        const listName = `${crypto.randomUUID()}-concat.txt`;
+        const listPath = path.join(UPLOAD_DIR, listName);
+        const lines = resolved.map((filePath) => `file '${filePath.replace(/'/g, "'\''")}'`).join('\n') + '\n';
+        await fs.promises.writeFile(listPath, lines, 'utf8');
+        const mergedName = outputName();
+        try {
+          await mergeVideos(listPath, path.join(UPLOAD_DIR, mergedName));
+        } finally {
+          await fs.promises.rm(listPath, { force: true });
+        }
+        return sendJson(res, 200, { success: true, tool, result: register(mergedName, 'TNS Studio merged video') });
+      }
+
+      if (tool === 'music' || tool === 'sfx' || tool === 'voice over' || tool === 'voice recorder' || tool === 'audio overlay') {
+        const audioPath = safeUploadPathFromUrl(input.audioPath || input.inputAudioPath);
+        const audioFileName = path.basename(audioPath);
+        if (!MediaAccess.canAccess(audioFileName, user.id)) throw new Error('Audio media access denied.');
+        const name = outputName();
+        await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume, start: input.start, audioBitrate: input.audioBitrate });
+        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS Studio ${tool}`) });
+      }
 
       if (tool === 'split') {
         const point = Math.max(0.05, Number(input.splitAt) || 0);

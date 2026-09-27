@@ -1,0 +1,143 @@
+{
+  "name": "TNS Studio",
+  "version": "2026-09-27-final-ui",
+  "master_reference": "1000249667.png",
+  "dashboard": {
+    "screen": 6,
+    "cards": [
+      "Edit Video",
+      "AI Video",
+      "AI Image",
+      "Projects",
+      "TNS Contact",
+      "Premium",
+      "TNS AI",
+      "Help & Support"
+    ],
+    "settings_location": "top-right-global-settings",
+    "settings_card_in_grid": false
+  },
+  "screens": [
+    {
+      "number": 1,
+      "id": "splashScreen",
+      "name": "Splash Screen"
+    },
+    {
+      "number": 2,
+      "id": "authScreen",
+      "name": "Login Screen"
+    },
+    {
+      "number": 3,
+      "id": "signupModal",
+      "name": "Signup Screen"
+    },
+    {
+      "number": 4,
+      "id": "otpScreen",
+      "name": "OTP Verification"
+    },
+    {
+      "number": 5,
+      "id": "languageScreen",
+      "name": "Language Selection"
+    },
+    {
+      "number": 6,
+      "id": "dashboard",
+      "name": "Main Dashboard"
+    },
+    {
+      "number": 7,
+      "id": "settings",
+      "name": "TNS Studio Settings"
+    },
+    {
+      "number": 8,
+      "id": "editor",
+      "name": "Edit Video"
+    },
+    {
+      "number": 9,
+      "id": "generate",
+      "name": "AI Video"
+    },
+    {
+      "number": 10,
+      "id": "image",
+      "name": "AI Image"
+    },
+    {
+      "number": 11,
+      "id": "contact",
+      "name": "TNS Contact"
+    },
+    {
+      "number": 12,
+      "id": "projects",
+      "name": "Projects"
+    },
+    {
+      "number": 13,
+      "id": "tnsAi",
+      "name": "TNS AI Chat + Image/File Understanding"
+    },
+    {
+      "number": 14,
+      "id": "tnsAiVoice",
+      "name": "TNS AI Voice Conversation"
+    },
+    {
+      "number": 15,
+      "id": "tnsAi",
+      "name": "TNS AI Image Understanding View"
+    },
+    {
+      "number": 16,
+      "id": "help",
+      "name": "Help & Support"
+    },
+    {
+      "number": 17,
+      "id": "premium",
+      "name": "Premium"
+    },
+    {
+      "number": 18,
+      "id": "settingsApp",
+      "name": "App Settings"
+    },
+    {
+      "number": 19,
+      "id": "languageInside",
+      "name": "Language Selection (Inside)"
+    },
+    {
+      "number": 20,
+      "id": "contactInside",
+      "name": "TNS Contact (Inside)"
+    },
+    {
+      "number": 21,
+      "id": "editorTools",
+      "name": "Edit Video (Tools)"
+    },
+    {
+      "number": 22,
+      "id": "exportVideo",
+      "name": "Export Video"
+    },
+    {
+      "number": 23,
+      "id": "appIcon",
+      "name": "Mobile App Icon"
+    },
+    {
+      "number": 24,
+      "id": "finalEditView",
+      "name": "Video Editing Final View"
+    }
+  ],
+  "note": "Screen 15 is an in-panel TNS AI image/file-understanding mode inside the TNS AI workspace, so the product keeps one coherent TNS AI module rather than duplicating screens."
+}

@@ -351,18 +351,77 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     }
   }
 
-  // Editor tool feedback and basic live preview transforms; provider/FFmpeg/AI tools remain routed through the editor architecture.
+  // Real editor operations. UI buttons now execute authenticated server-side FFmpeg operations where supported.
+  async function runEditorTool(tool) {
+    if(!currentMedia) return msg('#editStatus','Import a video first.','error');
+    const status=document.getElementById('toolMessage');
+    const setStatus=(text,cls='')=>{if(status){status.textContent=text;status.className=`status ${cls}`.trim();}};
+    const value=(id,fallback='')=>document.getElementById(id)?.value ?? fallback;
+    const numeric=(id,fallback=0)=>Number(value(id,fallback));
+    let body={inputPath:currentMedia.url,tool};
+
+    if(tool==='Split') body.splitAt=Number(prompt('Split video at which time (seconds)?',String(Math.max(1,Math.floor(numeric('trimStart',0)+1)))))||0;
+    if(tool==='Crop') { body.width=Number(prompt('Crop width (px)', '720'))||720; body.height=Number(prompt('Crop height (px)', '1280'))||1280; body.x=Number(prompt('Crop X (px)', '0'))||0; body.y=Number(prompt('Crop Y (px)', '0'))||0; }
+    if(tool==='Resize') { body.width=Number(prompt('Output width (px)', '1080'))||1080; body.height=Number(prompt('Output height (px)', '1920'))||1920; }
+    if(tool==='Flip') body.direction=(prompt('Flip direction: horizontal or vertical','horizontal')||'horizontal').toLowerCase();
+    if(tool==='Freeze Frame') body.duration=Number(prompt('Freeze last frame for how many seconds?','2'))||2;
+    if(tool==='Blur') body.strength=Number(prompt('Blur strength (1-32)','8'))||8;
+    if(tool==='Noise Cleanup') body.amount=Number(prompt('Noise cleanup strength (1-97)','12'))||12;
+    if(tool==='Chroma Key'||tool==='Green Screen') { body.color=prompt('Key color (hex, e.g. 0x00ff00)','0x00ff00')||'0x00ff00'; body.similarity=Number(prompt('Similarity (0.01-0.9)','0.1'))||0.1; }
+    if(tool==='Text') { body.text=prompt('Text to place on the video','TNS Studio')||''; body.fontSize=Number(prompt('Font size','48'))||48; }
+    if(tool==='Auto Reframe') { body.width=Number(prompt('Target width','1080'))||1080; body.height=Number(prompt('Target height','1920'))||1920; }
+    if(tool==='Trim'||tool==='Cut') { body.start=numeric('trimStart',0); body.duration=numeric('trimDuration',0); }
+
+    // These are already part of the real export pipeline.
+    const exportTools={
+      'Speed':{speed:numeric('speed',1)},
+      'Rotate':{rotate:numeric('rotate',0)},
+      'Brightness':{brightness:numeric('brightness',0)},
+      'Contrast':{contrast:numeric('contrast',1)},
+      'Saturation':{saturation:numeric('saturation',1)},
+      'Sharpness':{sharpness:numeric('sharpness',0)},
+      'Volume':{volume:numeric('volume',1)},
+      'Filter':{filter:value('filter','none')},
+      'Fade In':{fadeIn:numeric('fadeIn',0)},
+      'Fade Out':{fadeOut:numeric('fadeOut',0)},
+      'Normalize Audio':null,
+      'Mute':null
+    };
+
+    try{
+      setStatus(`${tool}: processing…`);
+      let data;
+      if(Object.prototype.hasOwnProperty.call(exportTools,tool) && !['Normalize Audio','Mute'].includes(tool)){
+        const d=await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputPath:currentMedia.url,...exportTools[tool],quality:Number(value('exportQuality',1080))||1080})});
+        data={result:d.result};
+      }else{
+        if(tool==='Normalize Audio') body.tool='normalize audio';
+        if(tool==='Mute') body.tool='mute';
+        data=await json('/api/editor/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      }
+
+      if(data.results?.length){
+        const links=data.results.map((r,i)=>{const a=document.createElement('a');a.href=r.url;a.download=r.fileName;a.textContent=`Download part ${i+1}`;a.className='download-btn';return a;});
+        const box=document.getElementById('toolMessage');
+        if(box){box.textContent='Split complete.';box.replaceChildren(document.createTextNode('Split complete — '),...links.flatMap((a,i)=>i?[document.createTextNode(' '),a]:[a]));}
+        currentMedia={...currentMedia,...data.results[0],originalName:data.results[0].fileName};
+        document.getElementById('preview').src=currentMedia.url;
+        document.getElementById('preview').load();
+      }else if(data.result){
+        currentMedia={...currentMedia,...data.result,originalName:data.result.fileName};
+        document.getElementById('preview').src=currentMedia.url;
+        document.getElementById('preview').load();
+        setStatus(`${tool} complete. Preview updated.`);
+      }
+      msg('#editStatus',`${tool} completed successfully.`,'success');
+    }catch(err){setStatus(`${tool} failed: ${err.message}`,'error');msg('#editStatus',err.message,'error');}
+  }
+
   document.addEventListener('click',e=>{
     const btn=e.target.closest('[data-tool]');
     if(!btn) return;
     const tool=btn.dataset.tool||'Tool';
-    const status=document.getElementById('toolMessage');
-    if(status) status.textContent=`${tool} selected. Configure it in the Edit Video workspace, then preview/export the project.`;
-    const preview=document.getElementById('preview');
-    if(preview){
-      if(tool==='Mute') preview.muted=true;
-      if(tool==='Volume') preview.muted=false;
-    }
+    runEditorTool(tool);
   });
 
   // Ensure every numbered reference screen can reach its own settings without changing the dashboard grid.

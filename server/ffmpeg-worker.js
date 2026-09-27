@@ -372,6 +372,94 @@ async function concatVideos(
 }
 
 
+
+/* =========================
+   EDITOR PRO OPERATIONS
+========================= */
+
+function safeNumber(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function escapeFilterText(value) {
+  return String(value ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/:/g, '\\:')
+    .replace(/'/g, "\\'")
+    .replace(/%/g, '\\%');
+}
+
+async function splitVideo(input, outputA, outputB, splitAt) {
+  const point = Math.max(0.05, safeNumber(splitAt, 0));
+  if (!point) throw new Error('A valid split time is required.');
+  const first = ['-y', '-i', input, '-t', String(point), '-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart', outputA];
+  await runFFmpeg(first);
+  const second = ['-y', '-ss', String(point), '-i', input, '-c:v', 'libx264', '-c:a', 'aac', '-movflags', '+faststart', outputB];
+  await runFFmpeg(second);
+  return { outputA, outputB, splitAt: point };
+}
+
+async function cropVideo(input, output, options = {}) {
+  const width = Math.max(2, Math.floor(safeNumber(options.width, 720)));
+  const height = Math.max(2, Math.floor(safeNumber(options.height, 720)));
+  const x = Math.max(0, Math.floor(safeNumber(options.x, 0)));
+  const y = Math.max(0, Math.floor(safeNumber(options.y, 0)));
+  return runFFmpeg(['-y', '-i', input, '-vf', `crop=${width}:${height}:${x}:${y}`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function flipVideo(input, output, direction = 'horizontal') {
+  const filter = String(direction).toLowerCase() === 'vertical' ? 'vflip' : 'hflip';
+  return runFFmpeg(['-y', '-i', input, '-vf', filter, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function reverseVideo(input, output) {
+  return runFFmpeg(['-y', '-i', input, '-vf', 'reverse', '-af', 'areverse', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function freezeFrame(input, output, duration = 2) {
+  const seconds = Math.max(0.1, Math.min(30, safeNumber(duration, 2)));
+  return runFFmpeg(['-y', '-i', input, '-vf', `tpad=stop_mode=clone:stop_duration=${seconds}`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-af', `apad=pad_dur=${seconds}`, '-t', `999999`, '-movflags', '+faststart', output]);
+}
+
+async function blurVideo(input, output, strength = 8) {
+  const radius = Math.max(1, Math.min(32, Math.floor(safeNumber(strength, 8))));
+  return runFFmpeg(['-y', '-i', input, '-vf', `boxblur=${radius}:1`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function stabilizeVideo(input, output) {
+  return runFFmpeg(['-y', '-i', input, '-vf', 'deshake=x=-1:y=-1:w=0:h=0:rx=16:ry=16:edge=mirror', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function cleanNoise(input, output, amount = 12) {
+  const strength = Math.max(0.1, Math.min(97, safeNumber(amount, 12)) / 100);
+  return runFFmpeg(['-y', '-i', input, '-af', `afftdn=nr=${strength}:nf=-25`, '-c:v', 'copy', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function chromaKeyVideo(input, output, options = {}) {
+  const color = String(options.color || '0x00ff00').replace(/[^0-9a-fx]/gi, '') || '0x00ff00';
+  const similarity = Math.max(0.01, Math.min(0.9, safeNumber(options.similarity, 0.1)));
+  const blend = Math.max(0, Math.min(1, safeNumber(options.blend, 0.05)));
+  return runFFmpeg(['-y', '-i', input, '-vf', `chromakey=${color}:${similarity}:${blend}`, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function textOverlay(input, output, text, options = {}) {
+  const safeText = escapeFilterText(text);
+  if (!safeText.trim()) throw new Error('Text is required.');
+  const size = Math.max(12, Math.min(180, Math.floor(safeNumber(options.fontSize, 48))));
+  const x = options.x === undefined ? '(w-text_w)/2' : String(Math.max(0, Math.floor(safeNumber(options.x, 0))));
+  const y = options.y === undefined ? 'h-text_h-60' : String(Math.max(0, Math.floor(safeNumber(options.y, 0))));
+  const filter = `drawtext=text='${safeText}':fontcolor=white:fontsize=${size}:borderw=3:bordercolor=black:x=${x}:y=${y}`;
+  return runFFmpeg(['-y', '-i', input, '-vf', filter, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
+async function autoReframe(input, output, width, height) {
+  const w = Math.max(2, Math.floor(safeNumber(width, 1080)));
+  const h = Math.max(2, Math.floor(safeNumber(height, 1920)));
+  const filter = `scale=${w}:${h}:force_original_aspect_ratio=increase,crop=${w}:${h}`;
+  return runFFmpeg(['-y', '-i', input, '-vf', filter, '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-movflags', '+faststart', output]);
+}
+
 /* =========================
    CUSTOM COMMAND
 ========================= */
@@ -391,5 +479,16 @@ module.exports = {
   muteVideo,
   exportMP4,
   concatVideos,
+  splitVideo,
+  cropVideo,
+  flipVideo,
+  reverseVideo,
+  freezeFrame,
+  blurVideo,
+  stabilizeVideo,
+  cleanNoise,
+  chromaKeyVideo,
+  textOverlay,
+  autoReframe,
   runCustom
 };

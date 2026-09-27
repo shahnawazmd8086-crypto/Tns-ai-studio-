@@ -528,6 +528,75 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/editor/tool') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 2 * 1024 * 1024);
+      const inputPath = safeUploadPathFromUrl(input.inputPath);
+      const inputFileName = path.basename(inputPath);
+      if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
+
+      const tool = String(input.tool || '').trim().toLowerCase();
+      const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo } = require('./editor/video-tools');
+      const outputName = () => `${crypto.randomUUID()}-edit.mp4`;
+      const outputPath = () => path.join(UPLOAD_DIR, outputName());
+      const register = (name, originalName = 'TNS Studio edit') => {
+        MediaAccess.register(name, user.id, { originalName, createdAt: new Date().toISOString() });
+        return { fileName: name, url: publicUrl(name), ownerId: user.id };
+      };
+
+      if (tool === 'split') {
+        const point = Math.max(0.05, Number(input.splitAt) || 0);
+        if (!point) throw new Error('Enter a split time greater than 0 seconds.');
+        const a = outputName();
+        const b = outputName();
+        await split(inputPath, path.join(UPLOAD_DIR, a), path.join(UPLOAD_DIR, b), point);
+        return sendJson(res, 200, { success: true, tool, results: [register(a, 'TNS Studio split part 1'), register(b, 'TNS Studio split part 2')] });
+      }
+
+      const name = outputName();
+      const out = path.join(UPLOAD_DIR, name);
+      if (tool === 'trim' || tool === 'cut') {
+        await trim(inputPath, out, Math.max(0, Number(input.start) || 0), Number(input.duration) > 0 ? Number(input.duration) : null);
+      } else if (tool === 'crop') {
+        await crop(inputPath, out, { width: input.width, height: input.height, x: input.x, y: input.y });
+      } else if (tool === 'resize') {
+        await resize(inputPath, out, Number(input.width), Number(input.height));
+      } else if (tool === 'flip') {
+        await flip(inputPath, out, input.direction || 'horizontal');
+      } else if (tool === 'reverse') {
+        await reverse(inputPath, out);
+      } else if (tool === 'freeze frame') {
+        await freeze(inputPath, out, input.duration || 2);
+      } else if (tool === 'blur') {
+        await blur(inputPath, out, input.strength || 8);
+      } else if (tool === 'stabilization') {
+        await stabilize(inputPath, out);
+      } else if (tool === 'noise cleanup') {
+        await cleanNoise(inputPath, out, input.amount || 12);
+      } else if (tool === 'chroma key' || tool === 'green screen') {
+        await chromaKey(inputPath, out, { color: input.color || '0x00ff00', similarity: input.similarity, blend: input.blend });
+      } else if (tool === 'text') {
+        await addText(inputPath, out, input.text, { fontSize: input.fontSize, x: input.x, y: input.y });
+      } else if (tool === 'auto reframe') {
+        await reframe(inputPath, out, Number(input.width) || 1080, Number(input.height) || 1920);
+      } else if (tool === 'normalize audio' || tool === 'audio normalize') {
+        await normalizeSound(inputPath, out);
+      } else if (tool === 'mute') {
+        await mute(inputPath, out);
+      } else if (tool === 'extract audio') {
+        const audioName = `${crypto.randomUUID()}-audio.m4a`;
+        const audioPath = path.join(UPLOAD_DIR, audioName);
+        await extractSound(inputPath, audioPath);
+        return sendJson(res, 200, { success: true, tool, result: register(audioName, 'TNS Studio extracted audio') });
+      } else if (tool === 'export') {
+        await exportVideo(inputPath, out, input.options || {});
+      } else {
+        return sendJson(res, 400, { error: `Editor tool '${input.tool}' is not implemented as a local media operation yet.` });
+      }
+
+      return sendJson(res, 200, { success: true, tool, result: register(name) });
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/chat') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);

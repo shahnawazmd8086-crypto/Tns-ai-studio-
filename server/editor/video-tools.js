@@ -9,6 +9,7 @@ const {
   muteVideo,
   exportMP4,
   concatVideos,
+  mixAudioIntoVideo,
   splitVideo,
   cropVideo,
   flipVideo,
@@ -161,6 +162,11 @@ async function mergeVideos(
 }
 
 
+async function mixAudio(inputVideo, inputAudio, output, options = {}) {
+  if (!inputVideo || !inputAudio) throw new Error("Video and audio input paths are required.");
+  return mixAudioIntoVideo(path.resolve(String(inputVideo)), path.resolve(String(inputAudio)), getOutputPath(output), options);
+}
+
 async function split(input, outputA, outputB, splitAt) {
   return splitVideo(path.resolve(String(input)), getOutputPath(outputA), getOutputPath(outputB), splitAt);
 }
@@ -213,6 +219,7 @@ module.exports = {
   mute,
   exportVideo,
   mergeVideos,
+  mixAudio,
   split,
   crop,
   flip,

@@ -356,8 +356,10 @@ const TNSEditorComponent = {
       projectId:
         this.state.currentProjectId,
 
-      timeline:
-        this.state.timeline,
+      timeline: {
+        clips: this.state.timeline.filter(item => item.type === "video" || item.type === "image").map(item => ({ ...item, source: item.src || item.source })),
+        audio: this.state.timeline.filter(item => item.type === "audio").map(item => ({ ...item, source: item.src || item.source }))
+      },
 
       duration:
         this.getTimelineDuration(),

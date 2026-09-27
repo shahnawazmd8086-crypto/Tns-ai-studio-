@@ -460,7 +460,7 @@ const server = http.createServer(async (req, res) => {
       const me = requireAuth(req, res); if (!me) return;
       const input = await readBody(req, 1024 * 1024);
       if (!input.to || !Auth.getUserById(input.to) || String(input.to) === me.id) throw new Error('Valid contact is required.');
-      return sendJson(res, 201, { success: true, message: Contact.addMessage(me.id, input.to, input.text) });
+      return sendJson(res, 201, { success: true, message: Contact.addMessage(me.id, input.to, input.text, { type: input.type, attachment: input.attachment }) });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/contact/status') {
@@ -486,6 +486,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 201, { success: true, media: { id: saved.id, ownerId: user.id, originalName: saved.originalName, fileName: saved.fileName, size: saved.size, url: publicUrl(saved.fileName) } });
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/uploads/file') {
+      const user = requireAuth(req, res); if (!user) return;
+      const parts = await readMultipart(req, 100 * 1024 * 1024);
+      const part = parts.find((p) => p.name === 'file' && p.filename);
+      if (!part) throw new Error('File is required.');
+      Uploads.validateUpload(part.filename, part.data.length, { maxFileSize: 100 * 1024 * 1024 });
+      const saved = Uploads.saveUpload(part.data, UPLOAD_DIR, part.filename, { maxFileSize: 100 * 1024 * 1024 });
+      MediaAccess.register(saved.fileName, user.id, { originalName: saved.originalName, createdAt: saved.createdAt });
+      return sendJson(res, 201, { success: true, media: { id: saved.id, ownerId: user.id, originalName: saved.originalName, fileName: saved.fileName, size: saved.size, contentType: part.contentType, url: publicUrl(saved.fileName) } });
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/editor/export') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req, 2 * 1024 * 1024);
@@ -507,7 +518,11 @@ const server = http.createServer(async (req, res) => {
         filter: String(input.filter || 'none'),
         rotate: Number(input.rotate) || 0,
         speed: Number(input.speed) > 0 ? Number(input.speed) : 1,
-        volume: Number.isFinite(Number(input.volume)) ? Math.max(0, Math.min(1, Number(input.volume))) : 1
+        volume: Number.isFinite(Number(input.volume)) ? Math.max(0, Math.min(1, Number(input.volume))) : 1,
+        saturation: Number.isFinite(Number(input.saturation)) ? Math.max(0, Math.min(2, Number(input.saturation))) : 1,
+        sharpness: Number.isFinite(Number(input.sharpness)) ? Math.max(0, Math.min(2, Number(input.sharpness))) : 0,
+        fadeIn: Number.isFinite(Number(input.fadeIn)) ? Math.max(0, Math.min(30, Number(input.fadeIn))) : 0,
+        fadeOut: Number.isFinite(Number(input.fadeOut)) ? Math.max(0, Math.min(30, Number(input.fadeOut))) : 0
       });
       MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio export' });
       return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
@@ -522,6 +537,18 @@ const server = http.createServer(async (req, res) => {
       if (!provider || typeof provider.chat !== 'function') return sendJson(res, 503, { error: 'Configured TNS AI provider does not support chat.' });
       const result = await provider.chat({ message: String(input.message || ''), userId: user.id });
       return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '' });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/understand') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req);
+      const providerName = String(process.env.TNS_AI_PROVIDER || '').toLowerCase();
+      if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
+      const provider = getProvider(providerName);
+      if (!provider) return sendJson(res, 503, { error: 'Configured TNS AI provider is unavailable.' });
+      if (typeof provider.understand === 'function') { const result = await provider.understand({ ...input, userId: user.id }); return sendJson(res, 200, { success: true, ...result }); }
+      if (typeof provider.chat === 'function') { const result = await provider.chat({ message: String(input.message || 'Analyze the supplied file/image.'), file: input.file || null, userId: user.id }); return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '' }); }
+      return sendJson(res, 503, { error: 'Configured TNS AI provider does not support file understanding.' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/video/jobs') {

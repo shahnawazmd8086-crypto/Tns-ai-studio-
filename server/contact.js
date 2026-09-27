@@ -18,11 +18,11 @@ function read(file) { ensure(); try { return SecureStore.decode(fs.readFileSync(
 function write(file, value) { ensure(); const tmp = `${file}.tmp`; fs.writeFileSync(tmp, SecureStore.encode(value)); fs.renameSync(tmp, file); }
 function key(a,b){ return [String(a),String(b)].sort().join('__'); }
 function listMessages(a,b){ const db=read(CONTACTS_FILE); return Array.isArray(db[key(a,b)]) ? db[key(a,b)] : []; }
-function addMessage(from,to,text){
+function addMessage(from,to,text,meta={}){
   const body=String(text||'').trim(); if(!body) throw new Error('Message cannot be empty.');
   if(body.length>4000) throw new Error('Message is too long.');
   const db=read(CONTACTS_FILE); const k=key(from,to); const messages=Array.isArray(db[k])?db[k]:[];
-  const message={id:crypto.randomUUID(),from:String(from),to:String(to),text:body,createdAt:new Date().toISOString()};
+  const message={id:crypto.randomUUID(),from:String(from),to:String(to),text:body,type:String(meta.type||'text'),attachment:meta.attachment||null,createdAt:new Date().toISOString()};
   messages.push(message); db[k]=messages.slice(-500); write(CONTACTS_FILE,db); return message;
 }
 function setStatus(userId,text){ const db=read(STATUS_FILE); db[String(userId)]={text:String(text||'').trim().slice(0,280),updatedAt:new Date().toISOString()}; write(STATUS_FILE,db); return db[String(userId)]; }

@@ -113,6 +113,17 @@ function buildVideoOptions(options = {}) {
   if (filter === 'grayscale') filters.push('hue=s=0');
   if (filter === 'sepia') filters.push('colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131');
 
+  const saturation = Number(options.saturation);
+  if (Number.isFinite(saturation) && Math.abs(saturation - 1) > 0.0001) filters.push(`eq=saturation=${Math.max(0, Math.min(2, saturation))}`);
+
+  const sharpness = Number(options.sharpness);
+  if (Number.isFinite(sharpness) && sharpness > 0) filters.push(`unsharp=5:5:${Math.max(0, Math.min(2, sharpness))}:5:5:0`);
+
+  const fadeIn = Number(options.fadeIn);
+  const fadeOut = Number(options.fadeOut);
+  if (Number.isFinite(fadeIn) && fadeIn > 0) filters.push(`fade=t=in:st=0:d=${Math.min(30, fadeIn)}`);
+  if (Number.isFinite(fadeOut) && fadeOut > 0 && Number.isFinite(options.totalDuration) && Number(options.totalDuration) > fadeOut) filters.push(`fade=t=out:st=${Math.max(0, Number(options.totalDuration)-fadeOut)}:d=${Math.min(30, fadeOut)}`);
+
   const rotate = Number(options.rotate) || 0;
   if (rotate === 90) filters.push('transpose=1');
   else if (rotate === 180) filters.push('transpose=1,transpose=1');

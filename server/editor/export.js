@@ -1,5 +1,8 @@
 const fs = require("fs");
 const path = require("path");
+const { execFile } = require('child_process');
+const { promisify } = require('util');
+const execFileAsync = promisify(execFile);
 
 const {
   exportVideo,
@@ -218,52 +221,59 @@ async function exportTimeline(timeline = {}, output, options = {}) {
   const args = ['-y'];
   const active = [...clips].sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
   let previousEnd = 0;
-  active.forEach(c => {
+  const inputMeta=[];
+  for (const c of active) {
     const source = ensureFile(c.source, 'Timeline media');
     const start = Math.max(0, Number(c.start)||0);
     const gap = Math.max(0, start - previousEnd);
     const duration = Math.max(0.1, Number(c.duration)||3);
     const trimStart = Math.max(0, Number(c.trimStart)||0);
-    if (c.type === 'image') args.push('-loop','1','-t',String(duration + gap),'-i',source);
+    const effectiveDuration = Math.max(0.1, duration - Math.max(0, Number(c.trimEnd)||0));
+    let hasAudio=false;
+    if (c.type !== 'image') {
+      try { const probe=await execFileAsync('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=index','-of','csv=p=0',source]); hasAudio=String(probe.stdout||'').trim().length>0; } catch { hasAudio=false; }
+    }
+    if (c.type === 'image') args.push('-loop','1','-t',String(effectiveDuration),'-i',source);
     else {
       if (trimStart > 0) args.push('-ss',String(trimStart));
-      if (duration > 0) args.push('-t',String(duration));
-      args.push('-i',source);
+      args.push('-t',String(effectiveDuration),'-i',source);
     }
-    c.__gap = gap;
+    inputMeta.push({gap,effectiveDuration,hasAudio,type:c.type});
     previousEnd = Math.max(previousEnd, start + duration);
-  });
-  const filters=[];
+  }
+  const filters=[]; const concatV=[]; const concatA=[]; let nextInput=active.length;
   active.forEach((c,i)=>{
-    const trimStart=Math.max(0,Number(c.trimStart)||0);
-    const duration=Number(c.duration)>0?Number(c.duration):0;
-    const base=`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},setpts=PTS-STARTPTS`;
-    const out=`v${i}`;
-    const gap = Math.max(0, Number(c.__gap)||0);
-    const gapFilter = gap > 0 ? `,tpad=start_mode=add:start_duration=${gap}` : '';
-    filters.push(`${base}${duration>0?`,trim=duration=${duration}`:''}${gapFilter}[${out}]`);
+    const meta=inputMeta[i];
+    const videoLabel=`v${i}`, audioLabel=`a${i}`;
+    const gapVideo=meta.gap>0?`,tpad=start_mode=add:start_duration=${meta.gap}`:'';
+    filters.push(`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},setpts=PTS-STARTPTS,trim=duration=${meta.effectiveDuration}${gapVideo}[${videoLabel}]`);
+    if (meta.type==='image' || !meta.hasAudio) {
+      args.push('-f','lavfi','-t',String(meta.effectiveDuration),'-i','anullsrc=channel_layout=stereo:sample_rate=48000');
+      const silentIndex=nextInput++;
+      const delay=meta.gap>0?`,adelay=${Math.round(meta.gap*1000)}:all=1`:'';
+      filters.push(`[${silentIndex}:a]asetpts=PTS-STARTPTS${delay},atrim=duration=${meta.effectiveDuration+meta.gap}[${audioLabel}]`);
+    } else {
+      const vol=Math.max(0,Math.min(3,Number(c.volume??1)));
+      const delay=meta.gap>0?`,adelay=${Math.round(meta.gap*1000)}:all=1`:'';
+      const mute=c.muted?'volume=0,':'';
+      filters.push(`[${i}:a]${mute}volume=${vol},aresample=48000,asetpts=PTS-STARTPTS${delay},atrim=duration=${meta.effectiveDuration+meta.gap}[${audioLabel}]`);
+    }
+    concatV.push(`[${videoLabel}]`); concatA.push(`[${audioLabel}]`);
   });
-  filters.push(active.map((_,i)=>`[v${i}]`).join('')+`concat=n=${active.length}:v=1:a=0,format=yuv420p[vout]`);
-  const audioInputs=[];
+  filters.push(`${concatV.join('')}concat=n=${active.length}:v=1:a=0,format=yuv420p[vout]`);
+  filters.push(`${concatA.join('')}concat=n=${active.length}:v=0:a=1[aout]`);
   const audioItems=Array.isArray(timeline.audio)?timeline.audio.filter(a=>a&&a.source):[];
+  const extraLabels=['[aout]'];
   audioItems.forEach((a,idx)=>{
-    const inputIndex=active.length+idx;
+    const inputIndex=nextInput++;
     args.push('-i',ensureFile(a.source,'Timeline audio'));
-    const start=Math.max(0,Number(a.start)||0);
-    const vol=Math.max(0,Math.min(3,Number(a.volume??1)));
-    filters.push(`[${inputIndex}:a]volume=${vol},adelay=${Math.round(start*1000)}:all=1[a${idx}]`);
-    audioInputs.push(`[a${idx}]`);
+    const start=Math.max(0,Number(a.start)||0); const vol=Math.max(0,Math.min(3,Number(a.volume??1)));
+    filters.push(`[${inputIndex}:a]volume=${vol},adelay=${Math.round(start*1000)}:all=1[a${idx+1}]`); extraLabels.push(`[a${idx+1}]`);
   });
-  if(audioInputs.length) filters.push(`${audioInputs.join('')}amix=inputs=${audioInputs.length}:duration=longest:dropout_transition=2[aout]`);
-  args.push('-filter_complex',filters.join(';'),'-map','[vout]');
-  if(audioInputs.length) args.push('-map','[aout]');
-  else args.push('-an');
-  args.push('-c:v','libx264','-pix_fmt','yuv420p','-r',String(fps),'-b:v',String(options.videoBitrate||'8M'));
-  if(audioInputs.length) args.push('-c:a','aac','-b:a',String(options.audioBitrate||'192k'));
-  args.push('-movflags','+faststart',outputPath);
+  if(audioItems.length) filters.push(`${extraLabels.join('')}amix=inputs=${extraLabels.length}:duration=longest:dropout_transition=2[aoutfinal]`);
+  args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',audioItems.length?'[aoutfinal]':'[aout]','-c:v','libx264','-pix_fmt','yuv420p','-r',String(fps),'-b:v',String(options.videoBitrate||'8M'),'-c:a','aac','-b:a',String(options.audioBitrate||'192k'),'-movflags','+faststart',outputPath);
   return customFFmpeg(args);
 }
-
 
 function getExportPresets() {
   return {

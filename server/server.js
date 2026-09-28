@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const { spawn } = require('child_process');
 const { signup } = require('./auth/Signup');
 const { login } = require('./auth/Login');
 const Auth = require('./auth/Auth');
@@ -185,6 +186,44 @@ function clearSessionCookie(req, res) {
   const secure = forwardedProto === 'https' || process.env.NODE_ENV === 'production';
   const prefix = sessionCookieName();
   res.setHeader('Set-Cookie', `${prefix}=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${secure ? '; Secure' : ''}`);
+}
+
+
+function runCommand(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'], ...options });
+    let stderr = '';
+    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
+    child.on('error', reject);
+    child.on('close', code => code === 0 ? resolve() : reject(new Error(stderr.trim() || `${command} failed with code ${code}`)));
+  });
+}
+
+function aiVideoDimensions(format, quality) {
+  const q = String(quality || 'HD').toLowerCase();
+  const base = q === '4k' ? 2160 : q === '2k' ? 1440 : q === 'full hd' ? 1080 : 720;
+  const ratio = String(format || '16:9');
+  if (ratio === '9:16') return [Math.floor((base * 9 / 16) / 2) * 2, base];
+  if (ratio === '1:1') return [base, base];
+  if (ratio === '4:5') return [Math.floor((base * 4 / 5) / 2) * 2, base];
+  return [base, Math.floor((base * 9 / 16) / 2) * 2];
+}
+
+async function generateLocalAIVideo(input = {}, userId) {
+  const duration = Math.max(1, Math.min(120, Number(input.duration) || 10));
+  const [width, height] = aiVideoDimensions(input.format, input.quality);
+  const outputName = `${crypto.randomUUID()}-tns-ai-video.mp4`;
+  const outputPath = path.join(UPLOAD_DIR, outputName);
+  const prompt = String(input.prompt || 'TNS Studio AI Video').replace(/\s+/g, ' ').trim().slice(0, 180);
+  const safeText = prompt.replace(/[:'\\]/g, ' ').replace(/%/g, '\%').replace(/,/g, '\,');
+  const style = String(input.style || 'Photorealistic');
+  const camera = String(input.camera || 'Auto');
+  const workflow = String(input.workflow || 'Script → Video');
+  const draw = `drawtext=text='TNS Studio':fontcolor=white:fontsize=${Math.max(28, Math.round(width/32))}:x=(w-text_w)/2:y=40:box=1:boxcolor=black@0.45:boxborderw=12,drawtext=text='${safeText}':fontcolor=white:fontsize=${Math.max(24, Math.round(width/48))}:x=(w-text_w)/2:y=h-text_h-70:box=1:boxcolor=black@0.5:boxborderw=10`;
+  const args = ['-y','-f','lavfi','-i',`color=c=0x172033:s=${width}x${height}:r=30`,'-f','lavfi','-i',`sine=frequency=440:sample_rate=48000:duration=${duration}`, '-t', String(duration), '-vf', draw, '-map','0:v:0','-map','1:a:0','-c:v','libx264','-preset','veryfast','-pix_fmt','yuv420p','-b:v', width >= 3840 ? '20M' : width >= 2560 ? '12M' : width >= 1920 ? '8M' : '5M','-c:a','aac','-b:a','192k','-movflags','+faststart','-metadata',`comment=Local TNS Studio fallback | ${style} | ${camera} | ${workflow}` ,outputPath];
+  await runCommand('ffmpeg', args);
+  MediaAccess.register(outputName, userId, { originalName: 'TNS Studio AI Video', createdAt: new Date().toISOString() });
+  return { url: publicUrl(outputName), fileName: outputName, duration, width, height, provider: 'mock', mode: 'local-fallback', prompt, style, camera, workflow };
 }
 
 function safePublicFile(requestPath) {
@@ -783,7 +822,15 @@ const server = http.createServer(async (req, res) => {
       const provider = getProvider(providerName);
       if (!provider) return sendJson(res, 503, { error: 'Configured video provider is unavailable.' });
       const job = await createVideoJob(providerName, { ...input, ownerId: user.id });
-      if (provider && typeof provider.create === 'function') {
+      if (providerName === 'mock') {
+        job.status = 'processing';
+        job.progress = 5;
+        generateLocalAIVideo(input, user.id).then(async result => {
+          await require('./jobs/video-job').complete(job.id, result);
+        }).catch(async error => {
+          await require('./jobs/video-job').fail(job.id, error);
+        });
+      } else if (provider && typeof provider.create === 'function') {
         try {
           job.providerJob = await provider.create(input);
           if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }

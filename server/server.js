@@ -226,6 +226,41 @@ async function generateLocalAIVideo(input = {}, userId) {
   return { url: publicUrl(outputName), fileName: outputName, duration, width, height, provider: 'mock', mode: 'local-fallback', prompt, style, camera, workflow };
 }
 
+
+function aiImageDimensions(ratio, quality) {
+  const q = String(quality || 'HD').toLowerCase();
+  const base = q === '4k' ? 2160 : q === '2k' ? 1440 : q === 'full hd' ? 1080 : 720;
+  const r = String(ratio || '1:1');
+  if (r === '9:16') return [Math.floor((base * 9 / 16) / 2) * 2, base];
+  if (r === '16:9') return [base, Math.floor((base * 9 / 16) / 2) * 2];
+  if (r === '4:5') return [Math.floor((base * 4 / 5) / 2) * 2, base];
+  if (r === '4:3') return [base, Math.floor((base * 3 / 4) / 2) * 2];
+  return [base, base];
+}
+
+async function generateLocalAIImage(input = {}, userId) {
+  const [width, height] = aiImageDimensions(input.ratio, input.quality);
+  const count = Math.max(1, Math.min(4, Number(input.variations) || 1));
+  const prompt = String(input.prompt || 'TNS Studio AI Image').replace(/\s+/g, ' ').trim().slice(0, 220);
+  const safeText = prompt.replace(/[:'\\]/g, ' ').replace(/%/g, '\\%').replace(/,/g, '\\,');
+  const style = String(input.style || 'Photorealistic');
+  const outputs = [];
+  const backgrounds = ['0x172033','0x243447','0x1d2939','0x202938'];
+  for (let i = 0; i < count; i += 1) {
+    const outputName = `${crypto.randomUUID()}-tns-ai-image.jpg`;
+    const outputPath = path.join(UPLOAD_DIR, outputName);
+    const bg = backgrounds[i % backgrounds.length];
+    const titleSize = Math.max(30, Math.round(width / 22));
+    const bodySize = Math.max(22, Math.round(width / 42));
+    const draw = `drawtext=text='TNS Studio':fontcolor=white:fontsize=${titleSize}:x=(w-text_w)/2:y=h*0.18:box=1:boxcolor=black@0.35:boxborderw=12,drawtext=text='${safeText}':fontcolor=white:fontsize=${bodySize}:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.48:boxborderw=10,drawtext=text='${style}':fontcolor=white:fontsize=${Math.max(20, Math.round(width/50))}:x=(w-text_w)/2:y=h*0.78`;
+    const args = ['-y','-f','lavfi','-i',`color=c=${bg}:s=${width}x${height}`,'-frames:v','1','-vf',draw,'-q:v','2','-metadata',`comment=Local TNS Studio fallback | ${style} | variation ${i+1}`,outputPath];
+    await runCommand('ffmpeg', args);
+    MediaAccess.register(outputName, userId, { originalName: 'TNS Studio AI Image', createdAt: new Date().toISOString() });
+    outputs.push({ url: publicUrl(outputName), fileName: outputName, width, height, variation: i + 1 });
+  }
+  return { ...outputs[0], variations: outputs, provider: 'mock', mode: 'local-fallback', prompt, style };
+}
+
 function safePublicFile(requestPath) {
   let decoded;
   try { decoded = decodeURIComponent(String(requestPath).split('?')[0]); } catch { return null; }
@@ -857,7 +892,15 @@ const server = http.createServer(async (req, res) => {
       const provider = getProvider(providerName);
       if (!provider) return sendJson(res, 503, { error: 'Configured image provider is unavailable.' });
       const job = await createImageJob(providerName, { ...input, ownerId: user.id });
-      if (provider && typeof provider.createImage === 'function') {
+      if (providerName === 'mock') {
+        job.status = 'processing';
+        job.progress = 5;
+        generateLocalAIImage(input, user.id).then(async result => {
+          await require('./jobs/image-job').update(job.id, { status: 'completed', progress: 100, result, error: null });
+        }).catch(async error => {
+          await require('./jobs/image-job').update(job.id, { status: 'failed', error: error.message });
+        });
+      } else if (provider && typeof provider.createImage === 'function') {
         try {
           job.providerJob = await provider.createImage(input);
           if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }

@@ -505,24 +505,24 @@ const server = http.createServer(async (req, res) => {
         const allMedia = [];
         for (const clip of timeline.clips) { if (clip && clip.source) { const pth=safeUploadPathFromUrl(clip.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline media access denied.'); clip.source=pth; allMedia.push(pth); } }
         for (const audio of (timeline.audio||[])) { if (audio && audio.source) { const pth=safeUploadPathFromUrl(audio.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline audio access denied.'); audio.source=pth; } }
-        const quality = [720,1080,1440].includes(Number(input.quality)) ? Number(input.quality) : 1080;
+        const quality = [720,1080,1440,2160].includes(Number(input.quality)) ? Number(input.quality) : 1080;
         const outputName = `${crypto.randomUUID()}-timeline-export.mp4`;
         const outputPath = path.join(UPLOAD_DIR, outputName);
         const { exportTimeline } = require('./editor/export');
-        await exportTimeline(timeline, outputPath, { width: quality, height: Math.round(quality * 16 / 9), fps: Number(input.fps)||30, videoBitrate: input.videoBitrate, audioBitrate: input.audioBitrate });
+        const ratio = String(input.ratio || '9:16'); const ratioMap = {'9:16':[9,16],'16:9':[16,9],'1:1':[1,1],'4:5':[4,5]}; const dims=ratioMap[ratio]||ratioMap['9:16']; const width=ratio==='16:9'?Math.round(quality*dims[0]/dims[1]):quality; const height=ratio==='16:9'?quality:Math.round(quality*dims[1]/dims[0]); await exportTimeline(timeline, outputPath, { width, height, fps: Number(input.fps)||30, videoBitrate: input.videoBitrate, audioBitrate: input.audioBitrate });
         MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio timeline export' });
         return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id, mode: 'timeline' } });
       }
       const inputPath = safeUploadPathFromUrl(input.inputPath);
       const inputFileName = path.basename(inputPath);
       if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
-      const quality = [720, 1080, 1440].includes(Number(input.quality)) ? Number(input.quality) : 1080;
+      const quality = [720, 1080, 1440, 2160].includes(Number(input.quality)) ? Number(input.quality) : 1080;
       const outputName = `${crypto.randomUUID()}-export.mp4`;
       const outputPath = path.join(UPLOAD_DIR, outputName);
       const { exportMP4 } = require('./editor/export');
       await exportMP4(inputPath, outputPath, {
-        width: quality,
-        height: Math.round(quality * 16 / 9),
+        width: String(input.ratio||'9:16')==='16:9'?Math.round(quality*16/9):quality,
+        height: String(input.ratio||'9:16')==='16:9'?quality:(String(input.ratio||'9:16')==='1:1'?quality:(String(input.ratio||'9:16')==='4:5'?Math.round(quality*5/4):Math.round(quality*16/9))),
         fps: 30,
         trimStart: Math.max(0, Number(input.trimStart) || 0),
         trimDuration: Number(input.trimDuration) > 0 ? Number(input.trimDuration) : null,

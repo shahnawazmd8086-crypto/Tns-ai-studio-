@@ -411,7 +411,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   function openEditorToolWorkspace(tool){
     if(!currentMedia)return msg('#editStatus','Import a video first.','error');
     let fields=''; const t=tool.toLowerCase();
-    if(['text','captions','ai captions','subtitles','karaoke captions','text animation','fonts','templates','shadow','tts'].includes(t)) fields+=`<div style="grid-column:1/-1"><label>Text / Caption</label><textarea id="tool_text">TNS Studio</textarea></div>`;
+    if(['text','captions','subtitles','karaoke captions','text animation','fonts','templates','shadow','tts'].includes(t)) fields+=`<div style="grid-column:1/-1"><label>Text / Caption</label><textarea id="tool_text">TNS Studio</textarea></div><div><label>Start (sec)</label><input id="tool_textStart" type="number" min="0" step="0.1" value="0"></div><div><label>Duration (sec)</label><input id="tool_textDuration" type="number" min="0.1" step="0.1" value="3"></div><div><label>X</label><input id="tool_textX" type="number" min="0" step="1" value="40"></div><div><label>Y</label><input id="tool_textY" type="number" min="0" step="1" value="40"></div><div><label>Font Size</label><input id="tool_textFontSize" type="number" min="8" max="240" value="56"></div><div><label>Colour</label><input id="tool_textColor" type="text" value="white"></div>`;
     if(['crop'].includes(t)) fields+=toolField('Width','width','number',720,'min="2"')+toolField('Height','height','number',1280,'min="2"')+toolField('X','x','number',0)+toolField('Y','y','number',0);
     if(['resize','ai enhance','ai upscale','auto reframe'].includes(t)) fields+=toolField('Width','width','number',1080,'min="2"')+toolField('Height','height','number',1920,'min="2"');
     if(['split'].includes(t)) fields+=toolField('Split at seconds','splitAt','number',1,'min="0.1" step="0.1"');
@@ -434,6 +434,17 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   }
   async function executeEditorTool(tool){
     if(!currentMedia)return msg('#editStatus','Import a video first.','error');
+    const lowerTool=tool.toLowerCase();
+    if(['text','captions','subtitles','karaoke captions','text animation'].includes(lowerTool)){
+      const c=editorApi();
+      const text=document.getElementById('tool_text')?.value?.trim();
+      if(!text)return msg('#editStatus','Enter text first.','error');
+      const item=c.addItem({type:'text',name:`${tool} Layer`,text,start:Number(document.getElementById('tool_textStart')?.value)||0,duration:Math.max(.1,Number(document.getElementById('tool_textDuration')?.value)||3),x:Math.max(0,Number(document.getElementById('tool_textX')?.value)||0),y:Math.max(0,Number(document.getElementById('tool_textY')?.value)||0),fontSize:Math.max(8,Math.min(240,Number(document.getElementById('tool_textFontSize')?.value)||56)),color:document.getElementById('tool_textColor')?.value||'white'});
+      renderEditorTimeline();
+      document.getElementById('editorToolWorkspace')?.remove();
+      msg('#editStatus',`${tool} layer added to the timeline.`,'success');
+      return item;
+    }
     const value=id=>document.getElementById('tool_'+id)?.value;
     const n=(id,d=0)=>Number(value(id)??d); const lower=tool.toLowerCase(); let body={inputPath:currentMedia.url,tool};
     ['width','height','x','y','splitAt','start','duration','strength','degrees','speed','zoom','amount','minSilence','bpm','similarity','blend'].forEach(k=>{if(value(k)!==undefined)body[k]=n(k)});

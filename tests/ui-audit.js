@@ -11,6 +11,7 @@ for(const x of ['videoCamera','characterConsistency','videoReference','videoNega
 for(const x of ['data-module-settings="ai-video"','data-module-settings="ai-image"','data-module-settings="edit-video"','data-module-settings="contact"','data-module-settings="projects"','data-module-settings="tns-ai-voice"','data-module-settings="tns-ai"','data-module-settings="help"','data-module-settings="premium"']) assert(html.includes(x),`Missing module settings: ${x}`);
 const toolCount=(html.match(/data-tool="/g)||[]).length;
 assert(toolCount>=60,`Expected at least 60 editor tools, found ${toolCount}`);
+for(const x of ['videoStep1','videoStep2','imageStep1','imageStep2','acceptedVideoIdea','acceptedImageIdea','editVideoIdeaBtn','editImageIdeaBtn']) assert(html.includes('id=\"'+x+'\"'),`Missing creation workflow element: ${x}`);
 for(const x of ['videoContinueBtn','imageContinueBtn','startTnsAiVoice','tnsAiUnderstandFile','tnsAiAnalyzeFile','locationShareBtn']) {
   if(x==='locationShareBtn') continue; // injected at runtime
   assert(html.includes(`id="${x}"`),`Missing final feature control: ${x}`);

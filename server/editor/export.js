@@ -212,97 +212,177 @@ async function removeAudio(
 
 
 async function exportTimeline(timeline = {}, output, options = {}) {
-  const clips = Array.isArray(timeline.clips) ? timeline.clips.filter(c => c && c.source) : [];
-  if (!clips.length) throw new Error('Timeline must contain at least one media clip.');
+  const rawClips = Array.isArray(timeline.clips) ? timeline.clips.filter(c => c && c.source && c.visible !== false) : [];
+  const textLayers = Array.isArray(timeline.text) ? timeline.text.filter(t => t && t.visible !== false && String(t.text || '').trim()) : [];
+  if (!rawClips.length && !textLayers.length) throw new Error('Timeline must contain at least one visible media or text layer.');
+
   const outputPath = ensureOutput(output);
   const width = Math.max(2, Number(options.width) || 1080);
   const height = Math.max(2, Number(options.height) || 1920);
   const fps = Math.max(1, Number(options.fps) || 30);
   const args = ['-y'];
-  const active = [...clips].sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
-  const inputMeta=[];
-  for (const c of active) {
+  const clips = [...rawClips].sort((a, b) => (Number(a.start) || 0) - (Number(b.start) || 0));
+  const filters = [];
+  const audioLabels = [];
+  const textFiles = [];
+  let nextInput = clips.length;
+  let totalDuration = 0;
+
+  const safeNum = (v, fallback = 0) => Number.isFinite(Number(v)) ? Number(v) : fallback;
+  const escapeFilterPath = pth => String(pth).replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'");
+  const escapeDrawText = value => String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+  // Every media clip is placed at its actual timeline start. Gaps remain gaps.
+  for (let i = 0; i < clips.length; i++) {
+    const c = clips[i];
     const source = ensureFile(c.source, 'Timeline media');
-    const duration = Math.max(0.1, Number(c.duration)||3);
-    const trimStart = Math.max(0, Number(c.trimStart)||0);
-    const trimEnd = Math.max(0, Number(c.trimEnd)||0);
-    const effectiveDuration = Math.max(0.1, duration - trimEnd);
-    let hasAudio=false;
+    const duration = Math.max(0.1, safeNum(c.duration, 3));
+    const trimStart = Math.max(0, safeNum(c.trimStart, 0));
+    const trimEnd = Math.max(0, safeNum(c.trimEnd, 0));
+    const sourceDuration = Math.max(0.1, duration - trimStart - trimEnd);
+    const speed = Math.max(0.1, safeNum(c.speed, 1));
+    const start = Math.max(0, safeNum(c.start, 0));
+    const renderedDuration = sourceDuration / speed;
+    totalDuration = Math.max(totalDuration, start + renderedDuration);
+
+    if (c.type === 'image') {
+      args.push('-loop', '1', '-t', String(sourceDuration), '-i', source);
+    } else {
+      if (trimStart > 0) args.push('-ss', String(trimStart));
+      args.push('-t', String(sourceDuration), '-i', source);
+    }
+
+    const v = `clipv${i}`;
+    const vf = [];
+    const rotate = ((safeNum(c.rotate, 0) % 360) + 360) % 360;
+    if (rotate === 90) vf.push('transpose=1');
+    else if (rotate === 180) vf.push('hflip,vflip');
+    else if (rotate === 270) vf.push('transpose=2');
+    vf.push(
+      `scale=${width}:${height}:force_original_aspect_ratio=decrease`,
+      `pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`,
+      `fps=${fps}`
+    );
+    const brightness = safeNum(c.brightness, 0);
+    const contrast = Math.max(0.1, safeNum(c.contrast, 1));
+    const saturation = Math.max(0, safeNum(c.saturation, 1));
+    const sharpness = Math.max(0, safeNum(c.sharpness, 0));
+    if (Math.abs(brightness) > 0.001 || Math.abs(contrast - 1) > 0.001 || Math.abs(saturation - 1) > 0.001) {
+      vf.push(`eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}`);
+    }
+    if (sharpness > 0.001) vf.push(`unsharp=5:5:${Math.min(2, sharpness)}:5:5:0`);
+    vf.push(`setpts=PTS-STARTPTS`, `setpts=${1 / speed}*PTS`, `trim=duration=${renderedDuration}`, `setpts=PTS-STARTPTS+${start}/TB`);
+    filters.push(`[${i}:v]${vf.join(',')}[${v}]`);
+
+    // Audio follows the same timeline position and speed as its video clip.
     if (c.type !== 'image') {
-      try { const probe=await execFileAsync('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=index','-of','csv=p=0',source]); hasAudio=String(probe.stdout||'').trim().length>0; } catch { hasAudio=false; }
+      let hasAudio = false;
+      try {
+        const probe = await execFileAsync('ffprobe', ['-v', 'error', '-select_streams', 'a:0', '-show_entries', 'stream=index', '-of', 'csv=p=0', source]);
+        hasAudio = String(probe.stdout || '').trim().length > 0;
+      } catch { hasAudio = false; }
+      if (hasAudio && c.muted !== true) {
+        const a = `clipa${i}`;
+        const vol = Math.max(0, Math.min(3, safeNum(c.volume, 1)));
+        const af = [`volume=${vol}`, 'aresample=48000', 'asetpts=PTS-STARTPTS'];
+        if (Math.abs(speed - 1) > 0.001) {
+          let remain = speed;
+          while (remain > 2) { af.push('atempo=2'); remain /= 2; }
+          while (remain < 0.5) { af.push('atempo=0.5'); remain /= 0.5; }
+          af.push(`atempo=${remain}`);
+        }
+        af.push(`atrim=duration=${renderedDuration}`, 'asetpts=PTS-STARTPTS');
+        if (safeNum(c.fadeIn, 0) > 0) af.push(`afade=t=in:st=0:d=${safeNum(c.fadeIn, 0)}`);
+        if (safeNum(c.fadeOut, 0) > 0) af.push(`afade=t=out:st=${Math.max(0, renderedDuration - safeNum(c.fadeOut, 0))}:d=${safeNum(c.fadeOut, 0)}`);
+        af.push(`adelay=${Math.round(start * 1000)}:all=1`);
+        filters.push(`[${i}:a]${af.join(',')}[${a}]`);
+        audioLabels.push(`[${a}]`);
+      }
     }
-    if (c.type === 'image') args.push('-loop','1','-t',String(effectiveDuration),'-i',source);
-    else {
-      if (trimStart > 0) args.push('-ss',String(trimStart));
-      args.push('-t',String(effectiveDuration),'-i',source);
-    }
-    inputMeta.push({effectiveDuration,hasAudio,type:c.type});
   }
 
-  const filters=[]; const concatV=[]; const concatA=[]; let nextInput=active.length;
-  active.forEach((c,i)=>{
-    const meta=inputMeta[i];
-    const videoLabel=`v${i}`, audioLabel=`a${i}`;
-    const brightness=Number(c.brightness ?? 0);
-    const contrast=Math.max(0.1, Number(c.contrast ?? 1));
-    const saturation=Math.max(0, Number(c.saturation ?? 1));
-    const sharpness=Math.max(0, Number(c.sharpness ?? 0));
-    const speed=Math.max(0.1, Number(c.speed ?? 1));
-    const rotate=Number(c.rotate||0);
-    const filtersV=[];
-    if (rotate===90) filtersV.push('transpose=1');
-    else if (rotate===180) filtersV.push('hflip,vflip');
-    else if (rotate===270) filtersV.push('transpose=2');
-    filtersV.push(`scale=${width}:${height}:force_original_aspect_ratio=decrease`,`pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`,`fps=${fps}`);
-    if (Math.abs(brightness)>0.001 || Math.abs(contrast-1)>0.001 || Math.abs(saturation-1)>0.001) filtersV.push(`eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}`);
-    if (sharpness>0.001) filtersV.push(`unsharp=5:5:${Math.min(2,sharpness)}:5:5:0`);
-    filtersV.push('setpts=PTS-STARTPTS');
-    if (Math.abs(speed-1)>0.001) filtersV.push(`setpts=${1/speed}*PTS`);
-    filtersV.push(`trim=duration=${meta.effectiveDuration/speed}`,`setpts=PTS-STARTPTS`);
-    filters.push(`[${i}:v]${filtersV.join(',')}[${videoLabel}]`);
-    concatV.push(`[${videoLabel}]`);
+  // Create a full-length canvas so timeline gaps and overlaps are preserved.
+  const baseDuration = Math.max(0.1, totalDuration || 0.1);
+  args.push('-f', 'lavfi', '-t', String(baseDuration), '-i', `color=c=black:s=${width}x${height}:r=${fps}`);
+  let videoBase = `[${nextInput}:v]`;
+  nextInput += 1;
+  filters.push(`${videoBase}setpts=PTS-STARTPTS[base0]`);
+  let currentBase = '[base0]';
+  clips.forEach((c, i) => {
+    const next = `[comp${i}]`;
+    filters.push(`${currentBase}[clipv${i}]overlay=0:0:eof_action=pass:shortest=0${next}`);
+    currentBase = next;
+  });
 
-    if (meta.type==='image' || !meta.hasAudio) {
-      const silentIndex=nextInput++;
-      args.push('-f','lavfi','-t',String(meta.effectiveDuration),'-i','anullsrc=channel_layout=stereo:sample_rate=48000');
-      filters.push(`[${silentIndex}:a]asetpts=PTS-STARTPTS,atrim=duration=${meta.effectiveDuration}[${audioLabel}]`);
-    } else {
-      const vol=Math.max(0,Math.min(3,Number(c.volume??1)));
-      const mute=c.muted?'volume=0,':'';
-      const audioFilters=[];
-      if(mute) audioFilters.push('volume=0');
-      audioFilters.push(`volume=${vol}`,'aresample=48000','asetpts=PTS-STARTPTS');
-      if (Math.abs(speed-1)>0.001) {
-        let remain=speed, chain=[];
-        while(remain>2){chain.push('atempo=2');remain/=2;}
-        while(remain<0.5){chain.push('atempo=0.5');remain/=0.5;}
-        chain.push(`atempo=${remain}`); audioFilters.push(...chain);
-      }
-      audioFilters.push(`atrim=duration=${meta.effectiveDuration/speed}`,'asetpts=PTS-STARTPTS');
-      if(Number(c.fadeIn)>0) audioFilters.push(`afade=t=in:st=0:d=${Number(c.fadeIn)}`);
-      if(Number(c.fadeOut)>0) audioFilters.push(`afade=t=out:st=${Math.max(0,meta.effectiveDuration/speed-Number(c.fadeOut))}:d=${Number(c.fadeOut)}`);
-      filters.push(`[${i}:a]${audioFilters.join(',')}[${audioLabel}]`);
+  // Text layers are rendered after video layers, preserving their timeline start/duration.
+  for (let i = 0; i < textLayers.length; i++) {
+    const t = textLayers[i];
+    const start = Math.max(0, safeNum(t.start, 0));
+    const duration = Math.max(0.1, safeNum(t.duration, 3));
+    const end = Math.min(baseDuration, start + duration);
+    const file = path.join(require('os').tmpdir(), `tns-editor-text-${process.pid}-${Date.now()}-${i}.txt`);
+    fs.writeFileSync(file, String(t.text || ''), 'utf8');
+    textFiles.push(file);
+    const font = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+    const fontPart = fs.existsSync(font) ? `fontfile='${escapeFilterPath(font)}':` : '';
+    const x = Math.max(0, safeNum(t.x, 40));
+    const y = Math.max(0, safeNum(t.y, 40));
+    const fontsize = Math.max(8, Math.min(240, safeNum(t.fontSize, 56)));
+    const color = String(t.color || 'white').replace(/[^a-zA-Z0-9#@.,]/g, '');
+    const textFilter = `${fontPart}textfile='${escapeFilterPath(file)}':x=${x}:y=${y}:fontsize=${fontsize}:fontcolor=${color || 'white'}:box=1:boxcolor=black@0.35:boxborderw=12:enable='between(t,${start},${end})'`;
+    const next = `[text${i}]`;
+    filters.push(`${currentBase}drawtext=${textFilter}${next}`);
+    currentBase = next;
+  }
+
+  let audioMap = null;
+  const extraAudio = Array.isArray(timeline.audio) ? timeline.audio.filter(a => a && a.source && a.visible !== false && a.muted !== true) : [];
+  for (let i = 0; i < extraAudio.length; i++) {
+    const a = extraAudio[i];
+    const source = ensureFile(a.source, 'Timeline audio');
+    args.push('-i', source);
+    const idx = nextInput++;
+    const label = `extraa${i}`;
+    const start = Math.max(0, safeNum(a.start, 0));
+    const duration = Math.max(0.1, safeNum(a.duration, baseDuration - start));
+    const vol = Math.max(0, Math.min(3, safeNum(a.volume, 1)));
+    filters.push(`[${idx}:a]volume=${vol},aresample=48000,asetpts=PTS-STARTPTS,atrim=duration=${duration},adelay=${Math.round(start * 1000)}:all=1[${label}]`);
+    audioLabels.push(`[${label}]`);
+  }
+
+  if (audioLabels.length) {
+    filters.push(`${audioLabels.join('')}amix=inputs=${audioLabels.length}:duration=longest:dropout_transition=2,aresample=48000,atrim=duration=${baseDuration},asetpts=PTS-STARTPTS[aout]`);
+    audioMap = '[aout]';
+  } else {
+    args.push('-f', 'lavfi', '-t', String(baseDuration), '-i', 'anullsrc=channel_layout=stereo:sample_rate=48000');
+    const silentIndex = nextInput++;
+    filters.push(`[${silentIndex}:a]atrim=duration=${baseDuration},asetpts=PTS-STARTPTS[aout]`);
+    audioMap = '[aout]';
+  }
+
+  args.push(
+    '-filter_complex', filters.join(';'),
+    '-map', currentBase,
+    '-map', audioMap,
+    '-t', String(baseDuration),
+    '-c:v', 'libx264',
+    '-pix_fmt', 'yuv420p',
+    '-r', String(fps),
+    '-b:v', String(options.videoBitrate || '8M'),
+    '-c:a', 'aac',
+    '-b:a', String(options.audioBitrate || '192k'),
+    '-movflags', '+faststart',
+    outputPath
+  );
+
+  try {
+    return await customFFmpeg(args);
+  } finally {
+    for (const file of textFiles) {
+      try { fs.unlinkSync(file); } catch {}
     }
-    concatA.push(`[${audioLabel}]`);
-  });
-  filters.push(`${concatV.join('')}concat=n=${active.length}:v=1:a=0,format=yuv420p[vout]`);
-  filters.push(`${concatA.join('')}concat=n=${active.length}:v=0:a=1[aout]`);
-
-  const audioItems=Array.isArray(timeline.audio)?timeline.audio.filter(a=>a&&a.source):[];
-  const extraLabels=['[aout]'];
-  audioItems.forEach((a,idx)=>{
-    const inputIndex=nextInput++;
-    args.push('-i',ensureFile(a.source,'Timeline audio'));
-    const start=Math.max(0,Number(a.start)||0); const vol=Math.max(0,Math.min(3,Number(a.volume??1)));
-    const duration=Math.max(0.1,Number(a.duration)||0);
-    const trim=duration>0?`,atrim=duration=${duration}`:'';
-    filters.push(`[${inputIndex}:a]volume=${vol},aresample=48000,adelay=${Math.round(start*1000)}:all=1${trim}[a${idx+1}]`); extraLabels.push(`[a${idx+1}]`);
-  });
-  if(audioItems.length) filters.push(`${extraLabels.join('')}amix=inputs=${extraLabels.length}:duration=longest:dropout_transition=2[aoutfinal]`);
-  args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',audioItems.length?'[aoutfinal]':'[aout]','-c:v','libx264','-pix_fmt','yuv420p','-r',String(fps),'-b:v',String(options.videoBitrate||'8M'),'-c:a','aac','-b:a',String(options.audioBitrate||'192k'),'-movflags','+faststart',outputPath);
-  return customFFmpeg(args);
+  }
 }
-
 function getExportPresets() {
   return {
     shorts: {

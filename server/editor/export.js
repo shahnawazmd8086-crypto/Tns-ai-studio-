@@ -220,15 +220,13 @@ async function exportTimeline(timeline = {}, output, options = {}) {
   const fps = Math.max(1, Number(options.fps) || 30);
   const args = ['-y'];
   const active = [...clips].sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
-  let previousEnd = 0;
   const inputMeta=[];
   for (const c of active) {
     const source = ensureFile(c.source, 'Timeline media');
-    const start = Math.max(0, Number(c.start)||0);
-    const gap = Math.max(0, start - previousEnd);
     const duration = Math.max(0.1, Number(c.duration)||3);
     const trimStart = Math.max(0, Number(c.trimStart)||0);
-    const effectiveDuration = Math.max(0.1, duration - Math.max(0, Number(c.trimEnd)||0));
+    const trimEnd = Math.max(0, Number(c.trimEnd)||0);
+    const effectiveDuration = Math.max(0.1, duration - trimEnd);
     let hasAudio=false;
     if (c.type !== 'image') {
       try { const probe=await execFileAsync('ffprobe',['-v','error','-select_streams','a:0','-show_entries','stream=index','-of','csv=p=0',source]); hasAudio=String(probe.stdout||'').trim().length>0; } catch { hasAudio=false; }
@@ -238,37 +236,67 @@ async function exportTimeline(timeline = {}, output, options = {}) {
       if (trimStart > 0) args.push('-ss',String(trimStart));
       args.push('-t',String(effectiveDuration),'-i',source);
     }
-    inputMeta.push({gap,effectiveDuration,hasAudio,type:c.type});
-    previousEnd = Math.max(previousEnd, start + duration);
+    inputMeta.push({effectiveDuration,hasAudio,type:c.type});
   }
+
   const filters=[]; const concatV=[]; const concatA=[]; let nextInput=active.length;
   active.forEach((c,i)=>{
     const meta=inputMeta[i];
     const videoLabel=`v${i}`, audioLabel=`a${i}`;
-    const gapVideo=meta.gap>0?`,tpad=start_mode=add:start_duration=${meta.gap}`:'';
-    filters.push(`[${i}:v]scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2,fps=${fps},setpts=PTS-STARTPTS,trim=duration=${meta.effectiveDuration}${gapVideo}[${videoLabel}]`);
+    const brightness=Number(c.brightness ?? 0);
+    const contrast=Math.max(0.1, Number(c.contrast ?? 1));
+    const saturation=Math.max(0, Number(c.saturation ?? 1));
+    const sharpness=Math.max(0, Number(c.sharpness ?? 0));
+    const speed=Math.max(0.1, Number(c.speed ?? 1));
+    const rotate=Number(c.rotate||0);
+    const filtersV=[];
+    if (rotate===90) filtersV.push('transpose=1');
+    else if (rotate===180) filtersV.push('hflip,vflip');
+    else if (rotate===270) filtersV.push('transpose=2');
+    filtersV.push(`scale=${width}:${height}:force_original_aspect_ratio=decrease`,`pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`,`fps=${fps}`);
+    if (Math.abs(brightness)>0.001 || Math.abs(contrast-1)>0.001 || Math.abs(saturation-1)>0.001) filtersV.push(`eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}`);
+    if (sharpness>0.001) filtersV.push(`unsharp=5:5:${Math.min(2,sharpness)}:5:5:0`);
+    filtersV.push('setpts=PTS-STARTPTS');
+    if (Math.abs(speed-1)>0.001) filtersV.push(`setpts=${1/speed}*PTS`);
+    filtersV.push(`trim=duration=${meta.effectiveDuration/speed}`,`setpts=PTS-STARTPTS`);
+    filters.push(`[${i}:v]${filtersV.join(',')}[${videoLabel}]`);
+    concatV.push(`[${videoLabel}]`);
+
     if (meta.type==='image' || !meta.hasAudio) {
-      args.push('-f','lavfi','-t',String(meta.effectiveDuration),'-i','anullsrc=channel_layout=stereo:sample_rate=48000');
       const silentIndex=nextInput++;
-      const delay=meta.gap>0?`,adelay=${Math.round(meta.gap*1000)}:all=1`:'';
-      filters.push(`[${silentIndex}:a]asetpts=PTS-STARTPTS${delay},atrim=duration=${meta.effectiveDuration+meta.gap}[${audioLabel}]`);
+      args.push('-f','lavfi','-t',String(meta.effectiveDuration),'-i','anullsrc=channel_layout=stereo:sample_rate=48000');
+      filters.push(`[${silentIndex}:a]asetpts=PTS-STARTPTS,atrim=duration=${meta.effectiveDuration}[${audioLabel}]`);
     } else {
       const vol=Math.max(0,Math.min(3,Number(c.volume??1)));
-      const delay=meta.gap>0?`,adelay=${Math.round(meta.gap*1000)}:all=1`:'';
       const mute=c.muted?'volume=0,':'';
-      filters.push(`[${i}:a]${mute}volume=${vol},aresample=48000,asetpts=PTS-STARTPTS${delay},atrim=duration=${meta.effectiveDuration+meta.gap}[${audioLabel}]`);
+      const audioFilters=[];
+      if(mute) audioFilters.push('volume=0');
+      audioFilters.push(`volume=${vol}`,'aresample=48000','asetpts=PTS-STARTPTS');
+      if (Math.abs(speed-1)>0.001) {
+        let remain=speed, chain=[];
+        while(remain>2){chain.push('atempo=2');remain/=2;}
+        while(remain<0.5){chain.push('atempo=0.5');remain/=0.5;}
+        chain.push(`atempo=${remain}`); audioFilters.push(...chain);
+      }
+      audioFilters.push(`atrim=duration=${meta.effectiveDuration/speed}`,'asetpts=PTS-STARTPTS');
+      if(Number(c.fadeIn)>0) audioFilters.push(`afade=t=in:st=0:d=${Number(c.fadeIn)}`);
+      if(Number(c.fadeOut)>0) audioFilters.push(`afade=t=out:st=${Math.max(0,meta.effectiveDuration/speed-Number(c.fadeOut))}:d=${Number(c.fadeOut)}`);
+      filters.push(`[${i}:a]${audioFilters.join(',')}[${audioLabel}]`);
     }
-    concatV.push(`[${videoLabel}]`); concatA.push(`[${audioLabel}]`);
+    concatA.push(`[${audioLabel}]`);
   });
   filters.push(`${concatV.join('')}concat=n=${active.length}:v=1:a=0,format=yuv420p[vout]`);
   filters.push(`${concatA.join('')}concat=n=${active.length}:v=0:a=1[aout]`);
+
   const audioItems=Array.isArray(timeline.audio)?timeline.audio.filter(a=>a&&a.source):[];
   const extraLabels=['[aout]'];
   audioItems.forEach((a,idx)=>{
     const inputIndex=nextInput++;
     args.push('-i',ensureFile(a.source,'Timeline audio'));
     const start=Math.max(0,Number(a.start)||0); const vol=Math.max(0,Math.min(3,Number(a.volume??1)));
-    filters.push(`[${inputIndex}:a]volume=${vol},adelay=${Math.round(start*1000)}:all=1[a${idx+1}]`); extraLabels.push(`[a${idx+1}]`);
+    const duration=Math.max(0.1,Number(a.duration)||0);
+    const trim=duration>0?`,atrim=duration=${duration}`:'';
+    filters.push(`[${inputIndex}:a]volume=${vol},aresample=48000,adelay=${Math.round(start*1000)}:all=1${trim}[a${idx+1}]`); extraLabels.push(`[a${idx+1}]`);
   });
   if(audioItems.length) filters.push(`${extraLabels.join('')}amix=inputs=${extraLabels.length}:duration=longest:dropout_transition=2[aoutfinal]`);
   args.push('-filter_complex',filters.join(';'),'-map','[vout]','-map',audioItems.length?'[aoutfinal]':'[aout]','-c:v','libx264','-pix_fmt','yuv420p','-r',String(fps),'-b:v',String(options.videoBitrate||'8M'),'-c:a','aac','-b:a',String(options.audioBitrate||'192k'),'-movflags','+faststart',outputPath);

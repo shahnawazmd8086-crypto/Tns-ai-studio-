@@ -1,1 +1,42 @@
-[]
+[
+  {
+    "id": "feb204df-7306-444d-970e-1f48a141488d",
+    "email": "aitest1790603125@example.com",
+    "mobile": null,
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:bb55c3a900a43bfffd0b041fcb87ca94:42b6cd85e1ba07af1b780607c84c99523288f43fdad419b1d8ffb02f062660b1c10db87bb9ca801e9fa1d8d13d0f1af3cbfeb93e69c620a82d8bc85c8814f333",
+    "provider": "password",
+    "createdAt": "2026-09-28T13:45:25.638Z",
+    "updatedAt": "2026-09-28T13:45:25.638Z"
+  },
+  {
+    "id": "9cb0910d-7cb0-4e38-9d8d-f21eeada72f9",
+    "email": "aitest1790603143@example.com",
+    "mobile": null,
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:647e8e9f34a8f85f6f0ca1f312448c97:600c97e225e57c6e507c5721cf06d19812d96a1fcfb74d2c8afb28fccf99dcc41d1d8953ed66ffd957575f7edc191868ee73efc2fec3dcac114299cbdb1a59eb",
+    "provider": "password",
+    "createdAt": "2026-09-28T13:45:43.269Z",
+    "updatedAt": "2026-09-28T13:45:43.269Z"
+  },
+  {
+    "id": "e6e2c8bb-de6d-4710-848d-1cd7d5dd02f6",
+    "email": "aitest1790603164@example.com",
+    "mobile": null,
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:d32153136eff2c65218c3d2c7f39234e:0499a38736a26940b8ec7f2a0be5a5103f0eb61c10ad0ece61c2c2761564dde56f434fa3164400fd7a35366afa055ef14bcb5d45559c67520f941f501492e7fe",
+    "provider": "password",
+    "createdAt": "2026-09-28T13:46:04.278Z",
+    "updatedAt": "2026-09-28T13:46:04.278Z"
+  },
+  {
+    "id": "85ed3e7e-ba3b-4582-b7c5-757fd81cd449",
+    "email": "aitest1790603180@example.com",
+    "mobile": null,
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:23e36c4cf462aabc636ded85a1a92a2a:a88132ceb7ffc22f62eaa5ba3f98d8cbb69553b4831daf7716883c5b6bd2e5696fb99882095214ec8cac7b5c3cae8157684ca3d46ce65da876a5cdf9d0ecbaed",
+    "provider": "password",
+    "createdAt": "2026-09-28T13:46:20.517Z",
+    "updatedAt": "2026-09-28T13:46:20.517Z"
+  }
+]

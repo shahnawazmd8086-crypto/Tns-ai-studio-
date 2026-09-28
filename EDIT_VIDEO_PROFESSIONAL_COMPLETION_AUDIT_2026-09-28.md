@@ -26,3 +26,12 @@ Source: latest GitHub-uploaded project ZIP supplied on 2026-09-28.
 
 ## Explicit production limitation
 AI-labelled tools such as true speech-to-text captions, ML super-resolution, AI object removal/inpainting, automatic motion tracking, ML background segmentation and true audio beat detection still require dedicated production AI models/providers. The editor does not claim these local fallbacks are equivalent to those models.
+
+
+## Final Professional Export Pass
+- Timeline export now preserves real clip start positions and timeline gaps.
+- Visible video/image layers are composited in timeline order.
+- Text layers are rendered into the final MP4 with start/duration, position, font size and colour.
+- Timeline audio and clip audio are mixed at their actual start positions.
+- Hidden layers are excluded from export. Locked clips cannot be edited, moved, duplicated or deleted until unlocked.
+- Export supports 720/1080/1440/2160 quality and 9:16/16:9/1:1/4:5 ratios.

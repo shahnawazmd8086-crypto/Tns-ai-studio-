@@ -58,7 +58,7 @@ function setSecurityHeaders(res) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=(self)');
   res.setHeader('Content-Security-Policy', "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; font-src 'self' data:");
   if (process.env.NODE_ENV === 'production') {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -488,6 +488,32 @@ const server = http.createServer(async (req, res) => {
       if (!existing || existing.ownerId !== user.id) return sendJson(res, 404, { error: 'Project not found.' });
       ProjectStore.deleteProject(id, PROJECT_DIR);
       return sendJson(res, 200, { success: true });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/contact/groups') {
+      const me = requireAuth(req, res); if (!me) return;
+      return sendJson(res, 200, { success: true, groups: Contact.listGroups(me.id) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/contact/groups') {
+      const me = requireAuth(req, res); if (!me) return;
+      const input = await readBody(req, 1024 * 1024);
+      const members = Array.isArray(input.members) ? input.members.filter(id => id !== me.id && Auth.getUserById(id)).slice(0, 99) : [];
+      return sendJson(res, 201, { success: true, group: Contact.createGroup(me.id, input.name, members) });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/contact/group-messages') {
+      const me = requireAuth(req, res); if (!me) return;
+      const groupId = String(url.searchParams.get('groupId') || '');
+      return sendJson(res, 200, { success: true, messages: Contact.listGroupMessages(groupId, me.id) });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/contact/group-messages') {
+      const me = requireAuth(req, res); if (!me) return;
+      const input = await readBody(req, 1024 * 1024);
+      const group = Contact.getGroup(String(input.groupId || ''), me.id);
+      if (!group) throw new Error('Group not found.');
+      return sendJson(res, 201, { success: true, message: Contact.addGroupMessage(group.id, me.id, input.text, { type: input.type, attachment: input.attachment }) });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/contact/users') {

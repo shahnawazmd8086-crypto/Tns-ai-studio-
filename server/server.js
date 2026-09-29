@@ -855,18 +855,18 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/chat') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);
-      const providerName = String(process.env.TNS_AI_PROVIDER || '').toLowerCase();
+      const providerName = String(process.env.TNS_AI_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
       if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
       const provider = getProvider(providerName);
       if (!provider || typeof provider.chat !== 'function') return sendJson(res, 503, { error: 'Configured TNS AI provider does not support chat.' });
-      const result = await provider.chat({ message: String(input.message || ''), userId: user.id });
+      const result = await provider.chat({ message: String(input.message || ''), research: Boolean(input.research), userId: user.id });
       return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/understand') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);
-      const providerName = String(process.env.TNS_AI_PROVIDER || '').toLowerCase();
+      const providerName = String(process.env.TNS_AI_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
       if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
       const provider = getProvider(providerName);
       if (!provider) return sendJson(res, 503, { error: 'Configured TNS AI provider is unavailable.' });

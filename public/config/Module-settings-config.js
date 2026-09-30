@@ -27,12 +27,22 @@ window.TNS_MODULE_SETTINGS_CONFIG = {
     fields: {
       autoSave: "boolean",
       previewQuality: ["Auto","720p","1080p","2K"],
+      timelineMode: ["Simple","Pro","Compact"],
+      timelineSnap: "boolean",
+      rippleEditing: "boolean",
+      confirmDelete: "boolean",
+      showSafeZones: "boolean",
+      showAudioMeters: "boolean",
+      defaultAspectRatio: ["9:16","16:9","1:1","4:5"],
       exportQuality: ["720","1080","1440","2160"],
       frameRate: ["24","30","60"],
+      exportFormat: ["MP4","MOV"],
       audioDefault: ["AAC 192k","AAC 320k","Original"],
-      confirmDelete: "boolean",
       hardwareAcceleration: "boolean",
-      showSafeZones: "boolean"
+      proxyPreview: "boolean",
+      autoRecover: "boolean",
+      keepVersionHistory: "boolean",
+      reduceMotion: "boolean"
     }
   },
   "contact": {

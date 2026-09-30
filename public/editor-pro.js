@@ -51,6 +51,7 @@
         <div class="pro-workspace">
           <div class="pro-preview-wrap"><video id="proPreview" playsinline preload="metadata"></video><div id="proPreviewEmpty"><span>🎬</span><b>Add a video to start</b><small>Your edits preview here</small></div><div id="proPlayOverlay" class="pro-play-overlay">▶</div><div id="proCanvasText"></div></div>
           <div class="pro-time"><button id="proPlay">▶</button><span id="proTime">00:00</span><input id="proScrub" type="range" min="0" max="1" value="0" step="0.01"><span id="proTotal">00:00</span></div>
+          <div class="pro-context" id="proContext"></div>
           <div class="pro-media-row"><label>＋ Add video<input id="proVideoInput" type="file" accept="video/*" multiple></label><label>＋ Add photo<input id="proPhotoInput" type="file" accept="image/*" multiple></label><label>＋ Audio<input id="proAudioInput" type="file" accept="audio/*,.mp3,.wav,.m4a,.webm"></label></div>
           <div class="pro-timeline" id="proTimeline"><div class="pro-empty-timeline">Import a video to build your timeline</div></div>
           <div class="pro-track-labels"><span>VIDEO</span><span>TEXT / OVERLAY</span><span>AUDIO</span></div>
@@ -79,19 +80,34 @@
   function iconFor(n){const m={Trim:'✂️',Split:'🔪',Crop:'▣',Resize:'↔',Rotate:'⟳',Speed:'⏩',Text:'T',Captions:'CC',Music:'♫',SFX:'🔊',Effects:'✨',Transitions:'◐',Filters:'◈',Brightness:'☀',HSL:'🎨',Keyframes:'◆',Mask:'◍',Stabilization:'◎',"Auto Captions":'CC',"Background Removal":'✂',"Chroma Key":'🟢',Export:'⬆'};return m[n]||'•';}
   function renderTools(){ const arr=CATEGORIES[state.category]||[]; $('#proTools').innerHTML=arr.map(n=>`<button class="pro-tool" data-tool="${esc(n)}"><span>${iconFor(n)}</span><small>${esc(n)}</small></button>`).join(''); }
   function renderTimeline(){
-    const el=$('#proTimeline'); if(!state.clips.length){el.innerHTML='<div class="pro-empty-timeline">Import a video to build your timeline</div>';return;}
+    const el=$('#proTimeline');
+    if(!state.clips.length){el.innerHTML='<div class="pro-empty-timeline">Import a video to build your timeline</div>';renderContext();return;}
     const total=Math.max(.1,timelineDuration());
-    el.innerHTML=`<div class="pro-ruler">${[0,.25,.5,.75,1].map(x=>`<span style="left:${x*100}%">${fmt(total*x)}</span>`).join('')}</div><div class="pro-video-track">${state.clips.map((c,i)=>{const left=(c.start/total)*100,w=(clipRenderDuration(c)/total)*100;return `<button class="pro-clip ${i===state.selected?'selected':''}" data-clip="${i}" style="left:${left}%;width:${Math.max(3,w)}%"><span class="clip-thumb">${c.type==='image'?'🖼️':'🎞️'}</span><b>${esc(c.name||'Clip')}</b><small>${fmt(clipRenderDuration(c))}</small><i class="trim-handle left" data-handle="left"></i><i class="trim-handle right" data-handle="right"></i></button>`}).join('')}</div><div class="pro-playhead" style="left:${clamp(state.playhead/total,0,1)*100}%"></div>`;
-    const track=el.querySelector('.pro-video-track'); track.onclick=e=>{if(e.target.closest('.pro-clip'))return; const r=track.getBoundingClientRect();state.playhead=clamp((e.clientX-r.left)/r.width,0,1)*total;syncPreview();renderTimeline();};
-    $$('.pro-clip',el).forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();state.selected=Number(btn.dataset.clip);syncPreview();renderTimeline();openTool('Clip');}));
+    const clips=state.clips.map((c,i)=>{const left=(c.start/total)*100,w=(clipRenderDuration(c)/total)*100;return `<div class="pro-clip-wrap" draggable="true" data-clip="${i}" style="left:${left}%;width:${Math.max(4,w)}%"><button class="pro-clip ${i===state.selected?'selected':''}" data-clip="${i}"><span class="clip-thumb">${c.type==='image'?'🖼️':'🎞️'}</span><b>${esc(c.name||'Clip')}</b><small>${fmt(clipRenderDuration(c))}</small><i class="trim-handle left" data-handle="left"></i><i class="trim-handle right" data-handle="right"></i></button></div>`}).join('');
+    const audio=state.audio.map((a,i)=>{const left=((a.start||0)/total)*100,w=(Math.max(.1,a.duration||1)/total)*100;return `<div class="pro-audio-item" style="left:${left}%;width:${Math.max(5,w)}%">♫ ${esc(a.name||'Audio')}</div>`}).join('');
+    const texts=state.text.map((t,i)=>{const left=((t.start||0)/total)*100,w=(Math.max(.2,t.duration||1)/total)*100;return `<div class="pro-text-item" style="left:${left}%;width:${Math.max(5,w)}%">T ${esc(t.text||'Text')}</div>`}).join('');
+    el.innerHTML=`<div class="pro-ruler">${[0,.25,.5,.75,1].map(x=>`<span style="left:${x*100}%">${fmt(total*x)}</span>`).join('')}</div><div class="pro-track pro-video-track">${clips}</div><div class="pro-track pro-text-track">${texts}</div><div class="pro-track pro-audio-track">${audio}</div><div class="pro-playhead" style="left:${clamp(state.playhead/total,0,1)*100}%"></div>`;
+    const track=el.querySelector('.pro-video-track');
+    track.onclick=e=>{if(e.target.closest('.pro-clip'))return;const r=track.getBoundingClientRect();state.playhead=clamp((e.clientX-r.left)/r.width,0,1)*total;syncPreview();renderTimeline();};
+    $$('.pro-clip',el).forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();state.selected=Number(btn.dataset.clip);syncPreview(false);renderTimeline();openTool('Clip');}));
     $$('.trim-handle',el).forEach(h=>h.addEventListener('pointerdown',e=>startTrimDrag(e,h)));
+    $$('.pro-clip-wrap',el).forEach(w=>{w.addEventListener('dragstart',e=>e.dataTransfer.setData('text/plain',w.dataset.clip));w.addEventListener('dragover',e=>e.preventDefault());w.addEventListener('drop',e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/plain')),to=Number(w.dataset.clip);if(Number.isInteger(from)&&Number.isInteger(to)&&from!==to){const [m]=state.clips.splice(from,1);state.clips.splice(to,0,m);state.selected=to;reflow();commit();}});});
+    renderContext();
   }
+  function renderContext(){
+    const el=$('#proContext'); if(!el)return;
+    const c=selectedClip(); if(!c){el.innerHTML='';return;}
+    const tools=['Trim','Split','Crop','Speed','Volume','Text','Overlay','Effects','Filters','Adjust'];
+    el.innerHTML=tools.map(t=>`<button data-context-tool="${t}">${iconFor(t)}<small>${t}</small></button>`).join('');
+    $$('[data-context-tool]',el).forEach(b=>b.onclick=()=>openTool(b.dataset.contextTool));
+  }
+
   function startTrimDrag(e,h){
     e.stopPropagation();e.preventDefault();const idx=Number(h.closest('.pro-clip').dataset.clip),c=state.clips[idx],track=$('#proTimeline .pro-video-track'),startX=e.clientX,start=Number(c.trimStart)||0,end=Number(c.trimEnd)||0,source=Number(c.sourceDuration)||3;
     const move=ev=>{const dx=(ev.clientX-startX)/track.getBoundingClientRect().width*timelineDuration()*Math.max(.1,c.speed); if(h.dataset.handle==='left') c.trimStart=clamp(start+dx,0,source-end-.1); else c.trimEnd=clamp(end-dx,0,source-start-.1); renderTimeline();syncPreview(false);};
     const up=()=>{window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);commit();};window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);
   }
-  function renderAll(){renderCategories();renderTools();renderTimeline();$('#proProjectName').textContent=state.projectName+(state.dirty?' •':'');$('#proTotal').textContent=fmt(timelineDuration());}
+  function renderAll(){renderCategories();renderTools();renderTimeline();renderContext();$('#proProjectName').textContent=state.projectName+(state.dirty?' •':'');$('#proTotal').textContent=fmt(timelineDuration());}
 
   function syncPreview(autoplay=true){
     const v=$('#proPreview'),c=selectedClip();if(!v)return;
@@ -115,6 +131,16 @@
   function openTool(tool){
     const box=$('#proWorkspace'); if(!box)return;
     if(tool==='Clip'){box.classList.add('hidden');return;}
+    if(tool==='Export'){
+      box.innerHTML=`<div class="drawer-head"><div><b>Export Video</b><small>Choose the final quality before saving.</small></div><button id="closeTool">×</button></div><div class="drawer-body export-sheet"><div class="export-presets"><button data-exp="720">720p</button><button data-exp="1080">1080p</button><button data-exp="1440">1440p</button><button data-exp="2160">4K</button></div><div class="ratio-pills"><button data-ratio="9:16">9:16</button><button data-ratio="16:9">16:9</button><button data-ratio="1:1">1:1</button><button data-ratio="4:5">4:5</button></div><label class="pro-field"><span>Frame Rate</span><select id="exportFps"><option value="24">24 FPS</option><option value="30" selected>30 FPS</option><option value="60">60 FPS</option></select></label><p class="tool-hint">Export uses the complete timeline, text layers and audio tracks. MP4 / H.264 with AAC audio.</p><button class="pro-action primary" id="doExportNow">Export & Download MP4</button></div>`;
+      box.classList.remove('hidden');
+      $('#closeTool').onclick=()=>box.classList.add('hidden');
+      $$('[data-exp]',box).forEach(b=>b.onclick=()=>{state.quality=Number(b.dataset.exp);toast(`${b.dataset.exp}p selected`);});
+      $$('[data-ratio]',box).forEach(b=>b.onclick=()=>{state.ratio=b.dataset.ratio;toast(`${b.dataset.ratio} selected`);});
+      $('#exportFps').onchange=e=>state.fps=Number(e.target.value);
+      $('#doExportNow').onclick=exportProject;
+      return;
+    }
     const c=selectedClip();
     const noClip=['Music','SFX','Extract Audio','Voice Over','TTS','Text','Captions','Auto Captions','Subtitles','Stickers','Shapes','Effects','Transitions','Filters','Background Removal','Chroma Key','Project Backup','Project Versions','Export Presets','Markers','Add Overlay','Photo Overlay','Video Overlay'];
     if(!c && !noClip.includes(tool)){toast('Add or select a video clip first.');return;}
@@ -210,7 +236,7 @@
   async function exportProject(){if(!state.clips.length)return toast('Add a video first.');const btn=$('#proExport');btn.disabled=true;btn.textContent='Exporting…';try{const ratio=state.ratio,q=Number(state.quality);const d=await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quality:q,ratio,fps:state.fps,videoBitrate:q>=2160?'20M':q>=1440?'12M':'8M',audioBitrate:'192k',timeline:{clips:state.clips.map(c=>({...c})),audio:state.audio.map(a=>({...a})),text:state.text.map(t=>({...t}))}})});const a=document.createElement('a');a.href=d.result.url;a.download='TNS-Studio-Export.mp4';a.target='_blank';a.click();toast('Export complete.');}catch(e){toast(e.message);}finally{btn.disabled=false;btn.textContent='Export';}}
 
   function bind(){
-    $('#proUndo').onclick=undo;$('#proRedo').onclick=redo;$('#proExport').onclick=exportProject;
+    $('#proUndo').onclick=undo;$('#proRedo').onclick=redo;$('#proExport').onclick=()=>openTool('Export');
     $('#proVideoInput').onchange=async e=>{for(const f of [...e.target.files]){try{await addVideo(f)}catch(err){toast(err.message);}}e.target.value='';};
     $('#proPhotoInput').onchange=async e=>{for(const f of [...e.target.files]){try{await addVideo(f,'image')}catch(err){toast(err.message);}}e.target.value='';};
     $('#proAudioInput').onchange=async e=>{for(const f of [...e.target.files]){try{const m=await upload(f);state.audio.push({id:crypto.randomUUID(),source:m.url,name:f.name,start:0,duration:30,volume:1,visible:true});commit();}catch(err){toast(err.message);}}e.target.value='';};

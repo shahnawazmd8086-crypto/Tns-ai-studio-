@@ -301,6 +301,33 @@ async function exportTimeline(timeline = {}, output, options = {}) {
     }
   }
 
+  // Overlay layers are independent from the main video sequence. They are composited on top at their timeline position.
+  const overlays = Array.isArray(timeline.overlays) ? timeline.overlays.filter(o => o && o.source && o.visible !== false) : [];
+  const overlayInputs = [];
+  for (let i = 0; i < overlays.length; i++) {
+    const o = overlays[i];
+    const source = ensureFile(o.source, 'Timeline overlay');
+    const duration = Math.max(0.1, safeNum(o.duration, 3));
+    const trimStart = Math.max(0, safeNum(o.trimStart, 0));
+    const trimEnd = Math.max(0, safeNum(o.trimEnd, 0));
+    const sourceDuration = Math.max(0.1, duration - trimStart - trimEnd);
+    const speed = Math.max(0.1, safeNum(o.speed, 1));
+    const start = Math.max(0, safeNum(o.start, 0));
+    const renderedDuration = sourceDuration / speed;
+    totalDuration = Math.max(totalDuration, start + renderedDuration);
+    if (o.type === 'image') args.push('-loop', '1', '-t', String(sourceDuration), '-i', source);
+    else { if (trimStart > 0) args.push('-ss', String(trimStart)); args.push('-t', String(sourceDuration), '-i', source); }
+    const idx = nextInput++;
+    const label = `overlayv${i}`;
+    const scale = Math.max(0.05, safeNum(o.scale, 1));
+    const x = safeNum(o.x, 0);
+    const y = safeNum(o.y, 0);
+    const opacity = Math.max(0, Math.min(1, safeNum(o.opacity, 1)));
+    const vf = [`scale=iw*${scale}:ih*${scale}`, `format=rgba`, `colorchannelmixer=aa=${opacity}`, `setpts=PTS-STARTPTS`, `setpts=${1/speed}*PTS`, `trim=duration=${renderedDuration}`, `setpts=PTS-STARTPTS+${start}/TB`];
+    filters.push(`[${idx}:v]${vf.join(',')}[${label}]`);
+    overlayInputs.push({label,x,y});
+  }
+
   // Create a full-length canvas so timeline gaps and overlaps are preserved.
   const baseDuration = Math.max(0.1, totalDuration || 0.1);
   args.push('-f', 'lavfi', '-t', String(baseDuration), '-i', `color=c=black:s=${width}x${height}:r=${fps}`);
@@ -313,6 +340,7 @@ async function exportTimeline(timeline = {}, output, options = {}) {
     filters.push(`${currentBase}[clipv${i}]overlay=0:0:eof_action=pass:shortest=0${next}`);
     currentBase = next;
   });
+  overlayInputs.forEach((o, i) => { const next = `[ovcomp${i}]`; filters.push(`${currentBase}[${o.label}]overlay=${o.x}:${o.y}:eof_action=pass:shortest=0${next}`); currentBase=next; });
 
   // Text layers are rendered after video layers, preserving their timeline start/duration.
   for (let i = 0; i < textLayers.length; i++) {

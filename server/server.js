@@ -605,6 +605,7 @@ const server = http.createServer(async (req, res) => {
         const allMedia = [];
         for (const clip of timeline.clips) { if (clip && clip.source) { const pth=safeUploadPathFromUrl(clip.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline media access denied.'); clip.source=pth; allMedia.push(pth); } }
         for (const audio of (timeline.audio||[])) { if (audio && audio.source) { const pth=safeUploadPathFromUrl(audio.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline audio access denied.'); audio.source=pth; } }
+        for (const overlay of (timeline.overlays||[])) { if (overlay && overlay.source) { const pth=safeUploadPathFromUrl(overlay.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline overlay access denied.'); overlay.source=pth; } }
         const quality = [720,1080,1440,2160].includes(Number(input.quality)) ? Number(input.quality) : 1080;
         const outputName = `${crypto.randomUUID()}-timeline-export.mp4`;
         const outputPath = path.join(UPLOAD_DIR, outputName);

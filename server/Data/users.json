@@ -68,5 +68,15 @@
     "provider": "password",
     "createdAt": "2026-09-28T14:16:53.171Z",
     "updatedAt": "2026-09-28T14:16:53.171Z"
+  },
+  {
+    "id": "ca2e37e0-ae06-448a-8f61-d00e4c1d3a50",
+    "email": null,
+    "mobile": "+919999999991",
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:cfddcdb1f1a75ed27c41f777b0cb7a8f:1bbdd0b13dd4a740ce15de62823464fa0170140f75d706e59c9c393d1524b594a402d73b43b09ca4e4344bac87f4673843cbe7fce7c652605011ffa1ff8b9995",
+    "provider": "password",
+    "createdAt": "2026-09-30T09:43:20.866Z",
+    "updatedAt": "2026-09-30T09:43:20.866Z"
   }
 ]

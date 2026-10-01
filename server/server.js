@@ -8,6 +8,7 @@ const { login } = require('./auth/Login');
 const Auth = require('./auth/Auth');
 const { createSession, getSession, destroySession, clearExpiredSessions } = require('./auth/Sessions');
 const Otp = require('./auth/Otp');
+const GoogleAuth = require('./auth/Google');
 const { create: createVideoJob, getJob: getVideoJob } = require('./jobs/video-job');
 const { create: createImageJob, getJob: getImageJob } = require('./jobs/image-job');
 const { create: createVoiceJob, getJob: getVoiceJob } = require('./jobs/voice-job');
@@ -373,9 +374,43 @@ const server = http.createServer(async (req, res) => {
       const input = await readBody(req, 1024 * 1024);
       if (!authRateLimit(req, input.identifier, 8)) return sendJson(res, 429, { error: 'Too many login attempts. Please try again later.' }, { 'Retry-After': '60' });
       const result = login(input);
-      const session = createSession(result.user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
+      // Password authentication is followed by the shared OTP screen. Do not issue
+      // the authenticated session cookie until that OTP has been verified.
+      return sendJson(res, 200, { success: true, requiresOtp: true, message: 'Password accepted. OTP verification required.', user: result.user });
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/auth/google') {
+      if (!GoogleAuth.configured(PORT)) { res.writeHead(302, { Location: '/?authError=Google%20sign-in%20is%20not%20configured.%20Add%20Google%20OAuth%20credentials%20in%20deployment%20configuration.' }); return res.end(); }
+      const redirect = GoogleAuth.authorizationUrl(PORT);
+      res.writeHead(302, { Location: redirect, 'Cache-Control': 'no-store' });
+      return res.end();
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/auth/google/callback') {
+      const state = String(url.searchParams.get('state') || '');
+      const code = String(url.searchParams.get('code') || '');
+      if (!GoogleAuth.consumeState(state)) {
+        res.writeHead(302, { Location: '/?authError=Invalid%20or%20expired%20Google%20login%20state.' });
+        return res.end();
+      }
+      if (!code) {
+        const error = String(url.searchParams.get('error_description') || url.searchParams.get('error') || 'Google sign-in was cancelled.');
+        res.writeHead(302, { Location: `/?authError=${encodeURIComponent(error)}` });
+        return res.end();
+      }
+      const tokens = await GoogleAuth.exchangeCode(code, PORT);
+      const profile = await GoogleAuth.getProfile(tokens.access_token);
+      const email = String(profile.email || '').trim().toLowerCase();
+      if (!email || profile.email_verified === false) throw new Error('Google did not provide a verified email address.');
+      let user = Auth.findUserByEmail(email);
+      if (!user) {
+        user = Auth.createUser({ email, name: profile.name || profile.given_name || null, provider: 'google', password: crypto.randomBytes(32).toString('hex') });
+        user = Auth.findUserByEmail(email);
+      }
+      const session = createSession(user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
       setSessionCookie(req, res, session);
-      return sendJson(res, 200, { success: true, message: 'Login successful.', user: result.user });
+      res.writeHead(302, { Location: '/' });
+      return res.end();
     }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/logout') {
@@ -402,7 +437,16 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/api/auth/otp/verify') {
       const input = await readBody(req, 1024 * 1024);
-      return sendJson(res, 200, Otp.verifyOtp(input.identifier, input.code));
+      const verified = Otp.verifyOtp(input.identifier, input.code);
+      if (!verified.success) return sendJson(res, 400, verified);
+      const identifier = String(input.identifier || '').trim();
+      const existing = identifier.includes('@') ? Auth.findUserByEmail(identifier) : Auth.findUserByMobile(identifier);
+      if (!existing) return sendJson(res, 400, { success: false, message: 'Account not found.' });
+      Otp.removeOtp(identifier);
+      const user = Auth.sanitizeUser(existing);
+      const session = createSession(user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
+      setSessionCookie(req, res, session);
+      return sendJson(res, 200, { ...verified, user });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/otp/login') {
@@ -1011,6 +1055,7 @@ setInterval(() => {
   for (const [key, bucket] of rateBuckets.entries()) if (now - bucket.startedAt >= RATE_WINDOW_MS) rateBuckets.delete(key);
   Otp.clearExpiredOtps();
   clearExpiredSessions();
+  GoogleAuth.cleanupStates();
 }, 60 * 1000).unref();
 
 server.listen(PORT, () => console.log(`TNS Studio running on port ${PORT}`));

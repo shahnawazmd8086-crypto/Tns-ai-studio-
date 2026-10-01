@@ -88,5 +88,25 @@
     "provider": "password",
     "createdAt": "2026-09-30T11:15:05.599Z",
     "updatedAt": "2026-09-30T11:15:05.599Z"
+  },
+  {
+    "id": "9380cd93-3978-411a-b487-35e60499251b",
+    "email": "test-login-20261001@example.com",
+    "mobile": null,
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:3e4ba031f2c61bbdcfa70862667222e5:b3e677965e5512e9c86e7252615322f078e9ff0a3f2488c309c3c4fd712018a86907324ba1b063a9f2d1c7f0cab6152999abb37d7acecb4271653a3e4b3da334",
+    "provider": "password",
+    "createdAt": "2026-10-01T15:55:38.588Z",
+    "updatedAt": "2026-10-01T15:55:38.588Z"
+  },
+  {
+    "id": "20300ac8-dbdc-4892-b47d-22b8c831e333",
+    "email": null,
+    "mobile": "+919999999992",
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:c8fdbb2d321a735c493b42e9584bbee4:71b427ba9b74a6b85661de0b6a3a102b3880453242e8dc9927c80f701576707757dfc8c89888f62ec30a0fe4b03a9a9626a4f530644d98a8a96287b0e3a7b3a2",
+    "provider": "password",
+    "createdAt": "2026-10-01T15:55:42.286Z",
+    "updatedAt": "2026-10-01T15:55:42.286Z"
   }
 ]

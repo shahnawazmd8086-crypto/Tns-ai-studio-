@@ -4,11 +4,12 @@ const crypto = require('crypto');
 const pendingStates = new Map();
 const STATE_TTL_MS = 10 * 60 * 1000;
 
-function googleConfig(port) {
+function googleConfig(port, requestOrigin = '') {
+  const fallbackOrigin = String(requestOrigin || '').trim() || `http://localhost:${port}`;
   return {
     clientId: String(process.env.GOOGLE_CLIENT_ID || '').trim(),
     clientSecret: String(process.env.GOOGLE_CLIENT_SECRET || '').trim(),
-    redirectUri: String(process.env.GOOGLE_REDIRECT_URI || `http://localhost:${port}/api/auth/google/callback`).trim()
+    redirectUri: String(process.env.GOOGLE_REDIRECT_URI || `${fallbackOrigin.replace(/\/$/, '')}/api/auth/google/callback`).trim()
   };
 }
 function configured(port) {
@@ -51,8 +52,8 @@ function requestJson(url, options = {}) {
     req.end();
   });
 }
-function authorizationUrl(port) {
-  const c = googleConfig(port);
+function authorizationUrl(port, requestOrigin = '') {
+  const c = googleConfig(port, requestOrigin);
   if (!configured(port)) throw new Error('Google sign-in is not configured. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET and GOOGLE_REDIRECT_URI.');
   const state = createState();
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
@@ -65,8 +66,8 @@ function authorizationUrl(port) {
   url.searchParams.set('prompt', 'select_account');
   return url.toString();
 }
-async function exchangeCode(code, port) {
-  const c = googleConfig(port);
+async function exchangeCode(code, port, requestOrigin = '') {
+  const c = googleConfig(port, requestOrigin);
   if (!configured(port)) throw new Error('Google sign-in is not configured.');
   const body = new URLSearchParams({ code: String(code || ''), client_id: c.clientId, client_secret: c.clientSecret, redirect_uri: c.redirectUri, grant_type: 'authorization_code' }).toString();
   return requestJson('https://oauth2.googleapis.com/token', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' }, body });

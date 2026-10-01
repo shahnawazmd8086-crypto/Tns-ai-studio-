@@ -56,7 +56,7 @@ async function waitForHealth() {
     assert.strictEqual(health.json.ok, true);
     assert.strictEqual(health.json.name, 'TNS Studio API');
 
-    const signup = await request('/api/auth/signup', { method: 'POST', ...jsonOptions({ mobile: '+919876543210', password: 'Tns@2026x' }) });
+    const signup = await request('/api/auth/signup', { method: 'POST', ...jsonOptions({ email: 'test@example.com', mobile: '+919876543210', password: 'MyOwnPass8' }) });
     assert.strictEqual(signup.status, 201, signup.body);
     assert.ok(signup.headers['set-cookie']?.[0].includes('HttpOnly'));
     assert.ok(signup.headers['set-cookie']?.[0].includes('SameSite=Strict'));
@@ -67,14 +67,39 @@ async function waitForHealth() {
     const me = await request('/api/auth/me', { headers: { Cookie: cookie } });
     assert.strictEqual(me.status, 200);
     assert.strictEqual(me.json.user.mobile, '+919876543210');
+    assert.strictEqual(me.json.user.email, 'test@example.com');
 
     const badLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'Wrong@2026' }) });
     assert.strictEqual(badLogin.status, 400);
     assert.match(badLogin.json.error, /Invalid email\/mobile number or password/i);
 
-    const goodLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'Tns@2026x' }) });
+    const goodLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'MyOwnPass8' }) });
     assert.strictEqual(goodLogin.status, 200);
+    assert.strictEqual(goodLogin.json.requiresOtp, true);
+    assert.ok(!goodLogin.headers['set-cookie']);
+    const loginOtp = await request('/api/auth/otp/request', { method: 'POST', ...jsonOptions({ identifier: '+919876543210' }) });
+    assert.strictEqual(loginOtp.status, 200);
+    const otpVerified = await request('/api/auth/otp/verify', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', code: loginOtp.json.otp }) });
+    assert.strictEqual(otpVerified.status, 200);
+    assert.ok(otpVerified.headers['set-cookie']?.[0].includes('HttpOnly'));
 
+    const emailLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: 'test@example.com', password: 'MyOwnPass8' }) });
+    assert.strictEqual(emailLogin.status, 200);
+
+    const forgot = await request('/api/auth/forgot-password', { method: 'POST', ...jsonOptions({ identifier: '+919876543210' }) });
+    assert.strictEqual(forgot.status, 200);
+    assert.ok(forgot.json.otp);
+    const reset = await request('/api/auth/password/reset', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', otp: forgot.json.otp, newPassword: 'MyNewPass9' }) });
+    assert.strictEqual(reset.status, 200);
+    const resetLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'MyNewPass9' }) });
+    assert.strictEqual(resetLogin.status, 200);
+
+    const googleConfig = await request('/api/auth/google');
+    assert.strictEqual(googleConfig.status, 302);
+    assert.match(googleConfig.headers.location || '', /Google%20sign-in%20is%20not%20configured/i);
+
+    const goodLoginOld = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'Tns@2026x' }) });
+    assert.strictEqual(goodLoginOld.status, 400);
     const unauthUpload = await request('/api/uploads/video', { method: 'POST' });
     assert.strictEqual(unauthUpload.status, 401);
 

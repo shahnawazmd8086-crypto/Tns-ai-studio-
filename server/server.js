@@ -374,14 +374,17 @@ const server = http.createServer(async (req, res) => {
       const input = await readBody(req, 1024 * 1024);
       if (!authRateLimit(req, input.identifier, 8)) return sendJson(res, 429, { error: 'Too many login attempts. Please try again later.' }, { 'Retry-After': '60' });
       const result = login(input);
-      // Password authentication is followed by the shared OTP screen. Do not issue
-      // the authenticated session cookie until that OTP has been verified.
-      return sendJson(res, 200, { success: true, requiresOtp: true, message: 'Password accepted. OTP verification required.', user: result.user });
+      // Email/mobile password login is usable before an external OTP service is connected.
+      // A real OTP provider can be re-enabled later without changing the dashboard flow.
+      const session = createSession(result.user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
+      setSessionCookie(req, res, session);
+      return sendJson(res, 200, { success: true, message: 'Login successful.', user: result.user });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/auth/google') {
+      const publicOrigin = `${String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim()}://${String(req.headers['x-forwarded-host'] || req.headers.host || `localhost:${PORT}`).split(',')[0].trim()}`;
       if (!GoogleAuth.configured(PORT)) { res.writeHead(302, { Location: '/?authError=Google%20sign-in%20is%20not%20configured.%20Add%20Google%20OAuth%20credentials%20in%20deployment%20configuration.' }); return res.end(); }
-      const redirect = GoogleAuth.authorizationUrl(PORT);
+      const redirect = GoogleAuth.authorizationUrl(PORT, publicOrigin);
       res.writeHead(302, { Location: redirect, 'Cache-Control': 'no-store' });
       return res.end();
     }
@@ -398,7 +401,8 @@ const server = http.createServer(async (req, res) => {
         res.writeHead(302, { Location: `/?authError=${encodeURIComponent(error)}` });
         return res.end();
       }
-      const tokens = await GoogleAuth.exchangeCode(code, PORT);
+      const publicOrigin = `${String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim()}://${String(req.headers['x-forwarded-host'] || req.headers.host || `localhost:${PORT}`).split(',')[0].trim()}`;
+      const tokens = await GoogleAuth.exchangeCode(code, PORT, publicOrigin);
       const profile = await GoogleAuth.getProfile(tokens.access_token);
       const email = String(profile.email || '').trim().toLowerCase();
       if (!email || profile.email_verified === false) throw new Error('Google did not provide a verified email address.');

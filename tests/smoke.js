@@ -75,16 +75,13 @@ async function waitForHealth() {
 
     const goodLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'MyOwnPass8' }) });
     assert.strictEqual(goodLogin.status, 200);
-    assert.strictEqual(goodLogin.json.requiresOtp, true);
-    assert.ok(!goodLogin.headers['set-cookie']);
-    const loginOtp = await request('/api/auth/otp/request', { method: 'POST', ...jsonOptions({ identifier: '+919876543210' }) });
-    assert.strictEqual(loginOtp.status, 200);
-    const otpVerified = await request('/api/auth/otp/verify', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', code: loginOtp.json.otp }) });
-    assert.strictEqual(otpVerified.status, 200);
-    assert.ok(otpVerified.headers['set-cookie']?.[0].includes('HttpOnly'));
+    assert.strictEqual(goodLogin.json.success, true);
+    assert.strictEqual(goodLogin.json.message, 'Login successful.');
+    assert.ok(goodLogin.headers['set-cookie']?.[0].includes('HttpOnly'));
 
     const emailLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: 'test@example.com', password: 'MyOwnPass8' }) });
     assert.strictEqual(emailLogin.status, 200);
+    assert.strictEqual(emailLogin.json.success, true);
 
     const forgot = await request('/api/auth/forgot-password', { method: 'POST', ...jsonOptions({ identifier: '+919876543210' }) });
     assert.strictEqual(forgot.status, 200);

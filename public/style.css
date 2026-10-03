@@ -374,3 +374,50 @@ body:has(#languageScreen:not(.hidden)) .bottom-nav,
 body:has(#splashScreen:not(.hidden)) .bottom-nav {
   display: none !important;
 }
+
+/* TNS Studio dashboard topbar: swap menu/logo positions and use follower messages icon */
+body:has(#dashboard.active) .topbar .brand-area{
+  width:auto;
+  min-height:40px;
+  padding-left:0;
+  background:none;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+body:has(#dashboard.active) .topbar .brand-area .topbar-menu-btn{
+  order:1;
+  width:38px;
+  height:38px;
+  padding:7px;
+}
+body:has(#dashboard.active) .topbar .brand-area .logo-mini{
+  order:2;
+  visibility:visible;
+  width:38px;
+  height:38px;
+  border-radius:11px;
+  object-fit:contain;
+  box-shadow:0 0 24px rgba(91,99,255,.28);
+}
+body:has(#dashboard.active) .topbar .brand-area>div{
+  order:3;
+  margin-left:0;
+}
+body:has(#dashboard.active) .topbar .brand-area strong{
+  font-size:18px;
+  line-height:1.05;
+  white-space:nowrap;
+}
+body:has(#dashboard.active) #notifyBtn{
+  font-size:0;
+  width:34px;
+  height:34px;
+  margin-right:6px;
+  padding:0;
+}
+body:has(#dashboard.active) #notifyBtn::after{
+  content:"💬";
+  font-size:21px;
+  line-height:1;
+}

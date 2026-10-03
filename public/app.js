@@ -55,7 +55,7 @@ function getLoginIdentifier(){if(getAuthMode()==='mobile'){const mobile=normaliz
 $('#loginForm')?.addEventListener('submit',async e=>{e.preventDefault();try{const identifier=getLoginIdentifier();const password=$('#loginPassword').value;if(password.length<8)throw new Error('Password must be at least 8 characters.');msg('#loginMessage','Signing in…');const d=await json('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier,password})});setUser(d.user);window.__tnsPasswordLoginPending=false;otpIdentifier=null;msg('#loginMessage',d.message||'Login successful.','success');toast('Login successful');startLanguage()}catch(err){msg('#loginMessage',err.message,'error')}});
 $('#signupOpen')?.addEventListener('click',()=>$('#signupModal').classList.remove('hidden'));$$('[data-close]').forEach(b=>b.addEventListener('click',()=>$('#'+b.dataset.close).classList.add('hidden')));
 $('#signupBtn')?.addEventListener('click',async()=>{const email=$('#signupEmail').value.trim().toLowerCase(),mobileRaw=$('#signupMobile').value.trim(),mobile=mobileRaw?normalizeMobileInput(mobileRaw,countryCallingCode('#signupCountry')):null,password=$('#signupPassword').value,confirm=$('#signupConfirm').value;if(!email&&!mobile)return msg('#signupMessage','Enter an email or mobile number.','error');if(password.length<8)return msg('#signupMessage','Password must be at least 8 characters long. Choose your own password.','error');if(password!==confirm)return msg('#signupMessage','Passwords do not match.','error');try{const d=await json('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,mobile,password})});setUser(d.user);$('#signupModal').classList.add('hidden');toast('Account created');startLanguage()}catch(err){msg('#signupMessage',err.message,'error')}});
-$('#googleBtn')?.addEventListener('click',()=>{window.location.href='/api/auth/google'});
+$('#createNewAccountBtn')?.addEventListener('click',()=>$('#signupModal')?.classList.remove('hidden'));
 async function requestOtp(){try{window.__tnsPasswordLoginPending=false;otpIdentifier=getLoginIdentifier();const d=await json('/api/auth/otp/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:otpIdentifier})});showAuthScreens('otpScreen');$('#otpHint').textContent=d.otp?`Demo OTP: ${d.otp}`:'Enter the OTP sent to you.';resetOtpBoxes();startOtpResendTimer()}catch(err){msg('#loginMessage',err.message,'error')}}
 function resetOtpBoxes(){document.querySelectorAll('.otp-digit').forEach(i=>i.value='');syncOtpCode();const first=document.querySelector('.otp-digit');first?.focus()}
 function syncOtpCode(){const code=[...document.querySelectorAll('.otp-digit')].map(i=>i.value.replace(/\D/g,'')).join('').slice(0,6);const hidden=$('#otpCode');if(hidden)hidden.value=code;return code}
@@ -88,7 +88,27 @@ function openModuleSettings(key){const item=MODULE_SETTINGS[key];if(!item)return
 $$('.module-settings-btn').forEach(b=>b.addEventListener('click',()=>openModuleSettings(b.dataset.moduleSettings)));
 function saveSettings(){const s={theme:$('#settingTheme').value,quality:$('#settingQuality').value,ratio:$('#settingRatio').value};localStorage.setItem('tnsStudioSettings',JSON.stringify(s));applyTheme(s.theme)}function applyTheme(v){document.body.classList.toggle('light',v==='light');if(v==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme:light)').matches)}
 $('#settingTheme')?.addEventListener('change',saveSettings);$('#settingQuality')?.addEventListener('change',saveSettings);$('#settingRatio')?.addEventListener('change',saveSettings);
-$('#globalSettingsBtn')?.addEventListener('click',()=>showPanel('settings'));
+const topbarMenu=$('#topbarMenu');
+$('#topbarMenu')?.addEventListener('click',(e)=>{
+  const item=e.target.closest('[data-menu-open]');
+  if(!item)return;
+  topbarMenu?.classList.add('hidden');
+  topbarMenu?.setAttribute('aria-hidden','true');
+  showPanel(item.dataset.menuOpen);
+});
+$('.topbar-menu-btn')?.addEventListener('click',(e)=>{
+  e.stopPropagation();
+  const open=topbarMenu?.classList.contains('hidden');
+  topbarMenu?.classList.toggle('hidden',!open);
+  topbarMenu?.setAttribute('aria-hidden',String(!open));
+});
+document.addEventListener('click',(e)=>{
+  if(topbarMenu && !topbarMenu.classList.contains('hidden') && !e.target.closest('.topbar-menu-btn') && !e.target.closest('#topbarMenu')){
+    topbarMenu.classList.add('hidden');
+    topbarMenu.setAttribute('aria-hidden','true');
+  }
+});
+
 $('#changeLanguageBtn')?.addEventListener('click',()=>startLanguage());
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}authenticatedUser=null;window.TNSAuth?.logout?.();localStorage.removeItem('tnsStudioLanguage');location.reload()});
 async function waitForMediaJob(type, jobId, options = {}) {

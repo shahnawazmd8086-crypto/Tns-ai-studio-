@@ -468,3 +468,91 @@ body:has(#dashboard.active) #notifyBtn{
   .dashboard-color-grid .dashboard-feature:nth-child(4),
   .dashboard-color-grid .dashboard-feature:nth-child(5){grid-column:span 3}
 }
+
+/* Premium dashboard icons and Shorts navigation icon */
+body:has(#dashboard.active) .top-actions{
+  gap:7px;
+}
+body:has(#dashboard.active) .premium-top-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  padding:0;
+  margin:0;
+  border:0;
+  background:transparent;
+}
+body:has(#dashboard.active) .premium-top-icon img{
+  width:30px;
+  height:30px;
+  display:block;
+  object-fit:contain;
+  filter:drop-shadow(0 0 7px rgba(83,171,255,.35));
+}
+body:has(#dashboard.active) #notifyBtn{
+  width:36px;
+  height:36px;
+  margin:0;
+}
+body:has(#dashboard.active) #notifyBtn img{
+  width:33px;
+  height:33px;
+}
+body:has(#dashboard.active) #notificationBellBtn{
+  width:30px;
+  height:30px;
+  margin:0;
+}
+body:has(#dashboard.active) #notificationBellBtn img{
+  width:27px;
+  height:27px;
+}
+
+/* Keep the dashboard 3 + 2 layout like the supplied reference on mobile too. */
+@media(max-width:560px){
+  body:has(#dashboard.active) .dashboard-color-grid{
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+    gap:9px;
+  }
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature{
+    min-height:118px;
+    padding:10px 6px;
+    border-radius:17px;
+  }
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature:nth-child(1),
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature:nth-child(2),
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature:nth-child(3){
+    grid-column:span 2;
+  }
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature:nth-child(4),
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature:nth-child(5){
+    grid-column:span 3;
+  }
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature span{
+    font-size:24px;
+    margin-bottom:7px;
+  }
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature b{
+    font-size:12px;
+    white-space:nowrap;
+  }
+  body:has(#dashboard.active) .dashboard-color-grid .dashboard-feature small{
+    font-size:8px;
+    white-space:nowrap;
+  }
+}
+
+/* Premium Shorts icon in bottom navigation */
+.bottom-nav .shorts-nav-icon{
+  width:30px;
+  height:30px;
+  display:block;
+  margin:0 auto 1px;
+  object-fit:contain;
+  border-radius:8px;
+  filter:drop-shadow(0 0 7px rgba(91,99,255,.4));
+}
+
+body:has(#dashboard.active) #notifyBtn::after{content:none !important;}

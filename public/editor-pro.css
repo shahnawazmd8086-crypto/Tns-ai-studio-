@@ -5,3 +5,311 @@
 .pro-context{display:flex;gap:7px;overflow-x:auto;padding:7px 0 4px;scroll-snap-type:x proximity}.pro-context button{flex:0 0 64px;border:1px solid rgba(255,255,255,.09);background:#131e33;color:#fff;border-radius:12px;padding:8px 5px;display:flex;flex-direction:column;align-items:center;gap:3px}.pro-context button small{font-size:9px;color:#b6c2d7}.pro-track{position:absolute;left:0;right:0}.pro-video-track{top:30px;height:58px}.pro-text-track{top:91px;height:22px}.pro-audio-track{top:116px;height:22px}.pro-timeline{height:150px}.pro-clip-wrap{position:absolute;top:2px;height:56px}.pro-clip-wrap .pro-clip{left:0;top:0;width:100%;height:56px}.pro-text-item,.pro-audio-item{position:absolute;height:18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-radius:5px;padding:2px 6px;font-size:8px;box-sizing:border-box}.pro-text-item{background:#283c67;color:#dbe7ff}.pro-audio-item{background:#244633;color:#d9ffe7}.export-sheet{padding-bottom:20px}.export-presets{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.export-presets button{border:1px solid rgba(255,255,255,.09);background:#172239;color:#fff;border-radius:10px;padding:11px;font-weight:700}.export-presets button:active,.ratio-pills button:active{transform:scale(.97)}
 
 .pro-clip .clip-thumb{display:block;width:100%;height:30px;border-radius:6px;overflow:hidden;background:#0a1020}.pro-clip .clip-thumb video,.pro-clip .clip-thumb img{width:100%;height:100%;object-fit:cover;display:block}.pro-clip b{margin-top:3px}.pro-overlay-track{top:91px;height:22px}.pro-overlay-item{position:absolute;height:18px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border-radius:5px;padding:2px 6px;font-size:8px;box-sizing:border-box;background:#5a3c21;color:#fff}.pro-text-track{top:116px}.pro-audio-track{top:141px}.pro-timeline{height:175px}.pro-track-labels{grid-template-columns:repeat(4,1fr)}.pro-head-actions button{cursor:pointer}.pro-head-actions button:disabled{opacity:.5}@media(max-width:520px){.pro-head-actions button{padding:8px 7px;font-size:11px}.pro-brand b{font-size:14px}.pro-timeline{height:175px}}
+
+/* TNS Studio mobile editing dashboard - familiar, icon-first workflow */
+.pro-categories{
+  display:flex;
+  overflow-x:auto;
+  gap:4px;
+  padding:8px 2px 7px;
+  margin:4px -2px 0;
+  border-top:1px solid rgba(255,255,255,.06);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:#080d19;
+  scrollbar-width:none;
+}
+.pro-categories::-webkit-scrollbar{display:none}
+.pro-cat{
+  flex:0 0 66px;
+  min-height:58px;
+  border:0;
+  background:transparent;
+  color:#8795ad;
+  border-radius:12px;
+  padding:6px 4px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  font-size:10px;
+  scroll-snap-align:start;
+}
+.pro-cat .pro-cat-icon{font-size:21px;line-height:1;font-weight:700;color:#c4cede}
+.pro-cat small{font-size:10px;color:inherit;white-space:nowrap}
+.pro-cat.active{background:rgba(255,255,255,.10);color:#fff;box-shadow:inset 0 -2px 0 #fff}
+.pro-cat.active .pro-cat-icon{color:#fff}
+.pro-tools{
+  display:flex;
+  overflow-x:auto;
+  gap:9px;
+  padding:10px 1px 13px;
+  scrollbar-width:none;
+  background:#080d19;
+}
+.pro-tools::-webkit-scrollbar{display:none}
+.pro-tool{
+  flex:0 0 74px;
+  min-height:76px;
+  border:1px solid rgba(255,255,255,.08);
+  background:#111a2b;
+  color:#f5f7ff;
+  border-radius:14px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:8px 5px;
+  box-shadow:0 5px 16px rgba(0,0,0,.14);
+}
+.pro-tool:active{transform:scale(.96)}
+.pro-tool-icon{font-size:25px;line-height:1;font-weight:700;color:#fff;min-height:25px;display:flex;align-items:center;justify-content:center}
+.pro-tool small{font-size:10px;line-height:1.15;color:#bdc7d8;text-align:center;max-width:68px}
+@media(max-width:520px){
+  .tns-pro-editor{border-radius:18px}
+  .pro-workspace{padding:8px}
+  .pro-preview-wrap{height:43vh;min-height:245px;border-radius:15px}
+  .pro-head{padding:10px 9px}
+  .pro-head-actions button{padding:8px 7px}
+  .pro-categories{margin-left:-1px;margin-right:-1px}
+  .pro-cat{flex-basis:62px;min-height:56px}
+  .pro-tool{flex-basis:70px;min-height:72px}
+}
+
+/* CapCut-inspired TNS Studio editor workspace — original TNS branding/assets retained */
+.capcut-inspired-editor{
+  background:#090b10;
+  color:#f4f6fb;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 24px 70px rgba(0,0,0,.42);
+}
+.capcut-topbar{
+  height:58px;
+  padding:0 14px;
+  background:#101216;
+  border-bottom:1px solid #25282f;
+}
+.capcut-back{
+  width:32px;height:32px;border:0;background:transparent;color:#fff;font-size:28px;line-height:1;cursor:pointer;
+}
+.capcut-top-center{display:flex;align-items:center;gap:12px;font-size:12px;color:#e8ebf2;margin-left:auto;margin-right:auto}
+.capcut-save-state{color:#7f8794}
+.capcut-body{display:grid;grid-template-columns:82px minmax(0,1fr);min-height:720px;background:#0b0d11}
+.capcut-sidebar{
+  order:0;
+  width:auto;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:8px 5px;
+  background:#111318;
+  border-right:1px solid #25282f;
+}
+.capcut-sidebar .pro-cat{
+  flex:0 0 68px;
+  width:70px;
+  min-height:64px;
+  border:0;
+  background:transparent;
+  color:#9ba2ae;
+  border-radius:8px;
+  padding:7px 2px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  cursor:pointer;
+}
+.capcut-sidebar .pro-cat:hover{background:#1c2027;color:#fff}
+.capcut-sidebar .pro-cat.active{background:#252a33;color:#fff;box-shadow:none}
+.capcut-sidebar .pro-cat-icon{font-size:21px;line-height:1;font-weight:700}
+.capcut-sidebar .pro-cat small{font-size:9px;white-space:nowrap;color:inherit}
+.capcut-main{
+  min-width:0;
+  padding:10px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.capcut-importbar{
+  order:0;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-height:38px;
+  padding:0;
+  margin:0;
+}
+.capcut-import{
+  white-space:nowrap;
+  border:1px solid #30343c;
+  background:#171a20;
+  color:#eef1f6;
+  border-radius:7px;
+  padding:8px 11px;
+  font-size:11px;
+  cursor:pointer;
+}
+.capcut-import:hover{background:#20242b}
+.capcut-import.primary-import{background:#5b4bdb;border-color:#6b5be7;font-weight:700}
+.capcut-import input{display:none}
+.capcut-stage{min-height:0;flex:1;display:flex;align-items:center;justify-content:center;background:#07080b;border:1px solid #24272d;border-radius:6px;padding:8px}
+.capcut-stage .pro-preview-wrap{
+  width:100%;
+  height:min(52vh,570px);
+  min-height:300px;
+  background:#050608;
+  border-radius:4px;
+  border:0;
+}
+.capcut-stage .pro-preview-wrap video{max-height:100%;object-fit:contain}
+.capcut-playback{background:#111318;border-top:1px solid #24272d;border-bottom:1px solid #24272d;padding:7px 8px;margin:0}
+.capcut-playback button{width:30px;height:30px;background:#fff;color:#111;border-radius:50%;font-size:12px}
+.capcut-clip-tools{
+  order:3;
+  display:flex;
+  gap:5px;
+  padding:5px 0;
+  min-height:55px;
+  background:#111318;
+  border-radius:5px;
+}
+.capcut-clip-tools button{
+  flex:0 0 64px;
+  border:0;
+  background:transparent;
+  color:#d8dde7;
+  border-radius:6px;
+  padding:6px 3px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+}
+.capcut-clip-tools button:hover{background:#22262e;color:#fff}
+.capcut-clip-tools button:first-child{background:#262b34;color:#fff}
+.capcut-clip-tools button small{font-size:9px}
+.capcut-timeline-head{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:4px 2px;color:#d7dbe3;font-size:11px
+}
+.capcut-timeline-head span{color:#747c88;font-size:9px}
+.capcut-timeline{
+  border-radius:5px;
+  background:#07090d;
+  border:1px solid #25282e;
+  min-height:150px;
+}
+.capcut-tool-panel{
+  order:5;
+  background:#111318;
+  border-top:1px solid #24272d;
+  border-radius:5px;
+  padding:7px 4px;
+  gap:5px;
+  min-height:78px;
+  overflow-x:auto;
+}
+.capcut-tool-panel .pro-tool{
+  flex:0 0 68px;
+  min-height:66px;
+  background:transparent;
+  border:0;
+  border-radius:7px;
+  box-shadow:none;
+  padding:6px 2px;
+}
+.capcut-tool-panel .pro-tool:hover{background:#22262e}
+.capcut-tool-panel .pro-tool-icon{font-size:22px;color:#e9edf5}
+.capcut-tool-panel .pro-tool small{font-size:9px;color:#b8bec9}
+.capcut-tool-panel .pro-tool-action{position:relative}
+.capcut-tool-panel .pro-tool-action input{display:none}
+.capcut-tool-panel .pro-tool-action{cursor:pointer}
+.capcut-inspired-editor .pro-drawer{
+  position:relative;
+  z-index:10;
+  background:#15181e;
+  border:1px solid #30343c;
+  border-radius:7px;
+  margin:0;
+}
+.capcut-inspired-editor .pro-track-labels{
+  background:#0c0e12;
+  border-top:1px solid #1f2228;
+  border-bottom:1px solid #1f2228;
+  padding:4px 3px;
+}
+.capcut-inspired-editor .pro-head-actions button{background:#1b1e24;color:#e9edf4;border-radius:7px}
+.capcut-inspired-editor .pro-head-actions .pro-export{background:#6c55f5;color:#fff}
+.capcut-inspired-editor .pro-brand b{font-size:14px}
+.capcut-inspired-editor .pro-brand small{color:#747d8c}
+.capcut-inspired-editor .pro-time span{color:#818996}
+.capcut-inspired-editor .pro-empty-timeline{color:#626a76}
+
+/* Mobile-browser layout: bottom-style CapCut tool rail, preview/timeline remain dominant. */
+@media(max-width:799px){
+  .capcut-inspired-editor{border-radius:12px}
+  .capcut-topbar{height:52px;padding:0 8px}
+  .capcut-top-center{display:none}
+  .capcut-topbar .pro-brand img{width:30px;height:30px}
+  .capcut-topbar .pro-brand b{font-size:13px}
+  .capcut-topbar .pro-brand small{display:none}
+  .capcut-topbar .pro-head-actions button{padding:7px 7px;font-size:10px}
+  .capcut-topbar .pro-head-actions #proSave,
+  .capcut-topbar .pro-head-actions #proLoad{display:none}
+  .capcut-body{display:flex;flex-direction:column;min-height:0}
+  .capcut-main{padding:6px;gap:6px;padding-bottom:0}
+  .capcut-sidebar{
+    order:20;
+    position:sticky;
+    bottom:0;
+    z-index:30;
+    width:100%;
+    height:68px;
+    flex-direction:row;
+    overflow-x:auto;
+    overflow-y:hidden;
+    padding:3px 5px;
+    border-right:0;
+    border-top:1px solid #282c33;
+    background:#111318;
+    scrollbar-width:none;
+  }
+  .capcut-sidebar::-webkit-scrollbar{display:none}
+  .capcut-sidebar .pro-cat{
+    flex:0 0 60px;
+    width:60px;
+    min-height:60px;
+    height:60px;
+    border-radius:7px;
+    padding:4px 2px;
+  }
+  .capcut-sidebar .pro-cat-icon{font-size:19px}
+  .capcut-sidebar .pro-cat small{font-size:8px}
+  .capcut-importbar{overflow-x:auto;scrollbar-width:none}
+  .capcut-importbar::-webkit-scrollbar{display:none}
+  .capcut-import{padding:7px 9px;font-size:10px}
+  .capcut-stage{padding:0;min-height:280px}
+  .capcut-stage .pro-preview-wrap{height:43vh;min-height:250px}
+  .capcut-clip-tools{overflow-x:auto;scrollbar-width:none}
+  .capcut-clip-tools::-webkit-scrollbar{display:none}
+  .capcut-clip-tools button{flex-basis:58px}
+  .capcut-tool-panel{min-height:73px;max-height:82px}
+  .capcut-tool-panel .pro-tool{flex-basis:61px;min-height:63px}
+  .capcut-tool-panel .pro-tool-icon{font-size:20px}
+  .capcut-tool-panel .pro-tool small{font-size:8px}
+}
+
+/* Workflow interaction polish */
+.capcut-stage .pro-preview-wrap.dragging{outline:2px dashed rgba(255,255,255,.65);outline-offset:-6px}
+#proCanvasOverlays{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#proCanvasOverlays img,#proCanvasOverlays video{position:absolute;max-width:none;object-fit:contain;transform-origin:top left}
+#proCanvasText{pointer-events:none}
+.record-status{padding:10px 12px;border-radius:10px;background:#11192a;color:#aebbd0;font-size:12px;margin:8px 0}
+.pro-action:disabled{opacity:.45;cursor:not-allowed}

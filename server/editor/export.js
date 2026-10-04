@@ -258,6 +258,8 @@ async function exportTimeline(timeline = {}, output, options = {}) {
     if (rotate === 90) vf.push('transpose=1');
     else if (rotate === 180) vf.push('hflip,vflip');
     else if (rotate === 270) vf.push('transpose=2');
+    if (c.flip === 'horizontal') vf.push('hflip');
+    else if (c.flip === 'vertical') vf.push('vflip');
     vf.push(
       `scale=${width}:${height}:force_original_aspect_ratio=decrease`,
       `pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2`,
@@ -267,10 +269,35 @@ async function exportTimeline(timeline = {}, output, options = {}) {
     const contrast = Math.max(0.1, safeNum(c.contrast, 1));
     const saturation = Math.max(0, safeNum(c.saturation, 1));
     const sharpness = Math.max(0, safeNum(c.sharpness, 0));
-    if (Math.abs(brightness) > 0.001 || Math.abs(contrast - 1) > 0.001 || Math.abs(saturation - 1) > 0.001) {
-      vf.push(`eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}`);
+    const opacity = Math.max(0, Math.min(1, safeNum(c.opacity, 1)));
+    const adjustments = c.adjustments || {};
+    let adjBrightness = brightness + safeNum(adjustments.Exposure, 0) * 0.5;
+    let adjContrast = contrast;
+    let adjSaturation = saturation;
+    if (safeNum(adjustments.Temperature, 0) !== 0) {
+      const t = safeNum(adjustments.Temperature, 0);
+      vf.push(`colorbalance=rs=${t*0.15}:gs=0:bs=${-t*0.15}`);
+    }
+    if (safeNum(adjustments.Tint, 0) !== 0) {
+      const t = safeNum(adjustments.Tint, 0);
+      vf.push(`colorbalance=rs=${t*0.1}:gs=${-t*0.05}:bs=${t*0.1}`);
+    }
+    adjBrightness += safeNum(adjustments.Highlights, 0) * 0.15 + safeNum(adjustments.Shadows, 0) * 0.1;
+    if (Math.abs(adjBrightness) > 0.001 || Math.abs(adjContrast - 1) > 0.001 || Math.abs(adjSaturation - 1) > 0.001) {
+      vf.push(`eq=brightness=${adjBrightness}:contrast=${adjContrast}:saturation=${adjSaturation}`);
     }
     if (sharpness > 0.001) vf.push(`unsharp=5:5:${Math.min(2, sharpness)}:5:5:0`);
+    if (opacity < 0.999) vf.push(`format=rgba,colorchannelmixer=aa=${opacity},format=yuv420p`);
+    const filterMap = {
+      grayscale:'hue=s=0',warm:'eq=brightness=0.04:saturation=1.15',cool:'hue=h=12:s=0.9',
+      vintage:'eq=contrast=0.9:saturation=0.8',retro:'eq=contrast=0.95:saturation=1.2',
+      blur:'gblur=sigma=3',glitch:'hue=h=10',glow:'gblur=sigma=2',
+      'film grain':'noise=alls=12:allf=t+u',vignette:'vignette',
+      lens:'lenscorrection=k1=0.03:k2=0.01','light leak':'eq=brightness=0.08:saturation=1.15',
+      cinematic:'eq=contrast=1.12:saturation=0.92',sepia:'colorchannelmixer=.393:.769:.189:.349:.686:.168:.272:.534:.131'
+    };
+    const filterName=String(c.filter||'none').toLowerCase();
+    if(filterMap[filterName]) vf.push(filterMap[filterName]);
     vf.push(`setpts=PTS-STARTPTS`, `setpts=${1 / speed}*PTS`, `trim=duration=${renderedDuration}`, `setpts=PTS-STARTPTS+${start}/TB`);
     filters.push(`[${i}:v]${vf.join(',')}[${v}]`);
 

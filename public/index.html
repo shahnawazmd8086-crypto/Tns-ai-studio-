@@ -192,7 +192,67 @@
 <section id="exportVideo" data-screen-number="22" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">EXPORT VIDEO</p><h2>Professional Export</h2><div class="section-actions"><button class="icon-btn module-settings-btn" data-module-settings="export-video" title="Export Settings">⚙️</button></div></div><button class="back-btn" data-open="editor">← Edit Video</button></div><div class="settings-grid"><div><label>Resolution</label><select id="finalExportQuality"><option value="720">720p</option><option value="1080" selected>1080p Full HD</option><option value="1440">1440p 2K</option></select></div><div><label>Format</label><select><option>MP4</option><option>MOV</option><option>WebM</option></select></div><div><label>Frame Rate</label><select><option>30 FPS</option><option>60 FPS</option></select></div><div><label>Audio</label><select><option>AAC 192 kbps</option><option>AAC 320 kbps</option></select></div></div><button class="primary wide" id="openExportFromEditor">Export / Download</button><p id="exportScreenStatus" class="status">Export uses the current Edit Video settings.</p></div></section>
 <section id="appIcon" data-screen-number="23" class="panel"><div class="card glass icon-preview-page"><div class="section-head"><div><p class="eyebrow">TNS STUDIO BRAND</p><h2>Mobile App Icon</h2><div class="section-actions"><button class="icon-btn module-settings-btn" data-module-settings="app-icon" title="Brand Settings">⚙️</button></div></div><button class="back-btn" data-open="dashboard">← Dashboard</button></div><img src="/assets/tns-studio-mark.svg" class="app-icon-large" alt="TNS Studio app icon"><h3>TNS Studio</h3><p class="muted">Official app icon and brand mark for mobile/web.</p></div></section>
 <section id="finalEditView" data-screen-number="24" class="panel"><div class="card glass"><div class="section-head"><div><p class="eyebrow">FINAL EDITING VIEW</p><h2>Video Ready</h2><div class="section-actions"><button class="icon-btn module-settings-btn" data-module-settings="final-edit" title="Final View Settings">⚙️</button></div></div><button class="back-btn" data-open="editor">← Edit Video</button></div><div class="final-view-grid"><div class="final-preview"><video id="finalPreview" controls playsinline></video></div><div class="final-summary"><h3>Project Summary</h3><p id="finalSummaryText" class="muted">Your exported video will appear here.</p><button class="primary wide" id="finalDownloadBtn">⬇ Download</button><button class="secondary wide" data-open="projects">Save to Projects</button></div></div></div></section>
-<section id="profile" data-screen-number="25" class="panel"><div class="card glass profile-page"><div class="section-head"><div><p class="eyebrow">TNS STUDIO ACCOUNT</p><h2>User Profile</h2><p class="muted">Your TNS Studio account information.</p></div><button class="back-btn" data-open="dashboard">← Home</button></div><div class="profile-card"><div class="profile-avatar" id="profileAvatar">👤</div><div class="profile-info"><h3 id="profileName">TNS Studio User</h3><p id="profileIdentifier" class="muted">Signed in account</p></div></div><div class="settings-grid profile-details"><div><label>Account ID</label><div id="profileAccountId" class="profile-value">—</div></div><div><label>Login</label><div id="profileLoginType" class="profile-value">—</div></div></div></div></section>
-<nav class="bottom-nav"><button data-open="dashboard">⌂<small>Home</small></button><button data-open="generate"><img class="shorts-nav-icon" src="/assets/icons/tns-shorts-premium.png" alt="Shorts"><small>Shorts</small></button><button class="plus" data-open="tnsAi">＋</button><button data-open="projects">📁<small>Projects</small></button><button data-open="profile">👤<small>Profile</small></button></nav></div>
+
+<section id="shorts" data-screen-number="26" class="panel shorts-panel">
+  <div class="shorts-viewer">
+    <div class="shorts-topbar">
+      <button id="shortsCloseBtn" class="shorts-top-btn" type="button" aria-label="Close Shorts">←</button>
+      <div class="shorts-brand"><img src="/assets/tns-studio-dashboard-logo.png" alt="TNS Studio"><b>TNS Studio</b></div>
+      <button id="shortsUploadBtn" class="shorts-top-btn" type="button" title="Upload Short">＋</button>
+      <input id="shortsUploadInput" type="file" accept="video/*" class="hidden">
+    </div>
+    <div id="shortsFeed" class="shorts-feed" tabindex="0" aria-label="TNS Studio Shorts"></div>
+    <div id="shortsComments" class="shorts-comments hidden">
+      <div class="shorts-comments-head"><b>Comments</b><button id="shortsCommentsClose" type="button">×</button></div>
+      <div id="shortsCommentList" class="shorts-comment-list"></div>
+      <div class="shorts-comment-compose"><input id="shortsCommentInput" maxlength="300" placeholder="Add a comment…"><button id="shortsCommentSend" type="button">➤</button></div>
+    </div>
+  </div>
+</section>
+
+<section id="profile" data-screen-number="25" class="panel profile-panel">
+  <div class="profile-page">
+    <div class="profile-page-head">
+      <button class="back-btn profile-back" data-open="dashboard">← Home</button>
+      <div class="profile-head-actions">
+        <button id="profilePublicBtn" class="secondary profile-head-btn" type="button">👁 View Public</button>
+        <button id="profileEditBtn" class="primary profile-head-btn" type="button">Edit Profile</button>
+      </div>
+    </div>
+    <div class="profile-hero glass">
+      <div class="profile-main-row">
+        <div class="profile-avatar-wrap">
+          <div class="profile-avatar" id="profileAvatar">👤</div>
+          <label class="profile-camera" title="Change profile photo">📷<input id="profileAvatarInput" type="file" accept="image/*"></label>
+        </div>
+        <div class="profile-main-info">
+          <div class="profile-name-row"><h2 id="profileName">TNS Studio User</h2><span class="profile-verified">✓</span></div>
+          <p id="profileHandle" class="profile-handle">@tns_user</p>
+          <p id="profileBio" class="profile-bio">Video Creator | AI Explorer | Dream Big</p>
+          <p id="profileLocation" class="profile-meta">📍 India <span>•</span> 📅 Joined recently</p>
+        </div>
+        <div class="profile-own-actions"><button id="profileSettingsBtn" class="icon-btn" type="button" title="Profile settings">⚙️</button></div>
+      </div>
+      <div class="profile-stats">
+        <button type="button" data-profile-stat="posts"><b id="profilePosts">0</b><span>Posts</span></button>
+        <button type="button" data-profile-stat="followers"><b id="profileFollowers">0</b><span>Followers</span></button>
+        <button type="button" data-profile-stat="following"><b id="profileFollowing">0</b><span>Following</span></button>
+      </div>
+      <div class="profile-tabs" role="tablist">
+        <button class="active" data-profile-tab="shorts" type="button">Shorts</button>
+        <button data-profile-tab="videos" type="button">Videos</button>
+        <button data-profile-tab="liked" type="button">Liked</button>
+      </div>
+      <div id="profileContent" class="profile-content"></div>
+    </div>
+    <div id="profileAccountPanel" class="profile-account-panel glass">
+      <div><p class="eyebrow">ACCOUNT</p><b id="profileIdentifier">Signed in account</b><small id="profileLoginType">Account</small></div>
+      <div><span>Account ID</span><b id="profileAccountId">—</b></div>
+    </div>
+  </div>
+</section>
+<div id="profileEditModal" class="modal hidden"><div class="modal-card glass profile-edit-modal"><button class="modal-close" data-close="profileEditModal">×</button><p class="eyebrow">PROFILE</p><h2>Edit Profile</h2><label>Display Name<input id="profileEditName" maxlength="40"></label><label>Username<input id="profileEditHandle" maxlength="30" placeholder="your_username"></label><label>Bio<textarea id="profileEditBio" rows="3" maxlength="160"></textarea></label><label>Location<input id="profileEditLocation" maxlength="40" placeholder="India"></label><button id="profileSaveBtn" class="primary wide" type="button">Save Profile</button><p id="profileEditStatus" class="status"></p></div></div>
+<div id="profileSocialModal" class="modal hidden"><div class="modal-card glass profile-social-modal"><button class="modal-close" data-close="profileSocialModal">×</button><p class="eyebrow" id="profileSocialEyebrow">TNS STUDIO</p><h2 id="profileSocialTitle">Followers</h2><div id="profileSocialList" class="profile-social-list"></div></div></div>
+<nav class="bottom-nav"><button data-open="dashboard">⌂<small>Home</small></button><button data-open="shorts"><img class="shorts-nav-icon" src="/assets/icons/tns-shorts-premium.png" alt="Shorts"><small>Shorts</small></button><button class="plus" data-open="tnsAi">＋</button><button data-open="projects">📁<small>Projects</small></button><button data-open="profile">👤<small>Profile</small></button></nav></div>
 <script src="/config/Language-registry.js"></script><script src="/config/Country-config.js"></script><script src="/config/Editor-tools-config.js"></script><script src="/config/Module-settings-config.js"></script><script src="/app.js"></script>
 <script src="/editor-pro.js"></script></body></html>

@@ -4,8 +4,89 @@ let selectedLang=null,otpIdentifier=null,currentMedia=null,currentContact=null,c
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200)}
 function msg(id,text,type='info'){const e=$(id);if(!e)return;e.textContent=text;e.dataset.type=type}
 async function json(url,options={}){const r=await fetch(url,{credentials:'include',...options});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error||d.message||'Request failed.');return d}
-function showPanel(id){$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='projects')renderProjects();if(id==='contact')loadContacts();if(id==='profile')renderProfile();}
-function renderProfile(){const u=currentUser()||{};const identifier=u.email||u.mobile||'Signed in account';const name=u.name||u.displayName||'TNS Studio User';const avatar=(name.trim()[0]||'👤').toUpperCase();$('#profileName')&&($('#profileName').textContent=name);$('#profileIdentifier')&&($('#profileIdentifier').textContent=identifier);$('#profileAccountId')&&($('#profileAccountId').textContent=u.id||'—');$('#profileLoginType')&&($('#profileLoginType').textContent=u.mobile?'Mobile Number':u.email?'Email':'Account');$('#profileAvatar')&&($('#profileAvatar').textContent=avatar)}
+function showPanel(id){$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));document.body.classList.toggle('shorts-mode',id==='shorts');window.scrollTo({top:0,behavior:'smooth'});if(id==='projects')renderProjects();if(id==='contact')loadContacts();if(id==='profile')renderProfile();if(id==='shorts'){initShortsViewer();loadShortsFeed();renderShortsFeed();}}
+
+const shortsDemoFeed=[
+  {id:'s1',creator:'TNS Creator',handle:'@tns_creator',title:'Create. Edit. Inspire. ✨',caption:'A new Short made with TNS Studio.',audio:'Original audio • TNS Studio',views:'125K'},
+  {id:'s2',creator:'Nature Studio',handle:'@nature_studio',title:'Into the wild 🌿',caption:'Nature, travel and cinematic Shorts.',audio:'Nature ambience',views:'98K'},
+  {id:'s3',creator:'AI Maker',handle:'@ai_maker',title:'AI creation in seconds 🤖',caption:'From an idea to a finished video.',audio:'Original audio • TNS AI',views:'210K'},
+  {id:'s4',creator:'Survival Mood',handle:'@survival_mood',title:'One man. One shelter. 🏕️',caption:'Realistic survival build Short.',audio:'Original audio',views:'76K'}
+];
+let shortsFeedItems=[],shortsCommentsById={},shortsCurrentIndex=0,shortsTouchY=0;
+function shortsStoreKey(){const u=currentUser()||{};return 'tnsStudioShorts_'+(u.id||u.email||u.mobile||'guest').replace(/[^a-z0-9_-]/gi,'_')}
+function loadShortsFeed(){shortsFeedItems=[...shortsDemoFeed];}
+function shortsInitial(name){return (String(name||'T')[0]||'T').toUpperCase()}
+function renderShortsFeed(){
+  const box=$('#shortsFeed');if(!box)return;
+  if(!shortsFeedItems.length){box.innerHTML='<div class="shorts-empty"><div class="shorts-empty-card"><div class="empty-icon">▶️</div><h2>No Shorts yet</h2><p class="muted">Upload your first Short and it will appear here.</p><button id="shortsEmptyUpload" class="primary" type="button">＋ Upload Short</button></div></div>';$('#shortsEmptyUpload')?.addEventListener('click',()=>$('#shortsUploadInput')?.click());return}
+  box.innerHTML=shortsFeedItems.map((x,i)=>`<article class="short-item" data-short-id="${escapeHtml(x.id)}" data-short-index="${i}">
+    ${x.url?`<video class="short-media" src="${escapeHtml(x.url)}" playsinline loop preload="metadata"></video>`:'<div class="short-placeholder"><span>TNS Studio</span></div>'}
+    <div class="short-gradient"></div><div class="short-pause">▶</div>
+    <div class="short-info">
+      <div class="short-creator"><div class="short-avatar">${x.avatar?`<img src="${escapeHtml(x.avatar)}" alt="">`:escapeHtml(shortsInitial(x.creator))}</div><b>${escapeHtml(x.creator)}</b><button class="short-follow" data-short-follow="${escapeHtml(x.id)}" type="button">${x.following?'✓ Following':'Follow'}</button></div>
+      <h3>${escapeHtml(x.title||'TNS Studio Short')}</h3><p>${escapeHtml(x.caption||'')}</p><div class="short-audio">♫ ${escapeHtml(x.audio||'Original audio')}</div>
+    </div>
+    <div class="short-actions">
+      <button class="short-action ${x.liked?'liked':''}" data-short-action="like" data-short-id="${escapeHtml(x.id)}" type="button">♥<small>${escapeHtml(x.views||'0')}</small></button>
+      <button class="short-action" data-short-action="comment" data-short-id="${escapeHtml(x.id)}" type="button">💬<small>${(shortsCommentsById[x.id]||[]).length}</small></button>
+      <button class="short-action" data-short-action="share" data-short-id="${escapeHtml(x.id)}" type="button">↗<small>Share</small></button>
+      <button class="short-action ${x.saved?'saved':''}" data-short-action="save" data-short-id="${escapeHtml(x.id)}" type="button">🔖<small>Save</small></button>
+      <button class="short-action" data-short-action="profile" data-short-id="${escapeHtml(x.id)}" type="button">👤<small>Profile</small></button>
+    </div>
+  </article>`).join('');
+  $$('#shortsFeed .short-item').forEach(item=>{
+    const video=item.querySelector('video');
+    item.addEventListener('click',e=>{if(e.target.closest('button'))return;if(video){if(video.paused){video.play().catch(()=>{});item.classList.remove('is-paused')}else{video.pause();item.classList.add('is-paused')}}});
+    if(video){const io=new IntersectionObserver(entries=>entries.forEach(en=>{if(en.isIntersecting){shortsCurrentIndex=Number(item.dataset.shortIndex)||0;video.play().catch(()=>{})}else video.pause()}),{threshold:.72});io.observe(item)}
+  });
+}
+function openShorts(){loadShortsFeed();renderShortsFeed();showPanel('shorts');document.body.classList.add('shorts-mode');setTimeout(()=>$('#shortsFeed')?.focus(),60)}
+function closeShorts(){document.body.classList.remove('shorts-mode');showPanel('dashboard')}
+function shortsAction(id,action){
+  const x=shortsFeedItems.find(v=>v.id===id);if(!x)return;
+  if(action==='like'){x.liked=!x.liked;renderShortsFeed();return}
+  if(action==='save'){x.saved=!x.saved;toast(x.saved?'Short saved':'Removed from saved');renderShortsFeed();return}
+  if(action==='comment'){openShortComments(id);return}
+  if(action==='profile'){showPanel('profile');return}
+  if(action==='share'){const text=`${x.title||'TNS Studio Short'} ${x.handle||''}`;if(navigator.share)navigator.share({title:x.title||'TNS Studio Short',text}).catch(()=>{});else navigator.clipboard?.writeText(text).then(()=>toast('Short link text copied')).catch(()=>toast('Share is ready'));return}
+}
+function openShortComments(id){
+  const box=$('#shortsComments');if(!box)return;box.dataset.shortId=id;box.classList.remove('hidden');
+  const list=shortsCommentsById[id]||[];$('#shortsCommentList').innerHTML=list.length?list.map(c=>`<div class="short-comment"><div class="short-comment-avatar">${escapeHtml(shortsInitial(c.name))}</div><div><b>${escapeHtml(c.name)}</b><span>${escapeHtml(c.text)}</span></div></div>`).join(''):'<p class="muted">Be the first to comment.</p>';
+}
+function initShortsViewer(){
+  if(window.__tnsShortsReady)return;window.__tnsShortsReady=true;
+  $('#shortsCloseBtn')?.addEventListener('click',closeShorts);
+  $('#shortsUploadBtn')?.addEventListener('click',()=>$('#shortsUploadInput')?.click());
+  $('#shortsUploadInput')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('video/'))return toast('Choose a video file');const id='upload_'+Date.now();shortsFeedItems.unshift({id,creator:(getProfileData().name||'TNS Studio User'),handle:'@'+(getProfileData().handle||'tns_user'),title:f.name.replace(/\.[^.]+$/,''),caption:'Uploaded from TNS Studio',audio:'Original audio',views:'0',url:URL.createObjectURL(f),avatar:getProfileData().avatar||'',liked:false,saved:false,following:false});renderShortsFeed();toast('Short added');e.target.value=''});
+  $('#shortsFeed')?.addEventListener('click',e=>{const b=e.target.closest('[data-short-action]');if(b)return shortsAction(b.dataset.shortId,b.dataset.shortAction);const follow=e.target.closest('[data-short-follow]');if(follow){const x=shortsFeedItems.find(v=>v.id===follow.dataset.shortFollow);if(!x)return;x.following=!x.following;const d=getProfileData();d.following=Math.max(0,(Number(d.following)||0)+(x.following?1:-1));saveProfileData(d);renderShortsFeed();}});
+  $('#shortsCommentsClose')?.addEventListener('click',()=>$('#shortsComments')?.classList.add('hidden'));
+  $('#shortsCommentSend')?.addEventListener('click',()=>{const input=$('#shortsCommentInput'),id=$('#shortsComments')?.dataset.shortId,text=input?.value.trim();if(!id||!text)return;const d=getProfileData();(shortsCommentsById[id]||(shortsCommentsById[id]=[])).push({name:d.name||'TNS Studio User',text});input.value='';openShortComments(id);renderShortsFeed()});
+  $('#shortsFeed')?.addEventListener('touchstart',e=>{shortsTouchY=e.touches[0].clientY},{passive:true});
+  $('#shortsFeed')?.addEventListener('touchend',e=>{const dy=shortsTouchY-e.changedTouches[0].clientY;if(Math.abs(dy)<55)return;const box=$('#shortsFeed');const target=Math.max(0,Math.min(shortsFeedItems.length-1,shortsCurrentIndex+(dy>0?1:-1)));box.children[target]?.scrollIntoView({behavior:'smooth'});shortsCurrentIndex=target},{passive:true});
+  $('#shortsFeed')?.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();const i=Math.min(shortsFeedItems.length-1,shortsCurrentIndex+1);$('#shortsFeed').children[i]?.scrollIntoView({behavior:'smooth'});shortsCurrentIndex=i}if(e.key==='ArrowUp'){e.preventDefault();const i=Math.max(0,shortsCurrentIndex-1);$('#shortsFeed').children[i]?.scrollIntoView({behavior:'smooth'});shortsCurrentIndex=i}});
+}
+
+function profileStoreKey(){const u=currentUser()||{};return 'tnsStudioProfile_'+(u.id||u.email||u.mobile||'guest').replace(/[^a-z0-9_-]/gi,'_')}
+function defaultProfile(){const u=currentUser()||{};const raw=u.name||u.displayName||'';const name=raw||'TNS Studio User';const handle=(u.username||u.handle||name).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,24)||'tns_user';return {name,handle,bio:'Video Creator | AI Explorer | Dream Big',location:'India',avatar:'',followers:0,following:0,posts:0,liked:[]}}
+function getProfileData(){const base=defaultProfile();try{return {...base,...JSON.parse(localStorage.getItem(profileStoreKey())||'{}')}}catch{return base}}
+function saveProfileData(d){localStorage.setItem(profileStoreKey(),JSON.stringify(d))}
+function profileShorts(){let projects=[];try{projects=JSON.parse(localStorage.getItem(projectKey())||'[]')}catch{}const names=projects.map(x=>x.name||x.title).filter(Boolean);const fallback=['My First Short','AI Creation','Travel Short','New Edit','Creator Story','TNS Studio'];return (names.length?names:fallback).slice(0,12)}
+function renderProfileContent(tab='shorts',publicMode=false){const box=$('#profileContent');if(!box)return;if(tab==='shorts'||tab==='videos'){const names=profileShorts();box.innerHTML='<div class="profile-short-grid">'+names.map((n,i)=>`<button class="profile-short" type="button" data-profile-short="${escapeHtml(n)}"><span class="short-icon">▶ ${tab==='videos'?'Video':'Short'}</span><span class="short-views">${[125,98,210,76,142,93,64,87][i%8]}K</span></button>`).join('')+'</div>';return}box.innerHTML='<div class="profile-empty"><div style="font-size:32px;margin-bottom:8px">♡</div><b>No liked videos yet</b><span>Liked Shorts will appear here.</span></div>'}
+function renderProfile(){const d=getProfileData();const u=currentUser()||{};const identifier=u.email||u.mobile||'Signed in account';const name=d.name||'TNS Studio User';const initial=(name.trim()[0]||'👤').toUpperCase();$('#profileName')&&($('#profileName').textContent=name);$('#profileHandle')&&($('#profileHandle').textContent='@'+(d.handle||'tns_user'));$('#profileBio')&&($('#profileBio').textContent=d.bio||'Video Creator | AI Explorer | Dream Big');$('#profileLocation')&&($('#profileLocation').innerHTML=`📍 ${escapeHtml(d.location||'India')} <span>•</span> 📅 Joined recently`);$('#profileFollowers')&&($('#profileFollowers').textContent=formatProfileCount(d.followers||0));$('#profileFollowing')&&($('#profileFollowing').textContent=formatProfileCount(d.following||0));$('#profilePosts')&&($('#profilePosts').textContent=d.posts||profileShorts().length);$('#profileIdentifier')&&($('#profileIdentifier').textContent=identifier);$('#profileAccountId')&&($('#profileAccountId').textContent=u.id||'—');$('#profileLoginType')&&($('#profileLoginType').textContent=u.mobile?'Mobile Number':u.email?'Email':'Account');const av=$('#profileAvatar');if(av){av.innerHTML=d.avatar?`<img src="${escapeHtml(d.avatar)}" alt="Profile photo">`:escapeHtml(initial)}renderProfileContent('shorts');}
+function formatProfileCount(n){n=Number(n)||0;if(n>=1000000)return (n/1000000).toFixed(1).replace('.0','')+'M';if(n>=1000)return (n/1000).toFixed(1).replace('.0','')+'K';return String(n)}
+function openProfileEdit(){const d=getProfileData();$('#profileEditName').value=d.name||'';$('#profileEditHandle').value=d.handle||'';$('#profileEditBio').value=d.bio||'';$('#profileEditLocation').value=d.location||'India';$('#profileEditStatus').textContent='';$('#profileEditModal').classList.remove('hidden')}
+function setProfilePublicMode(on){const page=$('#profile');if(!page)return;page.classList.toggle('profile-public-mode',!!on);const d=getProfileData();const btn=$('#profilePublicBtn');if(btn)btn.textContent=on?'← My Profile':'👁 View Public';const edit=$('#profileEditBtn');if(edit)edit.classList.toggle('hidden',!!on);const follow=$('#profileFollowBtn');if(follow)follow.classList.toggle('hidden',!on);if(on){const followers=Math.max(Number(d.followers)||0,0);$('#profileFollowers').textContent=formatProfileCount(followers);$('#profileContent').dataset.public='true'}else delete $('#profileContent').dataset.public;}
+$('#profileEditBtn')?.addEventListener('click',openProfileEdit);
+$('#profilePublicBtn')?.addEventListener('click',()=>setProfilePublicMode(!$('#profile')?.classList.contains('profile-public-mode')));
+$('#profileFollowBtn')?.addEventListener('click',()=>{const b=$('#profileFollowBtn');const d=getProfileData();const following=b.dataset.following==='true';b.dataset.following=following?'false':'true';b.textContent=following?'＋ Follow':'✓ Following';if(!following)d.followers=(Number(d.followers)||0)+1;else d.followers=Math.max(0,(Number(d.followers)||0)-1);saveProfileData(d);$('#profileFollowers').textContent=formatProfileCount(d.followers)});
+$('#profileSaveBtn')?.addEventListener('click',()=>{const d=getProfileData();const name=$('#profileEditName').value.trim()||'TNS Studio User';const handle=$('#profileEditHandle').value.trim().replace(/^@/,'').toLowerCase().replace(/[^a-z0-9_.]/g,'_').slice(0,30)||'tns_user';d.name=name;d.handle=handle;d.bio=$('#profileEditBio').value.trim()||'Video Creator | AI Explorer | Dream Big';d.location=$('#profileEditLocation').value.trim()||'India';saveProfileData(d);$('#profileEditModal').classList.add('hidden');renderProfile();toast('Profile updated')});
+$('#profileAvatarInput')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith('image/'))return toast('Choose an image');const r=new FileReader();r.onload=()=>{const d=getProfileData();d.avatar=r.result;saveProfileData(d);renderProfile();toast('Profile photo updated')};r.readAsDataURL(f)});
+$$('[data-profile-tab]').forEach(b=>b.addEventListener('click',()=>{$$('[data-profile-tab]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderProfileContent(b.dataset.profileTab,$('#profile')?.classList.contains('profile-public-mode'))}));
+$$('[data-profile-stat]').forEach(b=>b.addEventListener('click',()=>{const type=b.dataset.profileStat;const d=getProfileData();if(type==='posts')return;const title=type==='followers'?'Followers':'Following';const list=type==='followers'?[['Creator One','@creator_one'],['Nature Studio','@nature_studio'],['AI Maker','@ai_maker']]:[['TNS Creator','@tns_creator'],['Shorts Lab','@shorts_lab'],['AI World','@ai_world']];$('#profileSocialEyebrow').textContent=title.toUpperCase();$('#profileSocialTitle').textContent=title;$('#profileSocialList').innerHTML=list.map((x,i)=>`<div class="profile-social-row"><div class="profile-social-avatar">${x[0][0]}</div><div><b>${x[0]}</b><small>${x[1]}</small></div><button class="profile-social-follow" data-follow-demo="${i}" type="button">${type==='followers'?'Following':'Follow'}</button></div>`).join('');$('#profileSocialModal').classList.remove('hidden') }));
+$('#profileSocialList')?.addEventListener('click',e=>{const b=e.target.closest('[data-follow-demo]');if(!b)return;b.textContent=b.textContent==='Follow'?'Following':'Follow';b.style.opacity=b.textContent==='Following'?'.7':'1'});
+$('#profileSettingsBtn')?.addEventListener('click',openProfileEdit);
+
 $$('[data-open]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.open)));
 function showAuthScreens(which){['authScreen','otpScreen','languageScreen'].forEach(id=>$( '#'+id).classList.toggle('hidden',id!==which))}
 function currentUser(){return authenticatedUser}

@@ -108,5 +108,25 @@
     "provider": "password",
     "createdAt": "2026-10-01T15:55:42.286Z",
     "updatedAt": "2026-10-01T15:55:42.286Z"
+  },
+  {
+    "id": "733d2549-5843-444f-925c-35a64ebc8ee3",
+    "email": "editdemo@example.com",
+    "mobile": "+919876543219",
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:c444354212c851189b58fddf7fbac9fe:7e55f7414389fea2174b1d4d677021843e26693dfc3bb9bab3841d54b1d00467bd70340e3ace6f7a3ceeff069d864909d3c74119b85f9c8754e6d4057a39c35b",
+    "provider": "password",
+    "createdAt": "2026-10-04T12:01:55.422Z",
+    "updatedAt": "2026-10-04T12:01:55.422Z"
+  },
+  {
+    "id": "02b2cb64-ea31-40c4-899d-a8522a766e66",
+    "email": "editdemo2@example.com",
+    "mobile": "+919876543220",
+    "name": null,
+    "passwordHash": "scrypt:32768:8:1:64ecd07e67cd3d2eef84fd4382dbf914:d3b60171d4f6e48c5efcabc84273e5bbfde22c066db6d33c13949ad936ca8d229968083fa01d1ee0eafb95d23c945852298392776fec59ac63ed4fa915d3da50",
+    "provider": "password",
+    "createdAt": "2026-10-04T12:02:00.136Z",
+    "updatedAt": "2026-10-04T12:02:00.136Z"
   }
 ]

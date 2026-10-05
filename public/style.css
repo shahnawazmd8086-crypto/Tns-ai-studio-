@@ -850,3 +850,22 @@ body.profile-mode .profile-panel{padding-top:18px}
   .profile-follow-row-inline span{font-size:12px}
   .profile-bio-block{padding:7px 14px 4px}
 }
+
+/* TNS Studio — simple profile settings groups */
+.profile-settings-modal{max-height:92vh;overflow:auto}
+.settings-search-wrap{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;margin:10px 0 12px;padding:10px 12px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(8,12,28,.94);backdrop-filter:blur(12px)}
+.settings-search-wrap span{font-size:20px;opacity:.75}
+.settings-search-wrap input{width:100%;border:0;outline:0;background:transparent;color:inherit;font:inherit}
+.settings-group{margin:0 0 9px;border:1px solid rgba(255,255,255,.10);border-radius:15px;background:rgba(255,255,255,.025);overflow:hidden}
+.settings-group>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px;cursor:pointer;user-select:none}
+.settings-group>summary::-webkit-details-marker{display:none}
+.settings-group>summary span:first-child{display:flex;flex-direction:column;gap:3px}
+.settings-group>summary b{font-size:14px}
+.settings-group>summary small{font-size:11px;line-height:1.35;opacity:.62}
+.settings-chevron{font-size:25px;line-height:1;opacity:.65;transition:transform .18s ease}
+.settings-group[open]>summary .settings-chevron{transform:rotate(90deg)}
+.settings-group-body{padding:0 10px 10px}
+.settings-group-body .profile-setting-section{margin:0 0 9px}
+.settings-group-body .profile-setting-section:last-child{margin-bottom:0}
+.settings-search-empty{padding:22px 12px;text-align:center;opacity:.7}
+.settings-search-empty.hidden{display:none}

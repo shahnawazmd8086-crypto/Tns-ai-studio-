@@ -628,15 +628,18 @@ body.profile-mode .profile-panel{padding-top:18px}
 .profile-top-logo{width:34px;height:34px;object-fit:contain;filter:brightness(1.12) saturate(1.25) drop-shadow(0 0 9px rgba(48,170,255,.35))}
 .profile-top-brand{font-size:17px;letter-spacing:-.3px}
 .profile-settings-top{margin-left:auto;font-size:18px;background:transparent!important;border:0!important;box-shadow:none!important;padding:8px!important}
-.profile-main-row{grid-template-columns:auto 1fr auto;align-items:center}
+.profile-main-row{grid-template-columns:auto 1fr auto auto;align-items:center}
+.profile-follow-row-inline{padding:0 2px;gap:14px;justify-content:flex-end;white-space:nowrap}
+.profile-follow-row-inline button{padding:4px 2px}
+.profile-follow-row-inline b{font-size:21px}.profile-follow-row-inline span{font-size:12px}
 .profile-edit-inline{margin-top:7px;padding:7px 12px;font-size:11px;border-radius:10px}
 .profile-public-actions{display:flex;gap:7px;align-items:center;justify-content:flex-end}
-.profile-follow-row{display:grid;grid-template-columns:auto auto;justify-content:start;column-gap:22px;padding:7px 20px 12px;border-bottom:0}
-.profile-follow-row button{background:transparent;padding:7px 3px;display:grid;gap:2px;text-align:left}
-.profile-follow-row b{font-size:18px}.profile-follow-row span{font-size:11px;color:#aab4cc}
-.profile-bio-block{padding:20px 20px 4px}.profile-bio-block .profile-bio{margin:0 0 7px}
-.profile-status-head{display:flex;align-items:center;justify-content:space-between;padding:13px 20px 7px}.profile-status-head button{padding:9px 13px;font-size:12px;border-radius:12px}.profile-statuses{min-height:78px;gap:12px;padding:6px 18px 15px}
-.profile-statuses{display:flex;gap:12px;overflow-x:auto;padding:6px 18px 15px;scrollbar-width:none}.profile-statuses::-webkit-scrollbar{display:none}
+.profile-follow-row{display:flex;align-items:center;justify-content:flex-start;gap:28px;padding:8px 20px 13px;border-bottom:0}
+.profile-follow-row button{background:transparent;padding:6px 3px;display:flex;align-items:baseline;gap:6px;text-align:left}
+.profile-follow-row b{font-size:20px;line-height:1.1}.profile-follow-row span{font-size:12px;color:#aab4cc}
+.profile-bio-block{padding:8px 20px 4px}.profile-bio-block .profile-bio{margin:0 0 7px}
+.profile-status-head{display:flex;align-items:center;justify-content:space-between;padding:6px 20px 5px}.profile-status-head button{padding:9px 13px;font-size:12px;border-radius:12px}.profile-statuses{min-height:78px;gap:12px;padding:6px 18px 15px}
+.profile-statuses{display:flex;gap:12px;overflow-x:auto;padding:2px 18px 15px;scrollbar-width:none}.profile-statuses::-webkit-scrollbar{display:none}
 .profile-status{flex:0 0 64px;background:transparent;border:0;padding:0;text-align:center;color:#dce4f6}.profile-status-ring{width:58px;height:58px;margin:auto;border-radius:50%;display:grid;place-items:center;padding:3px;background:linear-gradient(135deg,#25b6ff,#7645ff,#df49c5);box-shadow:0 0 15px rgba(86,87,255,.25)}
 .profile-status-ring>span{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;background:#101a35;border:2px solid #071022;font-size:20px;font-weight:900;overflow:hidden}.profile-status-ring img{width:100%;height:100%;object-fit:cover}
 .profile-status small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:5px;font-size:9px;color:#9eabc8}.profile-status-ring.add{background:rgba(88,112,180,.25);border:1px solid rgba(110,140,220,.35);padding:0}.profile-status-ring.add>span{border:0}.profile-status-empty{padding:18px;color:#8793ae;font-size:11px}
@@ -645,7 +648,7 @@ body.profile-mode .profile-panel{padding-top:18px}
 .profile-content-head{display:flex;align-items:center;justify-content:space-between;padding:4px 18px 8px;color:#e7ecfa}.profile-content-head span{font-size:10px;color:#8f9bb7}
 .profile-public-mode .profile-upload-box,.profile-public-mode .profile-add-status{display:none}.profile-public-mode .profile-account-panel{display:none}.profile-public-mode .profile-edit-inline{display:none}.profile-public-mode .profile-bio-block{padding-top:8px}
 .profile-status-modal{max-width:480px}.profile-status-modal input[type=file]{padding:12px}.profile-status-modal label{display:grid;gap:6px;margin:12px 0}
-@media(max-width:680px){.profile-topbar{top:5px;margin-bottom:6px;padding-left:0;padding-right:0}.profile-main-row{grid-template-columns:auto 1fr auto;padding:17px 14px 9px;gap:10px}.profile-avatar-wrap,.profile-avatar{width:76px;height:76px}.profile-avatar{font-size:27px}.profile-public-actions{display:grid;gap:5px}.profile-head-btn{padding:7px 9px;font-size:10px}.profile-bio-block{padding-left:14px;padding-right:14px}.profile-follow-row{padding-left:14px;padding-right:10px;column-gap:18px}.profile-statuses{padding-left:13px;padding-right:13px}.profile-upload-box{margin-left:10px;margin-right:10px}.profile-content-head{padding-left:12px;padding-right:12px}}
+@media(max-width:680px){.profile-topbar{top:5px;margin-bottom:6px;padding-left:0;padding-right:0}.profile-main-row{grid-template-columns:auto 1fr auto;padding:17px 14px 9px;gap:10px}.profile-avatar-wrap,.profile-avatar{width:76px;height:76px}.profile-avatar{font-size:27px}.profile-public-actions{display:grid;gap:5px}.profile-head-btn{padding:7px 9px;font-size:10px}.profile-bio-block{padding:8px 14px 4px}.profile-follow-row{padding-left:14px;padding-right:10px;column-gap:18px} .profile-follow-row-inline{padding:0;gap:10px;align-self:center}.profile-follow-row-inline b{font-size:18px}.profile-follow-row-inline span{font-size:10px}.profile-statuses{padding-left:13px;padding-right:13px}.profile-upload-box{margin-left:10px;margin-right:10px}.profile-content-head{padding-left:12px;padding-right:12px}}
 
 /* Profile status placeholders: three circles visible before any status is added. */
 .profile-status-empty{display:none}.profile-statuses:empty::before,.profile-statuses:empty::after{content:"+";flex:0 0 58px;width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:rgba(88,112,180,.22);border:1px solid rgba(110,140,220,.35);color:#9eabc8;font-size:22px}.profile-statuses:empty{position:relative}.profile-statuses:empty{padding-right:100px}.profile-statuses:empty::after{content:"+";position:absolute;left:158px}.profile-statuses:empty::before{position:absolute;left:18px}.profile-statuses:empty{--status-placeholder:58px}
@@ -720,4 +723,9 @@ body.profile-mode .profile-panel{padding-top:18px}
   .profile-topbar{padding-left:7px;padding-right:7px}
   .profile-hero{max-width:none}
   .profile-account-panel{margin-top:8px}
+}
+
+/* Move the Shorts / Videos / Liked row slightly upward. */
+.profile-tabs{
+  margin-top:-4px;
 }

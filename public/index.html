@@ -229,14 +229,14 @@
           <p id="profileHandle" class="profile-handle">@tns_user</p>
           <button id="profileEditBtn" class="secondary profile-edit-inline" type="button">Edit Profile</button>
         </div>
+        <div class="profile-follow-row profile-follow-row-inline public-only-follow-actions">
+          <button type="button" data-profile-stat="followers"><b id="profileFollowers">0</b><span>Followers</span></button>
+          <button type="button" data-profile-stat="following"><b id="profileFollowing">0</b><span>Following</span></button>
+        </div>
         <div class="profile-public-actions">
           <button id="profileFollowBtn" class="primary profile-head-btn hidden" type="button">＋ Follow</button>
           <button id="profileMessageBtn" class="secondary profile-head-btn hidden" type="button">💬 Message</button>
         </div>
-      </div>
-      <div class="profile-follow-row public-only-follow-actions">
-        <button type="button" data-profile-stat="followers"><b id="profileFollowers">0</b><span>Followers</span></button>
-        <button type="button" data-profile-stat="following"><b id="profileFollowing">0</b><span>Following</span></button>
       </div>
       <div class="profile-bio-block">
         <p id="profileBio" class="profile-bio">Video Creator | AI Explorer | Dream Big</p>
@@ -251,10 +251,6 @@
         <button data-profile-tab="liked" type="button">♥ Liked</button>
       </div>
       <div id="profileContent" class="profile-content"></div>
-    </div>
-    <div id="profileAccountPanel" class="profile-account-panel glass">
-      <div><p class="eyebrow">ACCOUNT</p><b id="profileIdentifier">Signed in account</b><small id="profileLoginType">Account</small></div>
-      <div><span>Account ID</span><b id="profileAccountId">—</b></div>
     </div>
   </div>
 </section>

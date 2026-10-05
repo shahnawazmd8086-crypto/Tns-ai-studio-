@@ -772,3 +772,81 @@ body.profile-mode .profile-panel{padding-top:18px}
   .profile-follow-row-inline b{font-size:20px}
   .profile-follow-row-inline span{font-size:12px}
 }
+
+/* Profile header layout: avatar on the left; name + Posts/Followers/Following together on the right; bio below. */
+.profile-main-row{
+  display:block;
+  position:relative;
+  padding:17px 20px 0;
+  min-height:116px;
+}
+.profile-avatar-wrap{
+  float:left;
+  margin-right:14px;
+  margin-bottom:4px;
+}
+.profile-main-info{
+  min-width:0;
+  margin-left:130px;
+}
+.profile-name-row{
+  display:flex;
+  align-items:flex-start;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.profile-name-row h2{
+  margin:0;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  line-height:1.12;
+}
+.profile-follow-row-inline{
+  clear:none;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  width:calc(100% - 130px);
+  margin-left:130px;
+  padding:10px 0 5px;
+  transform:none!important;
+  align-items:start;
+}
+.profile-follow-row-inline button{
+  min-width:0;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+  padding:3px 2px;
+  line-height:1;
+  text-align:center;
+}
+.profile-follow-row-inline b{
+  font-size:23px;
+  line-height:1.05;
+}
+.profile-follow-row-inline span{
+  font-size:14px;
+  line-height:1.2;
+  color:#aab4cc;
+}
+.profile-bio-block{
+  clear:both;
+  max-width:none;
+  padding:7px 20px 4px;
+}
+@media(max-width:680px){
+  .profile-main-row{padding:12px 14px 0;min-height:86px}
+  .profile-avatar-wrap{margin-right:10px}
+  .profile-main-info{margin-left:86px}
+  .profile-follow-row-inline{
+    width:calc(100% - 86px);
+    margin-left:86px;
+    padding-top:9px;
+  }
+  .profile-follow-row-inline b{font-size:20px}
+  .profile-follow-row-inline span{font-size:12px}
+  .profile-bio-block{padding:7px 14px 4px}
+}

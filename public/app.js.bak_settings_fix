@@ -125,65 +125,25 @@ $('#shortCollab')?.addEventListener('change',()=>{$('#shortCollabFields')?.class
 function profileSettingsDefaults(){const d=getProfileData();const s=d.settings||{};if(s.sensitiveContent==='standard')s.sensitiveContent='limit';else if(s.sensitiveContent==='less')s.sensitiveContent='strict';return s;}
 function syncSensitiveContentControl(){const age=$('#psAgeBand')?.value||'adult';const el=$('#psSensitiveContent');if(!el)return;const allow=el.querySelector('option[value=allow]');if(age==='teen'){if(allow)allow.disabled=true;if(el.value==='allow')el.value='strict';}else if(allow)allow.disabled=false;const note=$('#psSensitiveContentNote');if(note)note.textContent=age==='teen'?'Under 18 accounts use the most restrictive available setting; Allow is unavailable.':'Controls sensitive content in recommended areas such as Shorts, Search and Explore.';}
 
-function applyCommentFilterToUpload(){const d=getProfileData();const s=d.settings||{};const el=$('#shortAllowComments');if(el)el.checked=s.comments!=='off';}function openProfileSettings(){
-  const s=profileSettingsDefaults();
-  s.mentions=s.mentions||'everyone'; s.tags=s.tags||'everyone'; s.feedView=s.feedView||'home';
-  const ids=['accountVisibility','followingVisibility','followersVisibility','likedVisibility','shortAudience','comments','likes','sharing','downloads','remix','commentFilter','mentions','tags','followRequests','messageRequests','limits'];
-  ids.forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=s[k]??el.value});
-  ['ageBand','madeForKids','locationVisibility','sensitiveContent','videoQuality','feedView'].forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=s[k]??el.value});
-  syncSensitiveContentControl();
-  ['hiddenWords','readReceipts','activityStatus','sleepMode','sleepAutoReply','notifyFollowers','notifyLikes','notifyMentions','notifyMessages','notifyCreator','analytics','saveOriginals','wifiUpload','personalizedFeed','autoplay','autoDownload'].forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=s[k]!==false});
-  if($('#psLoginAlerts')){$('#psLoginAlerts').dataset.on=s.loginAlerts!==false?'true':'false';$('#psLoginAlerts').textContent=`Login alerts: ${s.loginAlerts!==false?'On':'Off'}`}
-  if($('#psPasskey'))$('#psPasskey').textContent=`Passkey: ${s.passkey?'On':'Off'}`;
-  $('#profileSettingsSearch').value=''; $('#profileSettingsSearchClear')?.classList.add('hidden'); $('#profileSettingsSearchEmpty')?.classList.add('hidden');
-  $('#tnsSettingsHome').classList.remove('hidden'); $('#tnsSettingsSub').classList.add('hidden'); $('#tnsSettingsTitle').textContent='Settings & Activity'; $('#tnsSettingsSubtitle').textContent='Manage your TNS Studio account, privacy, content and app settings.';
-  $('#profileSettingsModal').classList.remove('hidden');
-}
+function applyCommentFilterToUpload(){const d=getProfileData();const s=d.settings||{};const el=$('#shortAllowComments');if(el)el.checked=s.comments!=='off';}function openProfileSettings(){const s=profileSettingsDefaults();s.mentions=s.mentions||'everyone';s.tags=s.tags||'everyone';s.feedView=s.feedView||'home';const ids=['accountVisibility','followingVisibility','followersVisibility','likedVisibility','shortAudience','comments','likes','sharing','downloads','remix','commentFilter','mentions','tags','followRequests','messageRequests','limits'];ids.forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=s[k]??el.value});['ageBand','madeForKids','locationVisibility','sensitiveContent','videoQuality','feedView'].forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=s[k]??el.value});syncSensitiveContentControl();['hiddenWords','readReceipts','activityStatus','sleepMode','sleepAutoReply','notifyFollowers','notifyLikes','notifyMentions','notifyMessages','notifyCreator','analytics','saveOriginals','wifiUpload','personalizedFeed','autoplay','autoDownload'].forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=s[k]!==false});$('#psLoginAlerts')&&(document.getElementById('psLoginAlerts').dataset.on=s.loginAlerts!==false?'true':'false',document.getElementById('psLoginAlerts').textContent=`Login alerts: ${s.loginAlerts!==false?'On':'Off'}`);$('#psPasskey')&&(document.getElementById('psPasskey').textContent=`Passkey: ${s.passkey?'On':'Off'}`);$('#profileSettingsStatus').textContent='';if($('#profileSettingsSearch'))$('#profileSettingsSearch').value='';$$('.settings-group').forEach((g,i)=>{g.classList.remove('hidden');g.open=i===0});$('#profileSettingsSearchEmpty')?.classList.add('hidden');const favs=Array.isArray(s.favoriteAccounts)?s.favoriteAccounts:[];$('#psFavoritesNote')&&($('#psFavoritesNote').textContent=`${favs.length}/50 favorite accounts selected. Their posts can be prioritized in your feed.`);$('#profileSettingsModal').classList.remove('hidden')}
 
-// TNS Studio Settings & Activity: simple menu + dedicated category screens.
-function openSettingsCategory(index){
-  const body=document.querySelector(`.tns-settings-body[data-settings-body="${index}"]`); if(!body)return;
-  const target=$('#tnsSettingsSubBody');
-  const active=target.dataset.active;
-  if(active!==undefined){
-    const oldWrap=document.querySelector(`.tns-settings-body[data-settings-body="${active}"]`);
-    const oldBody=target.querySelector('.settings-group-body');
-    if(oldWrap&&oldBody)oldWrap.appendChild(oldBody);
-  }
-  const nextBody=body.querySelector('.settings-group-body');
-  if(!nextBody)return;
-  target.innerHTML=''; target.appendChild(nextBody); target.dataset.active=String(index);
-  $('#tnsSettingsHome').classList.add('hidden'); $('#tnsSettingsSub').classList.remove('hidden');
-  $('#tnsSettingsTitle').textContent=body.dataset.title||'Settings'; $('#tnsSettingsSubtitle').textContent=body.dataset.desc||'';
-  $('#tnsSettingsBack').focus();
-}
-function closeSettingsCategory(){
-  const target=$('#tnsSettingsSubBody'); const active=target.dataset.active;
-  if(active!==undefined){
-    const wrap=document.querySelector(`.tns-settings-body[data-settings-body="${active}"]`); const activeBody=target.querySelector('.settings-group-body');
-    if(wrap&&activeBody)wrap.appendChild(activeBody);
-  }
-  target.innerHTML=''; delete target.dataset.active;
-  $('#tnsSettingsSub').classList.add('hidden'); $('#tnsSettingsHome').classList.remove('hidden');
-  $('#tnsSettingsTitle').textContent='Settings & Activity'; $('#tnsSettingsSubtitle').textContent='Manage your TNS Studio account, privacy, content and app settings.';
-}
-$$('.tns-settings-row').forEach(row=>row.addEventListener('click',()=>openSettingsCategory(Number(row.dataset.settingsGroup))));
-$('#tnsSettingsBack')?.addEventListener('click',closeSettingsCategory);
+// Simple Settings & Activity search: filter categories without changing any existing setting IDs/workflows.
 $('#profileSettingsSearch')?.addEventListener('input',()=>{
   const q=String($('#profileSettingsSearch').value||'').trim().toLowerCase();
-  $('#profileSettingsSearchClear')?.classList.toggle('hidden',!q);
+  const groups=$$('.settings-group');
   let matches=0;
-  $$('.tns-settings-row').forEach(row=>{const body=document.querySelector(`.tns-settings-body[data-settings-body="${row.dataset.settingsGroup}"]`);const hit=!q||((row.textContent+' '+(body?.textContent||'')).toLowerCase().includes(q));row.classList.toggle('hidden',!hit);if(hit)matches++;});
+  groups.forEach(g=>{
+    const text=g.textContent.toLowerCase();
+    const hit=!q||text.includes(q);
+    g.classList.toggle('hidden',!hit);
+    if(hit){matches++; if(q)g.open=true;}
+  });
   $('#profileSettingsSearchEmpty')?.classList.toggle('hidden',matches!==0);
 });
-$('#profileSettingsSearchClear')?.addEventListener('click',()=>{$('#profileSettingsSearch').value='';$('#profileSettingsSearch').dispatchEvent(new Event('input'));$('#profileSettingsSearch').focus()});
 $('#profileSettingsModal')?.addEventListener('click',(e)=>{
   const row=e.target.closest('.settings-group summary');
   if(row){ /* native details handles open/close */ }
 });
-
-const tnsAutoSaveIds=['psAccountVisibility','psFollowingVisibility','psFollowersVisibility','psLikedVisibility','psShortAudience','psComments','psLikes','psSharing','psDownloads','psRemix','psCommentFilter','psMentions','psTags','psHiddenWords','psFollowRequests','psMessageRequests','psReadReceipts','psActivityStatus','psSleepMode','psSleepStart','psSleepEnd','psSleepAutoReply','psLimits','psNotifyFollowers','psNotifyLikes','psNotifyMentions','psNotifyMessages','psNotifyCreator','psAnalytics','psSaveOriginals','psWifiUpload','psAgeBand','psMadeForKids','psLocationVisibility','psSensitiveContent','psPersonalizedFeed','psFeedView','psVideoQuality','psAutoplay','psWifiOnly','psAutoDownload'];
-tnsAutoSaveIds.forEach(id=>$('#'+id)?.addEventListener('change',()=>{saveProfileSettingsFromUI();if(id==='psAccountVisibility'||id==='psAgeBand')syncSensitiveContentControl();toast('Setting updated');}));
 $('#psNotInterestedInfo')?.addEventListener('click',()=>toast('Tap 🚫 Not interested on a Short to hide it from your feed.'));
 $('#psFavorites')?.addEventListener('click',()=>{
   const d=getProfileData();
@@ -207,8 +167,7 @@ $('#psResetRecommendations')?.addEventListener('click',()=>{
 });
 $('#psAgeBand')?.addEventListener('change',syncSensitiveContentControl);
 $('#psAccountVisibility')?.addEventListener('change',()=>{const d=getProfileData();const value=$('#psAccountVisibility').value;d.settings={...d.settings,accountVisibility:value};if(value==='private')d.settings.shortAudience='followers';else if(d.settings.shortAudience==='followers')d.settings.shortAudience='public';saveProfileData(d);const audience=$('#psShortAudience');if(audience)audience.value=d.settings.shortAudience;$('#profileSettingsStatus').textContent=value==='private'?'Private account enabled. New Shorts default to Followers.':'Public account enabled. New Shorts default to Everyone.';toast(value==='private'?'Private account enabled':'Public account enabled');if($('#profile')?.classList.contains('profile-public-mode'))setProfilePublicMode(true);});
-function saveProfileSettingsFromUI(){const d=getProfileData();d.settings={accountVisibility:$('#psAccountVisibility').value,followingVisibility:$('#psFollowingVisibility').value,followersVisibility:$('#psFollowersVisibility').value,likedVisibility:$('#psLikedVisibility').value,shortAudience:$('#psShortAudience').value,comments:$('#psComments').value,likes:$('#psLikes').value,sharing:$('#psSharing').value,downloads:$('#psDownloads').value,remix:$('#psRemix').value,commentFilter:$('#psCommentFilter').value,mentions:$('#psMentions').value,tags:$('#psTags').value,hiddenWords:$('#psHiddenWords').checked,followRequests:$('#psFollowRequests').value,messageRequests:$('#psMessageRequests').value,readReceipts:$('#psReadReceipts').checked,activityStatus:$('#psActivityStatus').checked,sleepMode:$('#psSleepMode').checked,sleepStart:$('#psSleepStart').value||'22:00',sleepEnd:$('#psSleepEnd').value||'07:00',sleepAutoReply:$('#psSleepAutoReply').checked,limits:$('#psLimits').value,notifyFollowers:$('#psNotifyFollowers').checked,notifyLikes:$('#psNotifyLikes').checked,notifyMentions:$('#psNotifyMentions').checked,notifyMessages:$('#psNotifyMessages').checked,notifyCreator:$('#psNotifyCreator').checked,analytics:$('#psAnalytics').checked,saveOriginals:$('#psSaveOriginals').checked,wifiUpload:$('#psWifiUpload').checked,loginAlerts:$('#psLoginAlerts').dataset.on!=='false',loginAlertNewDevice:!!d.settings.loginAlertNewDevice,loginAlertSuspicious:!!d.settings.loginAlertSuspicious,loginAlertChannel:d.settings.loginAlertChannel||'in_app',sessions:s.sessions||[],twoFactor:!!s.twoFactor,twoFactorMethod:s.twoFactorMethod||'authenticator',passkey:!!s.passkey,ageBand:$('#psAgeBand').value,madeForKids:$('#psMadeForKids').value,locationVisibility:$('#psLocationVisibility').value,sensitiveContent:(['limit','strict','allow'].includes($('#psSensitiveContent').value)?$('#psSensitiveContent').value:'limit'),personalizedFeed:$('#psPersonalizedFeed').checked,feedView:$('#psFeedView').value||'home',followingAccounts:Array.isArray(d.settings.followingAccounts)?d.settings.followingAccounts:[],recommendationResetAt:d.settings.recommendationResetAt||null,favoriteAccounts:Array.isArray(d.settings.favoriteAccounts)?d.settings.favoriteAccounts.slice(0,50):[],notInterestedShorts:Array.isArray(d.settings.notInterestedShorts)?d.settings.notInterestedShorts.slice(-500):[],videoQuality:$('#psVideoQuality').value,autoplay:$('#psAutoplay').checked,wifiOnly:$('#psWifiOnly').checked||$('#psWifiUpload').checked,autoDownload:$('#psAutoDownload').checked};saveProfileData(d);renderProfile();}
-;
+$('#profileSettingsSave')?.addEventListener('click',()=>{const d=getProfileData();d.settings={accountVisibility:$('#psAccountVisibility').value,followingVisibility:$('#psFollowingVisibility').value,followersVisibility:$('#psFollowersVisibility').value,likedVisibility:$('#psLikedVisibility').value,shortAudience:$('#psShortAudience').value,comments:$('#psComments').value,likes:$('#psLikes').value,sharing:$('#psSharing').value,downloads:$('#psDownloads').value,remix:$('#psRemix').value,commentFilter:$('#psCommentFilter').value,mentions:$('#psMentions').value,tags:$('#psTags').value,hiddenWords:$('#psHiddenWords').checked,followRequests:$('#psFollowRequests').value,messageRequests:$('#psMessageRequests').value,readReceipts:$('#psReadReceipts').checked,activityStatus:$('#psActivityStatus').checked,sleepMode:$('#psSleepMode').checked,sleepStart:$('#psSleepStart').value||'22:00',sleepEnd:$('#psSleepEnd').value||'07:00',sleepAutoReply:$('#psSleepAutoReply').checked,limits:$('#psLimits').value,notifyFollowers:$('#psNotifyFollowers').checked,notifyLikes:$('#psNotifyLikes').checked,notifyMentions:$('#psNotifyMentions').checked,notifyMessages:$('#psNotifyMessages').checked,notifyCreator:$('#psNotifyCreator').checked,analytics:$('#psAnalytics').checked,saveOriginals:$('#psSaveOriginals').checked,wifiUpload:$('#psWifiUpload').checked,loginAlerts:$('#psLoginAlerts').dataset.on!=='false',loginAlertNewDevice:!!d.settings.loginAlertNewDevice,loginAlertSuspicious:!!d.settings.loginAlertSuspicious,loginAlertChannel:d.settings.loginAlertChannel||'in_app',sessions:s.sessions||[],twoFactor:!!s.twoFactor,twoFactorMethod:s.twoFactorMethod||'authenticator',passkey:!!s.passkey,ageBand:$('#psAgeBand').value,madeForKids:$('#psMadeForKids').value,locationVisibility:$('#psLocationVisibility').value,sensitiveContent:(['limit','strict','allow'].includes($('#psSensitiveContent').value)?$('#psSensitiveContent').value:'limit'),personalizedFeed:$('#psPersonalizedFeed').checked,feedView:$('#psFeedView').value||'home',followingAccounts:Array.isArray(d.settings.followingAccounts)?d.settings.followingAccounts:[],recommendationResetAt:d.settings.recommendationResetAt||null,favoriteAccounts:Array.isArray(d.settings.favoriteAccounts)?d.settings.favoriteAccounts.slice(0,50):[],notInterestedShorts:Array.isArray(d.settings.notInterestedShorts)?d.settings.notInterestedShorts.slice(-500):[],videoQuality:$('#psVideoQuality').value,autoplay:$('#psAutoplay').checked,wifiOnly:$('#psWifiOnly').checked||$('#psWifiUpload').checked,autoDownload:$('#psAutoDownload').checked};saveProfileData(d);$('#profileSettingsStatus').textContent='Settings saved successfully';renderProfile();setTimeout(()=>$('#profileSettingsModal')?.classList.add('hidden'),650)});
 $('#psSecurityCheckup')?.addEventListener('click',()=>{
   const d=profileSettingsData(); const s=d.settings||{};
   const modalId='securityCheckupModal'; let m=$('#'+modalId);
@@ -434,18 +393,7 @@ $('#forgotPasswordBtn')?.addEventListener('click',()=>{$('#forgotPasswordModal')
 $('#forgotRequestBtn')?.addEventListener('click',async()=>{try{forgotIdentifier=getForgotIdentifier();const d=await json('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:forgotIdentifier})});$('#forgotResetFields')?.classList.remove('hidden');$('#forgotPasswordMessage').textContent=d.otp?`OTP sent. Demo OTP: ${d.otp}`:(d.message||'OTP sent through the configured channel.');$('#forgotPasswordMessage').dataset.type='success'}catch(err){msg('#forgotPasswordMessage',err.message,'error')}});
 $('#forgotResetBtn')?.addEventListener('click',async()=>{try{const otp=String($('#forgotOtp')?.value||'').trim(),password=String($('#forgotNewPassword')?.value||''),confirm=String($('#forgotConfirmPassword')?.value||'');if(!/^\d{6}$/.test(otp))throw new Error('Enter the 6-digit OTP.');if(password.length<8)throw new Error('New password must be at least 8 characters.');if(password!==confirm)throw new Error('Passwords do not match.');const d=await json('/api/auth/password/reset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:forgotIdentifier,otp,newPassword:password})});msg('#forgotPasswordMessage',d.message||'Password reset successfully.','success');setTimeout(()=>$('#forgotPasswordModal')?.classList.add('hidden'),700)}catch(err){msg('#forgotPasswordMessage',err.message,'error')}});
 
-function loadSettings(){
-  const s=JSON.parse(localStorage.getItem('tnsStudioSettings')||'{}');
-  applyTheme(s.theme||'system');
-}
-function saveSettingsPatch(patch){
-  const old=JSON.parse(localStorage.getItem('tnsStudioSettings')||'{}');
-  const next={...old,...patch};
-  localStorage.setItem('tnsStudioSettings',JSON.stringify(next));
-  applyTheme(next.theme||'system');
-  return next;
-}
-function applyTheme(v){document.body.classList.toggle('light',v==='light');if(v==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme:light)').matches)}
+function loadSettings(){const s=JSON.parse(localStorage.getItem('tnsStudioSettings')||'{}');$('#settingTheme').value=s.theme||'dark';$('#settingQuality').value=s.quality||'HD';$('#settingRatio').value=s.ratio||'9:16';applyTheme($('#settingTheme').value)}
 const MODULE_SETTINGS={
   'ai-video':{title:'AI Video Settings',items:['Default duration','Default style','Quality','AI provider','Character consistency']},
   'ai-image':{title:'AI Image Settings',items:['Default style','Aspect ratio','Quality','AI provider','Reference images']},
@@ -457,76 +405,33 @@ const MODULE_SETTINGS={
   help:{title:'Help & Support Settings',items:['Support notifications','Tutorial tips','Diagnostics','Privacy controls']},
   premium:{title:'Premium Settings',items:['Plan','Renewal','AI credits','Storage','Billing region']}
 };
-function openModuleSettings(key){const item=MODULE_SETTINGS[key];if(!item)return;showPanel('settings');$('#settingsTitle').textContent=item.title;const box=$('#moduleSettingsBox');if(box){box.classList.remove('hidden');box.innerHTML='<div class="module-settings-list">'+item.items.map((x)=>`<div class="module-setting-row"><div><b>${escapeHtml(x)}</b><small>Configure ${escapeHtml(x.toLowerCase())} for this feature.</small></div><button class="secondary" type="button">Configure</button></div>`).join('')+'</div>'}}
+function openModuleSettings(key){const item=MODULE_SETTINGS[key];if(!item)return;showPanel('settings');$('#settingsTitle').textContent=item.title;const box=$('#moduleSettingsBox');box.classList.remove('hidden');box.innerHTML='<div class="module-settings-list">'+item.items.map((x)=>`<div class="module-setting-row"><div><b>${escapeHtml(x)}</b><small>Configure ${escapeHtml(x.toLowerCase())} for this feature.</small></div><button class="secondary" type="button">Configure</button></div>`).join('')+'</div>'}
 $$('.module-settings-btn').forEach(b=>b.addEventListener('click',()=>openModuleSettings(b.dataset.moduleSettings)));
-
-const SETTINGS_CATEGORIES=[
- {id:'account',icon:'👤',title:'Account',desc:'Personal info, security, sessions'},
- {id:'privacy',icon:'🛡️',title:'Privacy & Safety',desc:'Privacy, blocked, hidden words'},
- {id:'social',icon:'💬',title:'Social',desc:'Messages, comments, followers'},
- {id:'notifications',icon:'🔔',title:'Notifications',desc:'Alerts, activity, messages'},
- {id:'shorts',icon:'▶️',title:'Shorts',desc:'Downloads, remix, collab'},
- {id:'app',icon:'⚙️',title:'App',desc:'Language, appearance, data usage'},
- {id:'activity',icon:'🕘',title:'Your Activity',desc:'Saved, archive, history'},
- {id:'help',icon:'❔',title:'Help & About',desc:'Support, policy, about'}
-];
-const SETTINGS_DETAILS={
- account:{eyebrow:'ACCOUNT',description:'Manage your personal information and account security.',rows:[['Personal Information','Name, email, phone and bio','profile'],['Change Profile Photo','Choose a gallery photo or take a new photo','profilePhoto'],['Password & Security','Change password and two-step verification','security'],['Login & Sessions','Devices and login activity','sessions'],['Account Activity','History, actions and downloads','activity'],['Delete / Deactivate Account','Temporarily deactivate or permanently delete your account','danger']]},
- privacy:{eyebrow:'PRIVACY & SAFETY',description:'Choose who can interact with you and what others can see.',rows:[['Public Account','Anyone can view your public profile and posts','toggle:public'],['Private Account','Approve followers before they can see private content','toggle:private'],['Blocked Users','Manage accounts you have blocked','blocked'],['Restricted','Limit interactions without fully blocking','restricted'],['Hidden Words','Hide comments and message requests containing selected words','hidden'],['Tags & Mentions','Control who can tag or mention you','mentions']]},
- social:{eyebrow:'SOCIAL',description:'Control messages, comments, followers and sharing.',rows:[['Messages','Followers & Following chat and message requests','messages'],['Comments','Who can comment and how comments are filtered','comments'],['Followers & Following','Follow requests, followers and following controls','followers'],['Sharing & Reuse','Duet, stitch, remix and download permissions','sharing']]},
- notifications:{eyebrow:'NOTIFICATIONS',description:'Choose which activity alerts TNS Studio can show.',rows:[['New Followers','Notify me when someone follows me','toggle:newFollowers'],['Likes','Alerts for likes on your content','toggle:likes'],['Comments','Alerts for comments and replies','toggle:comments'],['Mentions','Alerts when you are mentioned','toggle:mentions'],['Messages','New message notifications','toggle:messages'],['Shorts Activity','Activity on your Shorts','toggle:shortsActivity'],['Live','Live notifications','toggle:live'],['System Notifications','Important TNS Studio system alerts','toggle:system']]},
- shorts:{eyebrow:'SHORTS',description:'Manage downloads, remixing, collaboration and content preferences.',rows:[['Download','Allow downloads of your Shorts','toggle:download'],['Remix','Allow others to remix your Shorts','toggle:remix'],['Collab','Allow collaboration invitations','toggle:collab'],['Music & Sounds','Manage music and sound preferences','music'],['Content Preferences','Control what appears in your Shorts feed','content']]},
- app:{eyebrow:'APP',description:'Personalize TNS Studio and control device data usage.',rows:[['Language','Change your app language','language'],['Appearance','Theme and display preferences','appearance'],['Data Usage','Media quality and data-saving preferences','data']]},
- activity:{eyebrow:'YOUR ACTIVITY',description:'Review and manage your saved content and history.',rows:[['Saved','View your saved content','saved'],['Archive','View archived posts and Shorts','archive'],['History','Review recent activity and viewed content','history']]},
- help:{eyebrow:'HELP & ABOUT',description:'Get help, report problems and review TNS Studio information.',rows:[['Help & Support','Find answers and contact support','support'],['Report a Problem','Tell us about a bug or issue','report'],['Privacy Policy','Read TNS Studio privacy information','privacyPolicy'],['Terms & Conditions','Review the terms of service','terms'],['About TNS Studio','Version and product information','about']]}
-};
-const SETTING_TOGGLE_DEFAULTS={public:true,private:false,newFollowers:true,likes:true,comments:true,mentions:true,messages:true,shortsActivity:true,live:false,system:true,download:true,remix:true,collab:true};
-function getSettingToggle(key){const saved=JSON.parse(localStorage.getItem('tnsStudioSettingToggles')||'{}');return Object.prototype.hasOwnProperty.call(saved,key)?!!saved[key]:!!SETTING_TOGGLE_DEFAULTS[key]}
-function setSettingToggle(key,value){const saved=JSON.parse(localStorage.getItem('tnsStudioSettingToggles')||'{}');saved[key]=!!value;localStorage.setItem('tnsStudioSettingToggles',JSON.stringify(saved));}
-function renderSettingsHome(){
-  const list=$('#settingsCategoryList');if(!list)return;
-  list.innerHTML=SETTINGS_CATEGORIES.map(c=>`<button class="settings-category" data-settings-category="${c.id}" type="button"><span class="settings-category-icon">${c.icon}</span><span class="settings-category-copy"><b>${escapeHtml(c.title)}</b><small>${escapeHtml(c.desc)}</small></span><span class="settings-category-arrow">›</span></button>`).join('');
-  $('#settingsSearchResults')?.classList.add('hidden');
-}
-function renderSettingsDetail(id){
-  const d=SETTINGS_DETAILS[id];if(!d)return;
-  $('#settingsHomeView')?.classList.add('hidden');$('#settingsDetailView')?.classList.remove('hidden');$('#settingsHomeBack')?.classList.add('hidden');$('#settingsTitle').textContent=d.rows.length?SETTINGS_CATEGORIES.find(x=>x.id===id)?.title||'Settings':'Settings';$('#settingsDetailEyebrow').textContent=d.eyebrow;$('#settingsDetailTitle').textContent=SETTINGS_CATEGORIES.find(x=>x.id===id)?.title||'Settings';$('#settingsDetailDescription').textContent=d.description;
-  const box=$('#settingsDetailList');box.innerHTML=d.rows.map(([title,desc,action])=>{
-    if(action.startsWith('toggle:')){const key=action.slice(7),on=getSettingToggle(key);return `<div class="settings-detail-row"><div class="row-copy"><b>${escapeHtml(title)}</b><small>${escapeHtml(desc)}</small></div><button class="settings-switch ${on?'on':''}" data-setting-toggle="${key}" type="button" aria-pressed="${on}"><i></i></button></div>`}
-    const danger=action==='danger'?' settings-danger':'';return `<div class="settings-detail-row${danger}"><div class="row-copy"><b>${escapeHtml(title)}</b><small>${escapeHtml(desc)}</small></div><button class="secondary" data-settings-action="${escapeHtml(action)}" type="button">Open</button></div>`;
-  }).join('');
-}
-function renderSettingsSearch(q){
-  const term=String(q||'').trim().toLowerCase(), box=$('#settingsSearchResults');if(!box)return;
-  if(!term){box.classList.add('hidden');return}
-  const hits=[];Object.entries(SETTINGS_DETAILS).forEach(([id,d])=>d.rows.forEach(([title,desc])=>{if((title+' '+desc+' '+d.eyebrow).toLowerCase().includes(term))hits.push({id,title,desc})}));
-  box.classList.remove('hidden');box.innerHTML=hits.length?hits.slice(0,12).map(x=>`<button class="settings-search-result" data-settings-search-open="${x.id}" type="button"><b>${escapeHtml(x.title)}</b><small>${escapeHtml(x.desc)}</small></button>`).join(''):`<div class="settings-detail-card"><b>No settings found</b><p>Try another word such as privacy, messages, password or notifications.</p></div>`;
-}
-function showSettingsHome(){
-  $('#settingsHomeView')?.classList.remove('hidden');$('#settingsDetailView')?.classList.add('hidden');$('#settingsHomeBack')?.classList.remove('hidden');$('#settingsTitle').textContent='Settings and activity';$('#settingsSearch')?.focus();renderSettingsHome();
-}
-function openSettings(){showPanel('settings');showSettingsHome();}
-$$('[data-open="settings"]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();openSettings()}));
-$('#settingsDetailBack')?.addEventListener('click',showSettingsHome);
-$('#settingsSearch')?.addEventListener('input',e=>renderSettingsSearch(e.target.value));
-$('#settingsCategoryList')?.addEventListener('click',e=>{const b=e.target.closest('[data-settings-category]');if(b)renderSettingsDetail(b.dataset.settingsCategory)});
-$('#settingsSearchResults')?.addEventListener('click',e=>{const b=e.target.closest('[data-settings-search-open]');if(b)renderSettingsDetail(b.dataset.settingsSearchOpen)});
-$('#settingsDetailList')?.addEventListener('click',e=>{
-  const sw=e.target.closest('[data-setting-toggle]');if(sw){const key=sw.dataset.settingToggle,next=!getSettingToggle(key);if((key==='public'||key==='private')&&next){setSettingToggle(key,next);setSettingToggle(key==='public'?'private':'public',false);}else setSettingToggle(key,next);renderSettingsDetail(document.querySelector('[data-settings-category].active')?.dataset.settingsCategory||Object.keys(SETTINGS_DETAILS).find(id=>document.querySelector('#settingsDetailTitle')?.textContent===SETTINGS_CATEGORIES.find(c=>c.id===id)?.title)||'account');toast(`${next?'Enabled':'Disabled'} ${key}`);return;}
-  const btn=e.target.closest('[data-settings-action]');if(!btn)return;const a=btn.dataset.settingsAction;
-  if(a==='profile'){$('#profileEditModal')?.classList.remove('hidden');return}
-  if(a==='profilePhoto'){$('#profilePhotoModal')?.classList.remove('hidden');return}
-  if(a==='language'){startLanguage();return}
-  if(a==='appearance'){renderSettingsDetail('app');return}
-  if(a==='security'||a==='sessions'){toast(a==='security'?'Password & security controls are available here.':'Login sessions are protected by your TNS Studio account.');return}
-  if(a==='danger'){if(confirm('Deactivate or delete your TNS Studio account? This action should only be continued if you are sure.'))toast('Account deletion/deactivation requires server confirmation.');return}
-  if(a==='privacyPolicy'||a==='terms'){toast(a==='privacyPolicy'?'Privacy Policy will be connected here.':'Terms & Conditions will be connected here.');return}
-  toast(`${btn.parentElement.querySelector('b')?.textContent||'Setting'} opened`);
+function saveSettings(){const s={theme:$('#settingTheme').value,quality:$('#settingQuality').value,ratio:$('#settingRatio').value};localStorage.setItem('tnsStudioSettings',JSON.stringify(s));applyTheme(s.theme)}function applyTheme(v){document.body.classList.toggle('light',v==='light');if(v==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme:light)').matches)}
+$('#settingTheme')?.addEventListener('change',saveSettings);$('#settingQuality')?.addEventListener('change',saveSettings);$('#settingRatio')?.addEventListener('change',saveSettings);
+const topbarMenu=$('#topbarMenu');
+$('#topbarMenu')?.addEventListener('click',(e)=>{
+  const item=e.target.closest('[data-menu-open]');
+  if(!item)return;
+  topbarMenu?.classList.add('hidden');
+  topbarMenu?.setAttribute('aria-hidden','true');
+  showPanel(item.dataset.menuOpen);
+});
+$('.topbar-menu-btn')?.addEventListener('click',(e)=>{
+  e.stopPropagation();
+  const open=topbarMenu?.classList.contains('hidden');
+  topbarMenu?.classList.toggle('hidden',!open);
+  topbarMenu?.setAttribute('aria-hidden',String(!open));
+});
+document.addEventListener('click',(e)=>{
+  if(topbarMenu && !topbarMenu.classList.contains('hidden') && !e.target.closest('.topbar-menu-btn') && !e.target.closest('#topbarMenu')){
+    topbarMenu.classList.add('hidden');
+    topbarMenu.setAttribute('aria-hidden','true');
+  }
 });
 
-$('#settingsHomeBack')?.addEventListener('click',()=>showPanel('dashboard'));
+$('#changeLanguageBtn')?.addEventListener('click',()=>startLanguage());
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}authenticatedUser=null;window.TNSAuth?.logout?.();localStorage.removeItem('tnsStudioLanguage');location.reload()});
-
 async function waitForMediaJob(type, jobId, options = {}) {
   const id = String(jobId || '').trim();
   if (!id) throw new Error(`${type === 'image' ? 'Image' : 'Video'} job ID was not returned.`);
@@ -687,7 +592,7 @@ $$('.settings-tab').forEach(b=>b.addEventListener('click',()=>{const key=b.datas
 $('#openLanguageInside')?.addEventListener('click',()=>showPanel('languageInside'));
 function renderLanguageInside(filter=''){const grid=$('#languageInsideGrid');if(!grid)return;const q=filter.toLowerCase();grid.innerHTML=LANGS.filter(x=>x[0].toLowerCase().includes(q)||x[3].toLowerCase().includes(q)||x[2].toLowerCase().includes(q)).map(x=>`<button class="language-option ${selectedLang===x[2]?'selected':''}" data-inside-lang="${x[2]}"><span class="lang-icon">${escapeHtml(x[1])}</span><span><b>${escapeHtml(x[3])}</b><small>${escapeHtml(x[0])} · ${x[2].toUpperCase()}</small></span></button>`).join('');$$('[data-inside-lang]').forEach(b=>b.addEventListener('click',()=>{selectedLang=b.dataset.insideLang;localStorage.setItem('tnsStudioLanguage',selectedLang);applyLanguageMeta(selectedLang);renderLanguageInside($('#languageInsideSearch').value);toast('Language updated')}))}
 $('#languageInsideSearch')?.addEventListener('input',e=>renderLanguageInside(e.target.value));
-const oldShowPanel=showPanel; showPanel=function(id){oldShowPanel(id);if(id==='languageInside')renderLanguageInside();if(id==='settings')showSettingsHome();};
+const oldShowPanel=showPanel; showPanel=function(id){oldShowPanel(id);if(id==='languageInside')renderLanguageInside();if(id==='settings')$('#settingsTitle').textContent='Global Settings';};
 
 $('#improveVideoBtn')?.addEventListener('click',()=>{const x=$('#idea');if(x.value.trim())x.value=`Create a polished ${$('#style').value} video: ${x.value.trim()}. Include a clear hook, natural motion, realistic lighting, coherent camera movement, consistent subject identity and a satisfying ending.`;msg('#jobBox','Prompt improved. Review it before generating.','success')});
 $('#variationVideoBtn')?.addEventListener('click',()=>{const x=$('#idea');if(!x.value.trim())return msg('#jobBox','Enter an idea first.','error');x.value += ' Create a fresh visual variation with different camera movement and composition while preserving the same subject and story.';msg('#jobBox','Variation prompt prepared.','success')});

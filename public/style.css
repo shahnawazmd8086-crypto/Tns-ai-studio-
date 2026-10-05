@@ -663,3 +663,61 @@ body.profile-mode .profile-panel{padding-top:18px}
 }
 .profile-tabs button{padding-top:12px;padding-bottom:10px}
 .profile-content{padding-top:10px}
+
+/* Profile page: seamless full-screen page, not a stack of dashboard cards. */
+.profile-panel{
+  max-width:none;
+  padding:0 0 110px;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.profile-page{
+  width:100%;
+  max-width:none;
+  margin:0;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+}
+.profile-topbar{
+  border-radius:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  margin-bottom:0;
+  padding-left:max(12px,calc((100% - 920px)/2 + 12px));
+  padding-right:max(12px,calc((100% - 920px)/2 + 12px));
+}
+.profile-back-icon{
+  background:transparent!important;
+  border:0!important;
+  border-radius:50%;
+  box-shadow:none!important;
+}
+.profile-back-icon:hover{background:rgba(70,145,255,.10)!important;border:0!important}
+.profile-back-icon:active,.profile-back-icon.is-pressed{background:rgba(65,160,255,.18)!important;border:0!important;box-shadow:0 0 18px rgba(60,155,255,.28)!important}
+.profile-hero{
+  width:100%;
+  max-width:920px;
+  margin:0 auto;
+  border-radius:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+}
+.profile-account-panel{
+  max-width:920px;
+  margin:12px auto 0;
+  border-radius:0!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+@media(max-width:680px){
+  .profile-panel{padding:0 0 105px}
+  .profile-topbar{padding-left:7px;padding-right:7px}
+  .profile-hero{max-width:none}
+  .profile-account-panel{margin-top:8px}
+}

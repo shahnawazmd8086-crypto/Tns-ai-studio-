@@ -212,12 +212,11 @@
 
 <section id="profile" data-screen-number="25" class="panel profile-panel">
   <div class="profile-page">
-    <div class="profile-page-head">
-      <button class="back-btn profile-back" data-open="dashboard">← Home</button>
-      <div class="profile-head-actions">
-        <button id="profilePublicBtn" class="secondary profile-head-btn" type="button">👁 View Public</button>
-        <button id="profileEditBtn" class="primary profile-head-btn" type="button">Edit Profile</button><button id="profileFollowBtn" class="primary profile-head-btn hidden" type="button">＋ Follow</button>
-      </div>
+    <div class="profile-topbar glass">
+      <button class="profile-back-icon" data-open="dashboard" type="button" aria-label="Back to Home">‹</button>
+      <img class="profile-top-logo" src="/assets/tns-studio-dashboard-logo.png" alt="TNS Studio">
+      <strong class="profile-top-brand">TNS Studio</strong>
+      <button id="profileSettingsBtn" class="icon-btn profile-settings-top" type="button" title="Profile settings" aria-label="Profile settings">⚙️</button>
     </div>
     <div class="profile-hero glass">
       <div class="profile-main-row">
@@ -228,20 +227,32 @@
         <div class="profile-main-info">
           <div class="profile-name-row"><h2 id="profileName">TNS Studio User</h2><span class="profile-verified">✓</span></div>
           <p id="profileHandle" class="profile-handle">@tns_user</p>
-          <p id="profileBio" class="profile-bio">Video Creator | AI Explorer | Dream Big</p>
-          <p id="profileLocation" class="profile-meta">📍 India <span>•</span> 📅 Joined recently</p>
+          <button id="profileEditBtn" class="secondary profile-edit-inline" type="button">Edit Profile</button>
         </div>
-        <div class="profile-own-actions"><button id="profileSettingsBtn" class="icon-btn" type="button" title="Profile settings">⚙️</button></div>
+        <div class="profile-public-actions">
+          <button id="profileFollowBtn" class="primary profile-head-btn hidden" type="button">＋ Follow</button>
+          <button id="profileMessageBtn" class="secondary profile-head-btn hidden" type="button">💬 Message</button>
+        </div>
       </div>
-      <div class="profile-stats">
-        <button type="button" data-profile-stat="posts"><b id="profilePosts">0</b><span>Posts</span></button>
+      <div class="profile-follow-row public-only-follow-actions">
         <button type="button" data-profile-stat="followers"><b id="profileFollowers">0</b><span>Followers</span></button>
         <button type="button" data-profile-stat="following"><b id="profileFollowing">0</b><span>Following</span></button>
       </div>
+      <div class="profile-bio-block">
+        <p id="profileBio" class="profile-bio">Video Creator | AI Explorer | Dream Big</p>
+        <p id="profileLocation" class="profile-meta">📍 India <span>•</span> 📅 Joined recently</p>
+      </div>
+      <div class="profile-status-head"><b>Status</b><button id="profileAddStatusBtn" class="secondary" type="button">＋ Add</button></div>
+      <div id="profileStatuses" class="profile-statuses" aria-label="Profile status stories"></div>
+      <div id="profileUploadBox" class="profile-upload-box glass">
+        <button id="profileUploadShortBtn" class="profile-upload-main" type="button"><span class="profile-upload-plus">＋</span><span><b>Upload a Short</b><small>Share a video with your TNS Studio followers</small></span></button>
+        <button id="profileUploadVideoBtn" class="profile-upload-video" type="button">🎬 Upload Video</button>
+      </div>
+      <div class="profile-content-head"><b>Your content</b><span id="profilePostsLabel">0 Shorts</span></div>
       <div class="profile-tabs" role="tablist">
-        <button class="active" data-profile-tab="shorts" type="button">Shorts</button>
-        <button data-profile-tab="videos" type="button">Videos</button>
-        <button data-profile-tab="liked" type="button">Liked</button><button data-profile-tab="reposts" type="button">Reposts</button>
+        <button class="active" data-profile-tab="shorts" type="button">▶ Shorts</button>
+        <button data-profile-tab="videos" type="button">🎬 Videos</button>
+        <button data-profile-tab="liked" type="button">♥ Liked</button><button data-profile-tab="reposts" type="button">↻ Reposts</button>
       </div>
       <div id="profileContent" class="profile-content"></div>
     </div>
@@ -251,7 +262,7 @@
     </div>
   </div>
 </section>
-<div id="profileEditModal" class="modal hidden"><div class="modal-card glass profile-edit-modal"><button class="modal-close" data-close="profileEditModal">×</button><p class="eyebrow">PROFILE</p><h2>Edit Profile</h2><label>Display Name<input id="profileEditName" maxlength="40"></label><label>Username<input id="profileEditHandle" maxlength="30" placeholder="your_username"></label><label>Bio<textarea id="profileEditBio" rows="3" maxlength="160"></textarea></label><label>Location<input id="profileEditLocation" maxlength="40" placeholder="India"></label><label>Website / Link<input id="profileEditWebsite" maxlength="120" placeholder="https://example.com"></label><label>Date of Birth<input id="profileEditDob" type="date"></label><button id="profileSaveBtn" class="primary wide" type="button">Save Profile</button><p id="profileEditStatus" class="status"></p></div></div>
+<div id="profileStatusModal" class="modal hidden"><div class="modal-card glass profile-status-modal"><button class="modal-close" data-close="profileStatusModal">×</button><p class="eyebrow">TNS STATUS</p><h2>Add Status</h2><p class="muted">Photo/video status add karo. Followers ko profile par ye status circles dikhenge.</p><input id="profileStatusFile" type="file" accept="image/*,video/*"><label>Status text (optional)<input id="profileStatusText" maxlength="80" placeholder="What's happening?"></label><button id="profileStatusSave" class="primary wide" type="button">Add Status</button><p id="profileStatusMsg" class="status"></p></div></div><div id="profileEditModal" class="modal hidden"><div class="modal-card glass profile-edit-modal"><button class="modal-close" data-close="profileEditModal">×</button><p class="eyebrow">PROFILE</p><h2>Edit Profile</h2><label>Display Name<input id="profileEditName" maxlength="40"></label><label>Username<input id="profileEditHandle" maxlength="30" placeholder="your_username"></label><label>Bio<textarea id="profileEditBio" rows="3" maxlength="160"></textarea></label><label>Location<input id="profileEditLocation" maxlength="40" placeholder="India"></label><label>Website / Link<input id="profileEditWebsite" maxlength="120" placeholder="https://example.com"></label><label>Date of Birth<input id="profileEditDob" type="date"></label><button id="profileSaveBtn" class="primary wide" type="button">Save Profile</button><p id="profileEditStatus" class="status"></p></div></div>
 <div id="profileSocialModal" class="modal hidden"><div class="modal-card glass profile-social-modal"><button class="modal-close" data-close="profileSocialModal">×</button><p class="eyebrow" id="profileSocialEyebrow">TNS STUDIO</p><h2 id="profileSocialTitle">Followers</h2><div id="profileSocialList" class="profile-social-list"></div></div></div>
 <div id="profileListModal" class="modal hidden"><div class="modal-card glass profile-edit-modal"><button class="modal-close" data-close="profileListModal">×</button><p class="eyebrow">PROFILE & SAFETY</p><h2 id="profileListModalTitle">Settings</h2><div id="profileListModalBody"></div></div></div>
 <div id="shortUploadModal" class="modal hidden"><div class="modal-card glass short-upload-modal"><button class="modal-close" data-close="shortUploadModal">×</button><p class="eyebrow">CREATE SHORT</p><h2>Upload your Short</h2><p class="muted">Video choose karo → preview dekho → details set karo → Post.</p><div class="short-upload-preview"><video id="shortUploadPreview" controls playsinline class="hidden"></video><div id="shortUploadPlaceholder" class="short-upload-placeholder">🎬<b>Select a video</b><small>9:16 recommended</small></div></div><input id="shortUploadFile" type="file" accept="video/*" class="hidden"><button id="shortChooseVideo" class="secondary wide" type="button">📁 Choose Video</button><div id="shortUploadDetails" class="short-upload-details hidden"><label>Caption<textarea id="shortUploadCaption" rows="3" maxlength="2200" placeholder="Write a caption…"></textarea></label><label>Hashtags<input id="shortUploadHashtags" maxlength="300" placeholder="#shorts #tnsstudio"></label><label>Audience<select id="shortUploadAudience"><option value="public">Everyone</option><option value="followers">Followers only</option><option value="private">Only me</option></select></label><div class="short-upload-options"><label class="setting-check"><input id="shortTrial" type="checkbox"> Trial Short — test with non-followers first</label><label class="setting-check"><input id="shortCollab" type="checkbox"> 🤝 Collab Short — invite up to 3 co-authors</label><div id="shortCollabFields" class="advanced-box hidden"><label>Collaborator handles<input id="shortCollabHandles" maxlength="180" placeholder="@friend1, @friend2, @friend3"></label><small class="muted">Up to 3 collaborators. Invitations are stored as pending in this prototype; production delivery/acceptance needs the server messaging system.</small></div><label class="setting-check"><input id="shortAddYours" type="checkbox"> 🎯 Add Yours — invite others to answer this prompt</label><label class="setting-check"><input id="shortTranslate" type="checkbox"> 🌍 AI Translate Short — reach viewers in another language</label><div id="shortTranslateFields" class="advanced-box hidden"><label>Target language<select id="shortTranslateLanguage"><option value="hi">Hindi</option><option value="en">English</option><option value="bn">Bengali</option><option value="ta">Tamil</option><option value="te">Telugu</option><option value="kn">Kannada</option><option value="mr">Marathi</option><option value="es">Spanish</option><option value="pt">Portuguese</option></select></label><label class="setting-check"><input id="shortTranslateVoice" type="checkbox" checked> Translate voice</label><label class="setting-check"><input id="shortTranslateLipSync" type="checkbox" checked> Lip-sync translated speech</label><small class="muted">TNS Studio stores the translation request in this prototype. Actual AI dubbing/translation/lip-sync needs the AI service connection.</small></div><div id="shortAddYoursFields" class="advanced-box hidden"><label>Prompt<input id="shortAddYoursPrompt" maxlength="140" placeholder="Show your version…"></label><small class="muted">People can tap Join on this Short to create their own response. Production discovery/notifications need the server feed system.</small></div><label class="setting-check"><input id="shortAllowComments" type="checkbox" checked> Comments</label><label class="setting-check"><input id="shortAllowLikes" type="checkbox" checked> Likes</label><label class="setting-check"><input id="shortAllowSharing" type="checkbox" checked> Sharing</label><label class="setting-check"><input id="shortAllowDownloads" type="checkbox"> Downloads</label><label class="setting-check"><input id="shortAllowRemix" type="checkbox" checked> Remix / reuse</label></div><div class="short-cover-row"><label>Cover image (optional)<input id="shortCoverFile" type="file" accept="image/*"></label><div id="shortCoverPreview" class="short-cover-preview">Cover</div></div><small class="muted">Trial Shorts are marked as trials in this prototype. Add Yours responses are stored locally in this prototype. AI translation requests are stored locally in this prototype; production discovery/notifications require the server feed system.</small><button id="shortPostBtn" class="primary wide" type="button">Post Short</button><p id="shortUploadStatus" class="status"></p></div></div></div>

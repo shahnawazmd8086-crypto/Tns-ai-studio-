@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { signup } = require('./auth/Signup');
 const { login } = require('./auth/Login');
+const { changePassword, verifyPasswordStrength } = require('./auth/Password');
 const Auth = require('./auth/Auth');
 const { createSession, getSession, destroySession, clearExpiredSessions } = require('./auth/Sessions');
 const Otp = require('./auth/Otp');
@@ -468,6 +469,20 @@ const server = http.createServer(async (req, res) => {
       const session = createSession(user.id, { expiresInMs: SESSION_TIMEOUT_MINUTES * 60 * 1000 });
       setSessionCookie(req, res, session);
       return sendJson(res, 200, { success: true, message: 'OTP login successful.', user });
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/auth/password/change') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 1024 * 1024);
+      const currentPassword = String(input.currentPassword || '');
+      const newPassword = String(input.newPassword || '');
+      if (!currentPassword || !newPassword) return sendJson(res, 400, { error: 'Current password and new password are required.' });
+      const identifier = user.email || user.mobile;
+      if (!identifier) return sendJson(res, 400, { error: 'This account does not have a password login identifier.' });
+      if (!authRateLimit(req, identifier, 5)) return sendJson(res, 429, { error: 'Too many password change attempts. Please try again later.' }, { 'Retry-After': '60' });
+      verifyPasswordStrength(newPassword);
+      changePassword(identifier, currentPassword, newPassword);
+      return sendJson(res, 200, { success: true, message: 'Password changed successfully.' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/forgot-password') {

@@ -378,7 +378,7 @@ $('#psReportHistory')?.addEventListener('click',()=>openSimpleSettingsList('repo
 $('#psPresetCreator')?.addEventListener('click',()=>applyProfilePreset('creator'));
 $('#psPresetPrivate')?.addEventListener('click',()=>applyProfilePreset('private'));
 $('#psPresetOpen')?.addEventListener('click',()=>applyProfilePreset('open'));
-$('#profileSettingsBtn')?.addEventListener('click',openProfileSettings);
+$('#profileSettingsBtn')?.addEventListener('click',()=>openSettings());
 
 $$('[data-open]').forEach(b=>b.addEventListener('click',()=>{if(b.classList.contains('profile-back-icon')){b.classList.add('is-pressed');setTimeout(()=>b.classList.remove('is-pressed'),180)}showPanel(b.dataset.open)}));
 function showAuthScreens(which){['authScreen','otpScreen','languageScreen'].forEach(id=>$( '#'+id).classList.toggle('hidden',id!==which))}
@@ -498,6 +498,8 @@ const SETTINGS_SUBPAGES={
  personal:{title:'Personal Information',eyebrow:'ACCOUNT',description:'Keep your basic account information up to date.',rows:[['Change Profile Photo','Choose a gallery photo or take a new photo.','profilePhoto'],['Name','Your display name.','personalName'],['Email','Your account email address.','personalEmail'],['Mobile Number','Your account mobile number.','personalMobile'],['Bio','A short description about you.','personalBio']]},
  security:{title:'Password & Security',eyebrow:'ACCOUNT',description:'Protect your TNS Studio account.',rows:[['Change Password','Use your current password, then choose a new password.','changePassword'],['2-Step Verification','Add an extra layer of security to your account.','toggle:twoStep']]},
  sessions:{title:'Login & Sessions',eyebrow:'ACCOUNT',description:'See where your account is signed in.',rows:[['Your Devices','Manage devices currently signed in to your account.','devices'],['Login Activity','Review recent login activity.','loginActivity']]},
+devices:{title:'Your Devices',eyebrow:'LOGIN & SESSIONS',description:'Review devices currently signed in to your account.',rows:[['Current Device','This device is the device you are using now.','deviceCurrent'],['Other Devices','Sign out of devices you do not recognize.','deviceOthers']]},
+loginActivity:{title:'Login Activity',eyebrow:'LOGIN & SESSIONS',description:'Review recent sign-in activity for your account.',rows:[['Recent Login Activity','Your recent sign-ins will appear here.','loginHistory']]},
  accountActivity:{title:'Account Activity',eyebrow:'ACCOUNT',description:'Review your account history and downloads.',rows:[['History','View your account activity history.','history'],['Actions','Review recent account actions.','actions'],['Downloads','Manage your downloaded data.','downloads']]},
  danger:{title:'Deactivate / Delete Account',eyebrow:'ACCOUNT',description:'These actions affect your entire TNS Studio account.',rows:[['Deactivate Account','Temporarily hide your account and come back later.','deactivate'],['Delete Account','Permanently delete your account and its data.','delete']]},
  blocked:{title:'Blocked Users',eyebrow:'PRIVACY & SAFETY',description:'Accounts you have blocked cannot interact with you.',rows:[['Blocked Users','Your blocked-user list is managed here.','empty']]},
@@ -529,7 +531,7 @@ let settingsChoiceKey='';
 function readSettingsMap(key){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch{return {}}}
 function writeSettingsMap(key,value){localStorage.setItem(key,JSON.stringify(value))}
 function getSettingToggle(key){const s=readSettingsMap('tnsStudioSettingToggles');return Object.prototype.hasOwnProperty.call(s,key)?!!s[key]:!!SETTINGS_TOGGLE_DEFAULTS[key]}
-function setSettingToggle(key,value){const s=readSettingsMap('tnsStudioSettingToggles');s[key]=!!value;writeSettingsMap('tnsStudioSettingToggles',s);if(key==='darkMode')applyTheme(value?'dark':'light')}
+function setSettingToggle(key,value){const s=readSettingsMap('tnsStudioSettingToggles');s[key]=!!value;writeSettingsMap('tnsStudioSettingToggles',s);const d=getProfileData();d.settings=d.settings||{};const map={private:v=>d.settings.accountVisibility=v?'private':'public',twoStep:v=>d.settings.twoFactor=!!v,comments:v=>d.settings.comments=v?'on':'off',likes:v=>d.settings.likes=v?'on':'off',download:v=>d.settings.downloads=v?'on':'off',remix:v=>d.settings.remix=v?'on':'off',collab:v=>d.settings.collab=v?'on':'off',shareRemix:v=>d.settings.remix=v?'on':'off',shareDownload:v=>d.settings.downloads=v?'on':'off',shareCollab:v=>d.settings.collab=v?'on':'off',dataSaver:v=>d.settings.dataSaver=!!v};if(map[key])map[key](!!value);saveProfileData(d);if(key==='darkMode')applyTheme(value?'dark':'light')}
 function selectedValue(key,fallback){return readSettingsMap('tnsStudioSettingValues')[key]||fallback}
 function saveSelected(key,value){const s=readSettingsMap('tnsStudioSettingValues');s[key]=value;writeSettingsMap('tnsStudioSettingValues',s);toast(`${value} saved`)}
 function settingsCategory(id){return SETTINGS_CATEGORIES.find(x=>x.id===id)}
@@ -566,6 +568,24 @@ function renderSettingsSubpage(id,push=true){
   settingsCurrentId=id;$('#settingsHomeView')?.classList.add('hidden');$('#settingsDetailView')?.classList.remove('hidden');$('#settingsHomeBack')?.classList.add('hidden');
   const head=$('#settingsDetailView .settings-detail-head');if(head)head.innerHTML=`<div>${settingsBackButton()}</div><div><p class="eyebrow">${escapeHtml(page.eyebrow)}</p><h3>${escapeHtml(page.title)}</h3><p class="muted">${escapeHtml(page.description)}</p></div>`;
   const box=$('#settingsDetailList');box.innerHTML=page.rows.map(([title,desc,action])=>settingsSubRowHtml(title,desc,action)).join('');
+  if(id==='devices'){
+    const d=profileSettingsData(), current=tnsCurrentDevice(), sessions=Array.isArray(d.settings.sessions)?d.settings.sessions:[];
+    const currentHtml=`<div class="settings-detail-card"><div class="settings-device-current"><div class="detail-icon">✓</div><div><b>${escapeHtml(current.name)}</b><small>Current device • Active now</small></div></div></div>`;
+    const otherHtml=sessions.length
+      ? `<div class="settings-detail-list">${sessions.map((x,i)=>`<div class="settings-detail-row"><div class="detail-icon">▣</div><div class="row-copy"><b>${escapeHtml(x.name||'Other device')}</b><small>${escapeHtml(x.lastActive?new Date(x.lastActive).toLocaleString():'Recently active')}</small></div><button class="secondary" type="button" data-device-signout="${i}">Sign out</button></div>`).join('')}</div>`
+      : `<div class="settings-detail-card"><b>No other devices</b><p>Only this device is currently signed in.</p></div>`;
+    box.innerHTML=currentHtml+otherHtml;
+    if(sessions.length)box.insertAdjacentHTML('beforeend','<button class="secondary wide" type="button" data-device-signout-all="1">Sign out all other devices</button>');
+    box.onclick=e=>{
+      const b=e.target.closest('[data-device-signout]');
+      const all=e.target.closest('[data-device-signout-all]');
+      if(!b&&!all)return;
+      const x=profileSettingsData();
+      x.settings.sessions=all?[]:(Array.isArray(x.settings.sessions)?x.settings.sessions:[]).filter((_,i)=>i!==Number(b.dataset.deviceSignout));
+      saveProfileData(x);renderSettingsSubpage('devices',false);toast(all?'All other devices signed out':'Device signed out');
+    };
+  }
+  if(id==='loginHistory'){const d=profileSettingsData(),history=Array.isArray(d.settings.loginHistory)?d.settings.loginHistory:[];const current=tnsCurrentDevice();if(!history.length){history.push({name:current.name,when:new Date().toISOString(),result:'Successful sign-in'});d.settings.loginHistory=history;saveProfileData(d)}box.innerHTML=`<div class="settings-detail-list">${history.slice(-20).reverse().map(x=>`<div class="settings-detail-row"><div class="detail-icon">◉</div><div class="row-copy"><b>${escapeHtml(x.result||'Successful sign-in')}</b><small>${escapeHtml(x.name||'TNS Studio device')} • ${escapeHtml(x.when?new Date(x.when).toLocaleString():'Recently')}</small></div></div>`).join('')}</div><p class="settings-note">If you do not recognize a login, sign out other devices and change your password.</p>`;}
   wireSettingsInnerBack();wirePasswordEyes();
 }
 function settingsSubRowHtml(title,desc,action){
@@ -605,6 +625,7 @@ $('#settingsDetailList')?.addEventListener('click',e=>{
   if(a==='quality'){renderSettingsSubpage('quality');return}
   if(a==='ratio'){renderSettingsSubpage('ratio');return}
   if(a==='profilePhoto'){$('#profilePhotoModal')?.classList.remove('hidden');return}
+  if(a==='deviceCurrent'||a==='deviceOthers'||a==='loginHistory'){renderSettingsSubpage(a);return}
   if(a==='sendReport'){toast('Problem report prepared.');return}
 });
 function choicePageKey(stackKey){const map={tagSource:'tagSource',mentionSource:'mentionSource',followRequests:'followRequests',musicQuality:'musicQuality',sensitiveContent:'sensitiveContent',contentLanguage:'contentLanguage',language:'language',languageHindi:'language',languageSpanish:'language',languageFrench:'language',qualityHD:'quality',qualityFHD:'quality',quality4K:'quality',ratio916:'ratio',ratio169:'ratio',ratio11:'ratio'};return map[stackKey]||stackKey}

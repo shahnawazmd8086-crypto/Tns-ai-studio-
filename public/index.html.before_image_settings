@@ -175,8 +175,8 @@
 <section class="panel" data-screen-number="7" id="settings">
 <div class="card glass settings-page">
   <div class="section-head settings-main-head">
-    <button class="back-btn settings-home-back-arrow" id="settingsHomeBack" data-open="dashboard" aria-label="Back to Home" title="Back to Home">←</button>
     <div><p class="eyebrow">TNS STUDIO</p><h2 id="settingsTitle">Settings and activity</h2><p class="muted">Manage your account, privacy, social, notifications and app preferences.</p></div>
+    <button class="back-btn settings-home-back-arrow" id="settingsHomeBack" data-open="dashboard" aria-label="Back to Home" title="Back to Home">←</button>
   </div>
   <div id="settingsHomeView">
     <div class="settings-search-wrap"><span>⌕</span><input id="settingsSearch" type="search" placeholder="Search settings" autocomplete="off"/></div>

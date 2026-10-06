@@ -133,25 +133,25 @@ function applyCommentFilterToUpload(){const d=getProfileData();const s=d.setting
   ['ageBand','madeForKids','locationVisibility','sensitiveContent','videoQuality','feedView'].forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.value=s[k]??el.value});
   syncSensitiveContentControl();
   ['hiddenWords','readReceipts','activityStatus','sleepMode','sleepAutoReply','notifyFollowers','notifyLikes','notifyMentions','notifyMessages','notifyCreator','analytics','saveOriginals','wifiUpload','personalizedFeed','autoplay','autoDownload'].forEach(k=>{const el=$('#ps'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.checked=s[k]!==false});
-  if($('#psLoginAlerts')){$('#psLoginAlerts').dataset.on=s.loginAlerts!==false?'true':'false';$('#psLoginAlerts').textContent=`Login alerts: ${s.loginAlerts!==false?'On':'Off'}`}
-  if($('#psPasskey'))$('#psPasskey').textContent=`Passkey: ${s.passkey?'On':'Off'}`;
+  if($('#psLoginAlerts')){$('#psLoginAlerts').dataset.on=s.loginAlerts!==false?'true':'false';$('#psLoginAlerts').textContent='Login Activity'}
+  if($('#psPasskey'))$('#psPasskey').textContent='Passkey';
+  const priv=$('#psPrivateAccountToggle'); if(priv)priv.checked=(s.accountVisibility||'public')==='private';
+  const two=$('#settingsTwoFactorToggle'); if(two)two.checked=!!s.twoFactor;
+  ['psNotifyComments','psNotifyShorts','psNotifyLive','psShortDownloads','psShortRemix','psShortCollab','psDarkMode'].forEach(id=>{const el=$('#'+id);if(el)el.checked=s[id]!==false});
+  const d=getProfileData(); const name=d.name||'TNS Studio User'; const email=currentUser()?.email||d.email||'Email not set';
+  if($('#settingsAccountName'))$('#settingsAccountName').textContent=name; if($('#settingsAccountEmail'))$('#settingsAccountEmail').textContent=email;
+  if($('#settingsPersonalName'))$('#settingsPersonalName').value=name; if($('#settingsPersonalEmail'))$('#settingsPersonalEmail').value=email; if($('#settingsPersonalMobile'))$('#settingsPersonalMobile').value=d.mobile||currentUser()?.mobile||''; if($('#settingsPersonalBio'))$('#settingsPersonalBio').value=d.bio||'';
   $('#profileSettingsSearch').value=''; $('#profileSettingsSearchClear')?.classList.add('hidden'); $('#profileSettingsSearchEmpty')?.classList.add('hidden');
-  $('#tnsSettingsHome').classList.remove('hidden'); $('#tnsSettingsSub').classList.add('hidden'); $('#tnsSettingsTitle').textContent='Settings & Activity'; $('#tnsSettingsSubtitle').textContent='Manage your TNS Studio account, privacy, content and app settings.';
+  $('#tnsSettingsHome').classList.remove('hidden'); $('#tnsSettingsSub').classList.add('hidden'); $('#tnsSettingsTitle').textContent='Settings & Activity'; $('#tnsSettingsSubtitle').textContent='All settings in one place';
+  $$('.settings-detail-panel').forEach(p=>p.classList.remove('active')); $$('.settings-detail-list').forEach(p=>p.classList.remove('hidden'));
   $('#profileSettingsModal').classList.remove('hidden');
 }
-
-// TNS Studio Settings & Activity: simple menu + dedicated category screens.
 function openSettingsCategory(index){
   const body=document.querySelector(`.tns-settings-body[data-settings-body="${index}"]`); if(!body)return;
   const target=$('#tnsSettingsSubBody');
   const active=target.dataset.active;
-  if(active!==undefined){
-    const oldWrap=document.querySelector(`.tns-settings-body[data-settings-body="${active}"]`);
-    const oldBody=target.querySelector('.settings-group-body');
-    if(oldWrap&&oldBody)oldWrap.appendChild(oldBody);
-  }
-  const nextBody=body.querySelector('.settings-group-body');
-  if(!nextBody)return;
+  if(active!==undefined){const oldWrap=document.querySelector(`.tns-settings-body[data-settings-body="${active}"]`);const oldBody=target.querySelector('.settings-group-body');if(oldWrap&&oldBody)oldWrap.appendChild(oldBody)}
+  const nextBody=body.querySelector('.settings-group-body'); if(!nextBody)return;
   target.innerHTML=''; target.appendChild(nextBody); target.dataset.active=String(index);
   $('#tnsSettingsHome').classList.add('hidden'); $('#tnsSettingsSub').classList.remove('hidden');
   $('#tnsSettingsTitle').textContent=body.dataset.title||'Settings'; $('#tnsSettingsSubtitle').textContent=body.dataset.desc||'';
@@ -159,29 +159,41 @@ function openSettingsCategory(index){
 }
 function closeSettingsCategory(){
   const target=$('#tnsSettingsSubBody'); const active=target.dataset.active;
-  if(active!==undefined){
-    const wrap=document.querySelector(`.tns-settings-body[data-settings-body="${active}"]`); const activeBody=target.querySelector('.settings-group-body');
-    if(wrap&&activeBody)wrap.appendChild(activeBody);
-  }
-  target.innerHTML=''; delete target.dataset.active;
-  $('#tnsSettingsSub').classList.add('hidden'); $('#tnsSettingsHome').classList.remove('hidden');
-  $('#tnsSettingsTitle').textContent='Settings & Activity'; $('#tnsSettingsSubtitle').textContent='Manage your TNS Studio account, privacy, content and app settings.';
+  if(active!==undefined){const wrap=document.querySelector(`.tns-settings-body[data-settings-body="${active}"]`);const activeBody=target.querySelector('.settings-group-body');if(wrap&&activeBody)wrap.appendChild(activeBody)}
+  target.innerHTML=''; delete target.dataset.active; $('#tnsSettingsSub').classList.add('hidden'); $('#tnsSettingsHome').classList.remove('hidden'); $('#tnsSettingsTitle').textContent='Settings & Activity'; $('#tnsSettingsSubtitle').textContent='All settings in one place';
+}
+function openSettingsDetail(name){
+  const active=$('#tnsSettingsSubBody .settings-group-body'); if(!active)return;
+  active.querySelectorAll('.settings-detail-panel').forEach(p=>p.classList.toggle('active',p.dataset.detailPanel===name));
+  active.querySelectorAll('.settings-detail-list').forEach(p=>p.classList.toggle('hidden',name.startsWith('account-')));
+  const titles={
+    'account-personal':['Personal Information','Edit your basic details'],
+    'account-security':['Password & Security','Manage your security settings'],
+    'account-sessions':['Login & Sessions','Check your devices and login activity'],
+    'account-activity':['Account Activity','See your history, actions and downloads'],
+    'account-delete':['Deactivate / Delete Account','Choose to deactivate or delete your account']
+  };
+  if(titles[name]){$('#tnsSettingsTitle').textContent=titles[name][0];$('#tnsSettingsSubtitle').textContent=titles[name][1]}
+}
+function closeSettingsDetail(){
+  const active=$('#tnsSettingsSubBody .settings-group-body'); if(!active)return;
+  active.querySelectorAll('.settings-detail-panel').forEach(p=>p.classList.remove('active')); active.querySelectorAll('.settings-detail-list').forEach(p=>p.classList.remove('hidden'));
+  const body=$('#tnsSettingsSubBody .settings-group-body')?.closest('.tns-settings-body'); if(body){$('#tnsSettingsTitle').textContent=body.dataset.title||'Settings';$('#tnsSettingsSubtitle').textContent=body.dataset.desc||''}
 }
 $$('.tns-settings-row').forEach(row=>row.addEventListener('click',()=>openSettingsCategory(Number(row.dataset.settingsGroup))));
-$('#tnsSettingsBack')?.addEventListener('click',closeSettingsCategory);
-$('#profileSettingsSearch')?.addEventListener('input',()=>{
-  const q=String($('#profileSettingsSearch').value||'').trim().toLowerCase();
-  $('#profileSettingsSearchClear')?.classList.toggle('hidden',!q);
-  let matches=0;
-  $$('.tns-settings-row').forEach(row=>{const body=document.querySelector(`.tns-settings-body[data-settings-body="${row.dataset.settingsGroup}"]`);const hit=!q||((row.textContent+' '+(body?.textContent||'')).toLowerCase().includes(q));row.classList.toggle('hidden',!hit);if(hit)matches++;});
-  $('#profileSettingsSearchEmpty')?.classList.toggle('hidden',matches!==0);
-});
+$('#tnsSettingsBack')?.addEventListener('click',()=>{if($('#tnsSettingsSubBody .settings-detail-panel.active'))closeSettingsDetail();else closeSettingsCategory()});
+$$('[data-settings-detail]').forEach(b=>b.addEventListener('click',()=>openSettingsDetail(b.dataset.settingsDetail)));
+$('#profileSettingsSearch')?.addEventListener('input',()=>{const q=String($('#profileSettingsSearch').value||'').trim().toLowerCase();$('#profileSettingsSearchClear')?.classList.toggle('hidden',!q);let matches=0;$$('.tns-settings-row').forEach(row=>{const hit=!q||row.textContent.toLowerCase().includes(q);row.classList.toggle('hidden',!hit);if(hit)matches++});$('#profileSettingsSearchEmpty')?.classList.toggle('hidden',matches!==0)});
 $('#profileSettingsSearchClear')?.addEventListener('click',()=>{$('#profileSettingsSearch').value='';$('#profileSettingsSearch').dispatchEvent(new Event('input'));$('#profileSettingsSearch').focus()});
-$('#profileSettingsModal')?.addEventListener('click',(e)=>{
-  const row=e.target.closest('.settings-group summary');
-  if(row){ /* native details handles open/close */ }
-});
-
+$('#settingsChangeProfilePhoto')?.addEventListener('click',()=>$('#profilePhotoModal')?.classList.remove('hidden'));
+$('#settingsPersonalSave')?.addEventListener('click',()=>{const d=getProfileData();d.name=$('#settingsPersonalName').value.trim()||'TNS Studio User';d.email=$('#settingsPersonalEmail').value.trim();d.mobile=$('#settingsPersonalMobile').value.trim();d.bio=$('#settingsPersonalBio').value.trim()||'Video Creator | AI Explorer | Dream Big';saveProfileData(d);renderProfile();$('#settingsPersonalStatus').textContent='Profile information saved.';toast('Profile information saved')});
+$('#psPrivateAccountToggle')?.addEventListener('change',e=>{$('#psAccountVisibility').value=e.target.checked?'private':'public';$('#psAccountVisibility').dispatchEvent(new Event('change'))});
+$('#settingsTwoFactorToggle')?.addEventListener('change',e=>{const d=profileSettingsData();d.settings.twoFactor=e.target.checked;d.settings.twoFactorMethod=d.settings.twoFactorMethod||'authenticator';saveProfileData(d);$('#psTwoFactor')?.click();});
+$('#psSocialComments')?.addEventListener('change',e=>{$('#psComments').value=e.target.checked?'on':'off';saveProfileSettingsFromUI();toast('Setting updated')});
+$('#psSocialMessages')?.addEventListener('click',()=>$('#psSocialMessageOptions')?.classList.toggle('hidden'));
+$('#psSharingReuse')?.addEventListener('click',()=>$('#psSharingOptions')?.classList.toggle('hidden'));
+['psNotifyComments','psNotifyShorts','psNotifyLive','psShortDownloads','psShortRemix','psShortCollab','psDarkMode','psDataSaver'].forEach(id=>$('#'+id)?.addEventListener('change',()=>{saveProfileSettingsFromUI();if(id==='psDarkMode')document.body.classList.toggle('light',!$('#'+id).checked);toast('Setting updated')}));
+['psHelpSupport','psReportProblem','psPrivacyPolicy','psTerms','psAbout','psMusicSounds','psContentPreferences','psLanguage','psFollowersFollowing','psTagsMentionsDetail'].forEach(id=>$('#'+id)?.addEventListener('click',()=>toast((document.querySelector('#'+id+' b')?.textContent||'Setting')+' opened')));
 const tnsAutoSaveIds=['psAccountVisibility','psFollowingVisibility','psFollowersVisibility','psLikedVisibility','psShortAudience','psComments','psLikes','psSharing','psDownloads','psRemix','psCommentFilter','psMentions','psTags','psHiddenWords','psFollowRequests','psMessageRequests','psReadReceipts','psActivityStatus','psSleepMode','psSleepStart','psSleepEnd','psSleepAutoReply','psLimits','psNotifyFollowers','psNotifyLikes','psNotifyMentions','psNotifyMessages','psNotifyCreator','psAnalytics','psSaveOriginals','psWifiUpload','psAgeBand','psMadeForKids','psLocationVisibility','psSensitiveContent','psPersonalizedFeed','psFeedView','psVideoQuality','psAutoplay','psWifiOnly','psAutoDownload'];
 tnsAutoSaveIds.forEach(id=>$('#'+id)?.addEventListener('change',()=>{saveProfileSettingsFromUI();if(id==='psAccountVisibility'||id==='psAgeBand')syncSensitiveContentControl();toast('Setting updated');}));
 $('#psNotInterestedInfo')?.addEventListener('click',()=>toast('Tap 🚫 Not interested on a Short to hide it from your feed.'));

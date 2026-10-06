@@ -948,3 +948,37 @@ body.profile-mode .profile-panel{padding-top:18px}
 .settings-detail-head>div:first-child{flex:0 0 38px!important;width:38px!important}.settings-detail-head .settings-back-btn{position:static!important;width:38px!important;height:38px!important;border:0!important;background:transparent!important;padding:0!important;font-size:28px!important;display:grid!important;place-items:center!important}.settings-detail-head>div:last-child{min-width:0}.settings-detail-head .eyebrow{display:none}.settings-detail-head h3{font-size:18px!important;margin:0 0 2px!important}.settings-detail-head .muted{font-size:9px!important;margin:0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .settings-detail-row{min-height:56px!important;padding:11px 10px!important;border:1px solid rgba(91,119,210,.18)!important;border-radius:13px!important;background:#0a1427!important}.settings-detail-row b{font-size:12px!important}.settings-detail-row small{font-size:9px!important;margin-top:2px!important}.settings-switch{width:56px!important;height:31px!important;min-width:56px!important;padding:3px!important}.settings-switch i{width:25px!important;height:25px!important}.settings-switch.on i{transform:translateX(25px)!important}.settings-form-card,.settings-detail-card{padding:13px!important;border-radius:14px!important;background:#0a1427!important;border:1px solid rgba(91,119,210,.18)!important}.settings-form-card label{font-size:10px!important;margin:9px 0 5px!important}.settings-form-card input,.settings-form-card textarea{min-height:42px!important;font-size:12px!important}.settings-note{font-size:10px;color:var(--muted);line-height:1.45;margin:10px 3px}.settings-device-current{display:flex;align-items:center;gap:10px}.settings-device-current b{display:block;font-size:12px}.settings-device-current small{display:block;font-size:9px;color:var(--muted);margin-top:2px}.settings-logout{margin-top:12px!important}
 @media(max-width:560px){.settings-page{padding:12px 10px 88px}.settings-main-head{margin:-12px -10px 10px!important;padding:12px 10px!important}.settings-search-wrap{top:63px!important}.settings-detail-head{margin-left:-2px;margin-right:-2px}.settings-category{min-height:58px!important}.settings-detail-row{min-height:54px!important}}
+
+/* FINAL SIMPLE SETTINGS NAVIGATION */
+#profileSettingsModal{display:none!important}
+.settings-main-head,.settings-detail-head{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.settings-nav-arrow{flex:0 0 auto;width:42px;height:42px;border:1px solid rgba(80,120,255,.7);border-radius:14px;background:rgba(8,18,45,.92);color:#fff;font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 0 18px rgba(60,80,255,.18)}
+.settings-profile-header-row{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(88,118,255,.35);border-radius:16px;background:rgba(9,20,48,.62);cursor:pointer;margin-bottom:8px}
+.settings-profile-avatar-large{width:58px;height:58px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#2438ff,#7d3cff);font-size:25px;flex:0 0 58px}
+.settings-profile-avatar-large img{width:100%;height:100%;object-fit:cover}
+.settings-form-simple{display:flex;flex-direction:column;gap:14px}
+.settings-form-simple label{display:flex;flex-direction:column;gap:8px;font-weight:600}
+.settings-form-simple input,.settings-form-simple textarea{width:100%;box-sizing:border-box;border:1px solid rgba(90,120,255,.38);border-radius:14px;background:rgba(4,12,32,.85);color:#fff;padding:13px 14px;font:inherit}
+.settings-form-simple textarea{resize:vertical;min-height:120px}
+.settings-detail-head>.settings-nav-arrow{margin-left:auto}
+
+/* TNS Studio Settings — clean single-page navigation */
+.settings-page{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+.settings-main-head,.settings-detail-head{display:flex!important;align-items:center!important;gap:12px!important;min-height:48px!important;margin:0 0 14px!important;padding:0!important;border:0!important}
+.settings-main-head .settings-nav-arrow,.settings-detail-head .settings-nav-arrow{position:static!important;flex:0 0 40px!important;width:40px!important;height:40px!important;border:0!important;border-radius:10px!important;background:transparent!important;box-shadow:none!important;padding:0!important;display:grid!important;place-items:center!important;font-size:28px!important;line-height:1!important;color:inherit!important}
+.settings-main-head h2,.settings-detail-head h3{margin:0!important;font-size:21px!important;font-weight:800!important}
+.settings-home-back-arrow{position:static!important}
+.settings-category-list,.settings-detail-list,.settings-search-results{display:flex!important;flex-direction:column!important;gap:0!important}
+.settings-category,.settings-detail-row{width:100%!important;min-height:60px!important;padding:15px 4px!important;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.settings-category:first-child,.settings-detail-row:first-child{border-top:0!important}
+.settings-category-icon{display:none!important}
+.settings-category-copy small,.settings-detail-row small{font-size:11px!important;line-height:1.35!important;margin-top:3px!important}
+.settings-category-copy b,.settings-detail-row b{font-size:14px!important}
+.settings-category-arrow{font-size:23px!important;opacity:.7!important}
+.settings-search-wrap{border:1px solid var(--line)!important;border-radius:12px!important;background:var(--surface2)!important;margin:0 0 10px!important}
+.settings-switch{margin-left:auto!important}
+.settings-detail-card,.settings-form-card{border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;padding:14px 4px!important}
+.settings-choice-row{border-bottom:1px solid var(--line)!important}
+/* Never show the legacy profile-settings modal as a second Settings system. */
+#profileSettingsModal{display:none!important}
+#profileListModal{display:none!important}

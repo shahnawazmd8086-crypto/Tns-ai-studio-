@@ -381,6 +381,64 @@ $('#psPresetOpen')?.addEventListener('click',()=>applyProfilePreset('open'));
 $('#profileSettingsBtn')?.addEventListener('click',()=>openSettings());
 
 $$('[data-open]').forEach(b=>b.addEventListener('click',()=>{if(b.classList.contains('profile-back-icon')){b.classList.add('is-pressed');setTimeout(()=>b.classList.remove('is-pressed'),180)}showPanel(b.dataset.open)}));
+
+/* TNS Studio Original — Creator Autopilot 2.0: Create + Improve + Creator DNA + Continue. */
+(function initCreatorAutopilot(){
+  const modal=document.getElementById('creatorAutopilotModal');
+  const plusModal=document.getElementById('plusCreateModal');
+  if(!modal||!plusModal)return;
+  const idea=document.getElementById('autopilotIdea'), goal=document.getElementById('autopilotGoal'), style=document.getElementById('autopilotStyle');
+  const result=document.getElementById('autopilotResult'), status=document.getElementById('autopilotStatus'), dna=document.getElementById('creatorDnaSummary');
+  const key=()=>{const u=currentUser()||{};return 'tnsCreatorDNA_'+(u.id||u.email||u.mobile||'guest').replace(/[^a-z0-9_-]/gi,'_')};
+  const projectKeyLocal=()=>{const u=currentUser()||{};return 'tnsCreatorAutopilotProjects_'+(u.id||u.email||u.mobile||'guest').replace(/[^a-z0-9_-]/gi,'_')};
+  function getDNA(){try{return JSON.parse(localStorage.getItem(key())||'{}')}catch{return {}}}
+  function saveDNA(d){localStorage.setItem(key(),JSON.stringify(d))}
+  function renderDNA(){const d=getDNA();const n=d.runs||0;dna.textContent=n?`${n} builds • ${d.styleLabel||'Your style'} • ${d.goalLabel||'Your goal'}`:'Creator DNA ready — har build ke saath aapki style better learn hogi.';}
+  function openPlus(){plusModal.classList.remove('hidden')}
+  function closePlus(){plusModal.classList.add('hidden')}
+  function open(){closePlus();modal.classList.remove('hidden');const d=getDNA();if(d.goal)goal.value=d.goal;if(d.style)style.value=d.style;renderDNA();setTimeout(()=>idea.focus(),80)}
+  function close(){modal.classList.add('hidden')}
+  function esc(v){return escapeHtml(String(v||''))}
+  function build(ideaText,g,s){
+    const goalLabel={short:'Viral Short',youtube:'YouTube Video',reels:'Reel / Social',story:'Storytelling'}[g]||'Content';
+    const styleLabel={cinematic:'Cinematic & Realistic',viral:'Fast & Viral',educational:'Clear & Educational',emotional:'Emotional Story'}[s]||'Original';
+    const hook=s==='viral'?`Ruko! ${ideaText}`:`Aaj hum dekhte hain: ${ideaText}`;
+    const script=`HOOK (0–3s): ${hook}\nPROBLEM / CONTEXT (3–8s): Viewer ko turant context aur stakes clear karo.\nBUILD / STORY (8–35s): ${ideaText}. Har important action ko short visual beats mein dikhao.\nREVEAL (35–45s): Final result ko close-up + wide shot mein reveal karo.\nPAYOFF (45–52s): Result ka real test ya proof dikhao.\nCTA (last): “Aise original creator workflows ke liye TNS Studio use karo.”`;
+    const title=(s==='viral'?'Ye Idea Itna Powerful Kyu Hai? ':'')+ideaText.slice(0,58);
+    const caption=`${ideaText}\n\nBuilt with TNS Studio Creator Autopilot.\n#TNSStudio #Shorts #Creator`;
+    const tags='#TNSStudio #Shorts #ViralVideo #ContentCreator #AI #VideoEditing';
+    const cards=[['01','Idea Locked','Aapka core idea'],['02','Script','Hook → Story → Payoff'],['03','Shot Plan','Scene-by-scene visual plan'],['04','Create','AI Video / AI Image workflow'],['05','Edit','TNS Editor timeline + tools'],['06','Package','Thumbnail + Title + Caption + Tags'],['07','Short','9:16 publish-ready version'],['08','Learn','Creator DNA update']];
+    return {goalLabel,styleLabel,script,title,caption,tags,cards};
+  }
+  function render(plan){
+    result.innerHTML=`<div class="autopilot-head"><div><p class="eyebrow">YOUR CONTENT SYSTEM</p><h3>${esc(plan.goalLabel)} • ${esc(plan.styleLabel)}</h3></div><span class="autopilot-live">● WORKFLOW READY</span></div><div class="autopilot-flow">${plan.cards.map(c=>`<div class="autopilot-step"><b>${c[0]}</b><strong>${esc(c[1])}</strong><small>${esc(c[2])}</small></div>`).join('')}</div><div class="autopilot-output"><label>Generated Script<textarea readonly rows="8">${esc(plan.script)}</textarea></label><div class="grid2"><label>Title<input readonly value="${esc(plan.title).replace(/"/g,'&quot;')}"/></label><label>Tags<input readonly value="${esc(plan.tags)}"/></label></div><label>Caption<textarea readonly rows="4">${esc(plan.caption)}</textarea></label></div><div class="autopilot-actions"><button class="secondary" id="autopilotSaveProject" type="button">💾 Save Workflow</button><button class="primary" id="autopilotUseEditor" type="button">🎬 Continue to Edit</button></div>`;
+    result.classList.remove('hidden');
+    document.getElementById('autopilotSaveProject').onclick=()=>{const projects=JSON.parse(localStorage.getItem(projectKeyLocal())||'[]');projects.unshift({id:Date.now(),idea:idea.value.trim(),goal:plan.goalLabel,style:plan.styleLabel,title:plan.title,script:plan.script,caption:plan.caption,tags:plan.tags,stage:'autopilot-ready',createdAt:new Date().toISOString()});localStorage.setItem(projectKeyLocal(),JSON.stringify(projects.slice(0,30)));toast('Creator Workflow saved — you can continue it from Projects');};
+    document.getElementById('autopilotUseEditor').onclick=()=>{close();showPanel('editor');toast('Creator Workflow ready — continue with Edit Video');};
+  }
+  function improve(){
+    const text=idea.value.trim();
+    if(text.length<5){msg('#autopilotStatus','Improve ke liye apna video/idea select ya describe karo.','error');return;}
+    const checks=[['Hook','First 3 seconds ko stronger banao.'],['Pacing','Long/dead moments ko trim karo.'],['Story','Problem → action → result flow clear rakho.'],['Packaging','Title, caption aur thumbnail ko same promise par align karo.'],['Short Format','9:16 framing aur readable captions verify karo.']];
+    result.innerHTML=`<div class="autopilot-head"><div><p class="eyebrow">IMPROVE MY CONTENT</p><h3>5-point creator check</h3></div><span class="autopilot-live">● REVIEW READY</span></div><div class="autopilot-flow">${checks.map((c,i)=>`<div class="autopilot-step"><b>0${i+1}</b><strong>${c[0]}</strong><small>${c[1]}</small></div>`).join('')}</div><div class="autopilot-output"><p class="muted">TNS Studio ne aapke workflow ke liye improvement checklist banayi hai. Actual AI visual/audio analysis tabhi claim ki jayegi jab AI service connected hogi.</p><button class="primary wide" id="applyImprove" type="button">✨ Apply Workflow Improvements</button></div>`;
+    result.classList.remove('hidden');document.getElementById('applyImprove').onclick=()=>{close();showPanel('editor');toast('Improvement workflow opened in Edit Video');};msg('#autopilotStatus','Improvement plan ready.','success');
+  }
+  document.getElementById('plusCreateBtn')?.addEventListener('click',openPlus);
+  document.getElementById('plusCreateClose')?.addEventListener('click',closePlus);
+  plusModal.addEventListener('click',e=>{if(e.target===plusModal)closePlus()});
+  plusModal.querySelectorAll('[data-create-action]').forEach(b=>b.addEventListener('click',()=>{
+    const a=b.dataset.createAction;closePlus();
+    if(a==='autopilot'){open();return;}
+    if(a==='upload'){showPanel('editor');setTimeout(()=>document.getElementById('videoFile')?.click(),150);return;}
+    if(a==='ai'){showPanel('generate');return;}
+    if(a==='template'){showPanel('editor');toast('Template workflow opened — choose a template in Edit Video.');}
+  }));
+  document.getElementById('creatorAutopilotClose')?.addEventListener('click',close);
+  modal.addEventListener('click',e=>{if(e.target===modal)close()});
+  document.getElementById('runCreatorAutopilot')?.addEventListener('click',()=>{const text=idea.value.trim();if(text.length<5){msg('#autopilotStatus','Pehle apna idea likho.','error');return;}const plan=build(text,goal.value,style.value);const d=getDNA();d.runs=(d.runs||0)+1;d.style=style.value;d.styleLabel=plan.styleLabel;d.goal=goal.value;d.goalLabel=plan.goalLabel;d.lastIdea=text;d.lastBuiltAt=new Date().toISOString();saveDNA(d);render(plan);msg('#autopilotStatus','Creator DNA updated. Next build aapki saved preference use karega.','success');renderDNA();});
+  document.getElementById('autopilotImproveBtn')?.addEventListener('click',improve);
+  renderDNA();
+})();
 function showAuthScreens(which){['authScreen','otpScreen','languageScreen'].forEach(id=>$( '#'+id).classList.toggle('hidden',id!==which))}
 function currentUser(){return authenticatedUser}
 function setUser(u){authenticatedUser=u||null;window.TNSAuth?.setLoggedIn?.(u||null)}

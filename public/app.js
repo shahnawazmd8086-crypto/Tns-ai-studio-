@@ -1386,6 +1386,29 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   if (!form || !input || !messages) return;
   let researchEnabled = false;
   let attachedFile = null;
+  let isSending = false;
+  const MAX_FILE_BYTES = 1200 * 1024;
+  const allowedExtensions = new Set(['.png','.jpg','.jpeg','.webp','.gif','.pdf','.txt','.doc','.docx','.csv']);
+  const fileExtension = name => { const i=String(name||'').lastIndexOf('.'); return i>=0?String(name).slice(i).toLowerCase():''; };
+  const renderAttachment = () => {
+    if (!preview) return;
+    preview.replaceChildren();
+    preview.classList.toggle('hidden', !attachedFile);
+    if (!attachedFile) return;
+    const label=document.createElement('span');
+    label.textContent=`📎 ${attachedFile.name} · ${(attachedFile.size/1024).toFixed(0)} KB`;
+    const remove=document.createElement('button');
+    remove.type='button'; remove.className='home-attachment-remove'; remove.textContent='Hataayein';
+    remove.addEventListener('click',()=>{ attachedFile=null; if(fileInput)fileInput.value=''; renderAttachment(); setStatus('Attachment hata diya gaya.'); });
+    preview.append(label,remove);
+  };
+  const setSending = busy => {
+    isSending=busy;
+    form.querySelectorAll('button').forEach(button=>{ button.disabled=busy; });
+    if(input) input.disabled=busy;
+    if(fileInput) fileInput.disabled=busy;
+    form.classList.toggle('is-sending',busy);
+  };
   const addBubble = (text, role='assistant', isError=false) => {
     const welcome = messages.querySelector('.home-welcome-card');
     if (welcome) welcome.remove();
@@ -1407,17 +1430,24 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   });
   $id('homeChatAttach')?.addEventListener('click',()=>fileInput?.click());
   fileInput?.addEventListener('change',()=>{
-    attachedFile=fileInput.files?.[0]||null;
-    if(preview){
-      preview.classList.toggle('hidden',!attachedFile);
-      preview.textContent=attachedFile ? `📎 ${attachedFile.name} · ${(attachedFile.size/1024).toFixed(0)} KB — sawal likhkar bhejein.` : '';
+    const selected=fileInput.files?.[0]||null;
+    if(selected && !allowedExtensions.has(fileExtension(selected.name))){
+      attachedFile=null; fileInput.value=''; renderAttachment();
+      setStatus('Yeh file type abhi supported nahi hai. Photo, PDF, TXT, DOC, DOCX ya CSV chunein.'); return;
     }
+    if(selected && selected.size>MAX_FILE_BYTES){
+      attachedFile=null; fileInput.value=''; renderAttachment();
+      setStatus('File 1.2 MB se chhoti honi chahiye.'); return;
+    }
+    attachedFile=selected; renderAttachment();
+    if(attachedFile) setStatus('File attach ho gayi. Ab apna sawal likhkar bhejein.');
   });
   $id('homeResearchBtn')?.addEventListener('click',event=>{
     researchEnabled=!researchEnabled;
     event.currentTarget.classList.toggle('active',researchEnabled);
+    event.currentTarget.setAttribute('aria-pressed',String(researchEnabled));
     event.currentTarget.textContent=researchEnabled?'🔎 Research On':'🔎 Research';
-    setStatus(researchEnabled ? 'Research mode select hua. Live web results connected research provider par depend karte hain.' : 'Research mode band hai.');
+    setStatus(researchEnabled ? 'Research request flag on hai; is ZIP mein live web search provider abhi connect nahi hai.' : 'Research mode band hai.');
   });
   $id('homeExploreToolsBtn')?.addEventListener('click',event=>{
     const grid=$id('homeToolsGrid');
@@ -1430,6 +1460,13 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   document.querySelectorAll('[data-home-prompt]').forEach(button=>button.addEventListener('click',()=>{
     input.value=(button.getAttribute('data-home-prompt')||'')+input.value;
     input.focus(); fitInput();
+  }));
+  document.querySelectorAll('[data-home-starter]').forEach(button=>button.addEventListener('click',()=>{
+    const starter=button.getAttribute('data-home-starter')||'';
+    input.value=starter+input.value;
+    input.focus(); fitInput();
+    setStatus('Misaal message box mein aa gaya hai. Apni details bharein, phir bhejein.');
+    input.setSelectionRange(input.value.length,input.value.length);
   }));
   $id('homeChatVoice')?.addEventListener('click',()=>{
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -1451,19 +1488,23 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   });
   form.addEventListener('submit',async event=>{
     event.preventDefault();
+    if(isSending) return;
     const message=input.value.trim();
     if(!message && !attachedFile)return;
-    if(attachedFile && attachedFile.size>1200*1024){
-      setStatus('Filhaal is browser workflow mein 1.2 MB se chhoti file use karein.');
+    if(attachedFile && attachedFile.size>MAX_FILE_BYTES){
+      setStatus('File 1.2 MB se chhoti honi chahiye.');
       return;
     }
     const shownMessage=message || `Is file ko samajhne mein madad karein: ${attachedFile.name}`;
     addBubble(shownMessage+(attachedFile?`\n\n📎 ${attachedFile.name}`:''),'user');
+    const starters=$id('homeChatStarters');
+    if(starters) starters.classList.add('hidden');
     input.value=''; fitInput();
     const fileToSend=attachedFile;
     attachedFile=null;
     if(fileInput)fileInput.value='';
-    if(preview){preview.classList.add('hidden');preview.textContent='';}
+    renderAttachment();
+    setSending(true);
     setStatus(researchEnabled?'Research request par kaam ho raha hai…':'TNS jawab taiyar kar raha hai…');
     const pending=addBubble('Soch raha hoon…','assistant');
     try{
@@ -1480,6 +1521,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
           headers:{'Content-Type':'application/json'},
           body:JSON.stringify({
             message:message || `Please analyze this file and explain it in simple Hindi: ${fileToSend.name}`,
+            research:researchEnabled,
             file:{name:fileToSend.name,type:fileToSend.type,data:dataUrl}
           })
         });
@@ -1497,6 +1539,8 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
       pending.textContent=`Abhi jawab nahi mil saka: ${error.message}. Aapka sawal yahin hai—dobara koshish kar sakte hain.`;
       pending.classList.add('error');
       setStatus('Request complete nahi hui.');
+    } finally {
+      setSending(false);
     }
     messages.scrollTop=messages.scrollHeight;
   });

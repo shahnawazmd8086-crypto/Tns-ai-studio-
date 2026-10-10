@@ -55,6 +55,15 @@
       <p>Government work, documents, travel, shopping, online problems ya kisi bhi sawal ke liye TNS se baat karein.</p>
     </div>
   </div>
+  <div class="home-chat-starters" id="homeChatStarters" aria-label="Shuru karne ke liye misaalein">
+    <p class="home-chat-starters-title">Ya inmein se chunein — message pehle check kar sakte hain</p>
+    <div class="home-chat-starters-grid">
+      <button type="button" class="home-starter-btn" data-home-starter="Mujhe sarkari kaam mein madad chahiye. Mera kaam hai: ">🏛️ <span><b>Sarkari kaam</b><small>Form, certificate, scheme</small></span></button>
+      <button type="button" class="home-starter-btn" data-home-starter="Is document ya photo ko simple Hindi mein samjhao. Mera sawal hai: ">📄 <span><b>Document samjhein</b><small>Photo ya file attach karein</small></span></button>
+      <button type="button" class="home-starter-btn" data-home-starter="Mujhe website ya app mein dikkat aa rahi hai. Kya ho raha hai: ">🛠️ <span><b>Online problem</b><small>Error ya form ki dikkat</small></span></button>
+      <button type="button" class="home-starter-btn" data-home-starter="Meri shikayat ko saaf, factual aur vinamra bhasha mein draft karo. Ghatna: ">📝 <span><b>Shikayat likhein</b><small>Facts aur date batayein</small></span></button>
+    </div>
+  </div>
   <div class="home-chat-status" id="homeChatStatus" role="status"></div>
   <div class="home-attachment-preview hidden" id="homeChatFilePreview"></div>
   <form class="home-chat-composer" id="homeChatForm">
@@ -65,7 +74,7 @@
     <button class="home-send-btn" type="submit" aria-label="Send message" title="Send">↑</button>
   </form>
   <div class="home-chat-tools">
-    <button type="button" class="home-tool-chip" id="homeResearchBtn">🔎 Research</button>
+    <button type="button" class="home-tool-chip" id="homeResearchBtn" aria-pressed="false" title="Live web search requires a connected search service">🔎 Research</button>
     <button type="button" class="home-tool-chip" data-home-prompt="Mere diye hue link ya website ko samjho aur zaroori information dhoondho: ">🔗 Link samjho</button>
     <button type="button" class="home-tool-chip" data-home-prompt="Is jagah ka address, location aur relevant details dhoondhne mein madad karo: ">📍 Address / jagah</button>
     <button type="button" class="home-tool-chip" data-home-prompt="Mere budget aur zarooraton ke hisaab se options compare karo: ">⚖️ Compare options</button>

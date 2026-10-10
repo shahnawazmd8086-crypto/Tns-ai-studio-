@@ -1057,3 +1057,25 @@ body.profile-mode .profile-panel{padding-top:18px}
   .home-chat-composer { gap:5px; padding:7px; }
   .home-composer-icon,.home-send-btn { flex-basis:36px; width:36px; height:36px; }
 }
+
+/* Chat-first home usability: clear attachment removal and visible busy state. */
+.home-attachment-preview { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+.home-attachment-remove { border:1px solid var(--border,rgba(255,255,255,.18)); border-radius:999px; padding:6px 10px; background:transparent; color:inherit; cursor:pointer; }
+.home-chat-composer.is-sending { opacity:.78; }
+.home-chat-composer button:disabled { opacity:.45; cursor:wait; }
+.home-tool-chip[aria-pressed="true"] { border-color:var(--primary,#5268e8); background:rgba(82,104,232,.18); }
+
+
+/* TNS home: guided first steps for users who do not know what to type. */
+.home-chat-starters { padding:2px 0 10px; }
+.home-chat-starters-title { margin:0 2px 8px; font-size:12px; opacity:.72; }
+.home-chat-starters-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.home-starter-btn { display:flex; align-items:center; gap:10px; min-width:0; text-align:left; padding:11px 12px; border:1px solid var(--border,rgba(255,255,255,.14)); border-radius:14px; background:rgba(255,255,255,.035); color:inherit; cursor:pointer; }
+.home-starter-btn:focus-visible,.home-tool-chip:focus-visible,.home-composer-icon:focus-visible,.home-send-btn:focus-visible { outline:2px solid var(--primary,#5268e8); outline-offset:2px; }
+.home-starter-btn > span { display:flex; flex-direction:column; gap:3px; min-width:0; }
+.home-starter-btn b { font-size:12px; }
+.home-starter-btn small { font-size:10px; line-height:1.35; opacity:.7; }
+@media(max-width:420px) {
+  .home-chat-starters-grid { grid-template-columns:1fr; }
+  .home-starter-btn { padding:10px 12px; }
+}

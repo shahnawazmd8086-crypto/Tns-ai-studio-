@@ -43,20 +43,43 @@
 </div>
 <main>
 <section class="panel active" data-screen-number="6" id="dashboard">
-<div class="dashboard-hero glass">
-<div class="dashboard-hero-logo-wrap"><img alt="TNS Studio" class="dashboard-hero-logo" src="/assets/tns-studio-dashboard-logo.png"/></div>
-<div class="dashboard-hero-copy">
-<h1>TNS Studio</h1>
-<p class="muted">Your All-in-One AI Video &amp; Media Studio</p>
-</div>
-<span class="dashboard-hero-sparkle">✦</span>
-</div>
-<div class="feature-grid locked-dashboard-grid dashboard-color-grid">
-<button class="feature glass dashboard-feature" data-open="editor"><span>✂️</span><b>Edit Video</b><small>Trim • Cut • Enhance</small></button>
-<button class="feature glass dashboard-feature" data-open="generate"><span>🎥</span><b>AI Video</b><small>Text to Video</small></button>
-<button class="feature glass dashboard-feature" data-open="image"><span>🖼️</span><b>AI Image</b><small>Text to Image</small></button>
-<button class="feature glass dashboard-feature" data-open="contact"><span>💬</span><b>TNS Contact</b><small>Chat • Call • Share</small></button>
-<button class="feature glass dashboard-feature" data-open="tnsAi"><span>🤖</span><b>TNS AI</b><small>Chat • Voice • AI</small></button>
+<div class="home-assistant-shell">
+  <div class="home-assistant-intro">
+    <div class="home-assistant-mark"><img alt="TNS" src="/assets/tns-studio-dashboard-logo.png"/></div>
+    <h1>Namaste! TNS aapki kya madad kar sakta hai?</h1>
+    <p>Apna sawal likhein, bolkar batayein, ya photo aur document share karein.</p>
+  </div>
+  <div class="home-chat-messages" id="homeChatMessages" aria-live="polite">
+    <div class="home-welcome-card">
+      <b>Apna kaam yahin se shuru karein</b>
+      <p>Government work, documents, travel, shopping, online problems ya kisi bhi sawal ke liye TNS se baat karein.</p>
+    </div>
+  </div>
+  <div class="home-chat-status" id="homeChatStatus" role="status"></div>
+  <div class="home-attachment-preview hidden" id="homeChatFilePreview"></div>
+  <form class="home-chat-composer" id="homeChatForm">
+    <input accept="image/*,.pdf,.txt,.doc,.docx,.csv" class="hidden" id="homeChatFile" type="file"/>
+    <button class="home-composer-icon" type="button" id="homeChatAttach" aria-label="Attach photo or document" title="Photo ya document attach karein">＋</button>
+    <textarea id="homeChatInput" rows="1" maxlength="8000" placeholder="TNS se kuch bhi poochhein…" aria-label="Message TNS"></textarea>
+    <button class="home-composer-icon" type="button" id="homeChatVoice" aria-label="Speak to TNS" title="Bolkar batayein">🎙</button>
+    <button class="home-send-btn" type="submit" aria-label="Send message" title="Send">↑</button>
+  </form>
+  <div class="home-chat-tools">
+    <button type="button" class="home-tool-chip" id="homeResearchBtn">🔎 Research</button>
+    <button type="button" class="home-tool-chip" data-home-prompt="Mere diye hue link ya website ko samjho aur zaroori information dhoondho: ">🔗 Link samjho</button>
+    <button type="button" class="home-tool-chip" data-home-prompt="Is jagah ka address, location aur relevant details dhoondhne mein madad karo: ">📍 Address / jagah</button>
+    <button type="button" class="home-tool-chip" data-home-prompt="Mere budget aur zarooraton ke hisaab se options compare karo: ">⚖️ Compare options</button>
+    <button type="button" class="home-tool-chip" id="homeExploreToolsBtn" aria-expanded="false">☷ Saare tools</button>
+  </div>
+  <div class="home-tools-grid hidden" id="homeToolsGrid">
+    <button class="home-tool-card" data-open="editor" type="button"><span>✂️</span><b>Edit Video</b><small>Video edit karein</small></button>
+    <button class="home-tool-card" data-open="generate" type="button"><span>🎥</span><b>AI Video</b><small>Video creation</small></button>
+    <button class="home-tool-card" data-open="image" type="button"><span>🖼️</span><b>AI Image</b><small>Image creation</small></button>
+    <button class="home-tool-card" data-open="contact" type="button"><span>💬</span><b>TNS Contact</b><small>Chat aur sharing</small></button>
+    <button class="home-tool-card" data-open="tnsAi" type="button"><span>🤖</span><b>TNS AI tools</b><small>Chat, voice aur files</small></button>
+    <button class="home-tool-card" data-open="projects" type="button"><span>📁</span><b>Projects</b><small>Saved work</small></button>
+  </div>
+  <p class="home-chat-disclaimer">TNS jawab aur available tools ke zariye madad karega. Live search, booking ya submission ki availability connected services par depend karegi.</p>
 </div>
 <div hidden="" id="recentProjects"></div>
 </section>

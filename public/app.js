@@ -1371,3 +1371,133 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   window.addEventListener('mouseup',()=>{if(dragTrim){window.TNSEditorComponent.commit();dragTrim=null}});
   timeline.addEventListener('click',e=>{if(e.target.closest('[data-editor-item]')||e.target.closest('[data-trim]'))return;const rect=timeline.getBoundingClientRect();const zoom=Math.max(25,Number(window.TNSEditorComponent?.state.timelineZoom)||80);const x=Math.max(0,e.clientX-rect.left-86+timeline.scrollLeft);window.TNSEditorComponent.seek(x/zoom);const v=document.getElementById('preview');if(v?.src)v.currentTime=window.TNSEditorComponent.state.currentTime;renderEditorTimeline()});
 })();
+
+
+
+// TNS chat-first home dashboard: main entry point for universal assistance.
+(function initTnsHomeAssistant(){
+  const $id = id => document.getElementById(id);
+  const form = $id('homeChatForm');
+  const input = $id('homeChatInput');
+  const messages = $id('homeChatMessages');
+  const status = $id('homeChatStatus');
+  const fileInput = $id('homeChatFile');
+  const preview = $id('homeChatFilePreview');
+  if (!form || !input || !messages) return;
+  let researchEnabled = false;
+  let attachedFile = null;
+  const addBubble = (text, role='assistant', isError=false) => {
+    const welcome = messages.querySelector('.home-welcome-card');
+    if (welcome) welcome.remove();
+    const node = document.createElement('div');
+    node.className = `home-chat-message ${role}${isError ? ' error' : ''}`;
+    node.textContent = text;
+    messages.appendChild(node);
+    messages.scrollTop = messages.scrollHeight;
+    return node;
+  };
+  const setStatus = text => { if (status) status.textContent = text || ''; };
+  const fitInput = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,140)+'px'; };
+  input.addEventListener('input', fitInput);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+  $id('homeChatAttach')?.addEventListener('click',()=>fileInput?.click());
+  fileInput?.addEventListener('change',()=>{
+    attachedFile=fileInput.files?.[0]||null;
+    if(preview){
+      preview.classList.toggle('hidden',!attachedFile);
+      preview.textContent=attachedFile ? `📎 ${attachedFile.name} · ${(attachedFile.size/1024).toFixed(0)} KB — sawal likhkar bhejein.` : '';
+    }
+  });
+  $id('homeResearchBtn')?.addEventListener('click',event=>{
+    researchEnabled=!researchEnabled;
+    event.currentTarget.classList.toggle('active',researchEnabled);
+    event.currentTarget.textContent=researchEnabled?'🔎 Research On':'🔎 Research';
+    setStatus(researchEnabled ? 'Research mode select hua. Live web results connected research provider par depend karte hain.' : 'Research mode band hai.');
+  });
+  $id('homeExploreToolsBtn')?.addEventListener('click',event=>{
+    const grid=$id('homeToolsGrid');
+    if(!grid)return;
+    const opening=grid.classList.contains('hidden');
+    grid.classList.toggle('hidden',!opening);
+    event.currentTarget.setAttribute('aria-expanded',String(opening));
+    event.currentTarget.textContent=opening?'☷ Tools band karein':'☷ Saare tools';
+  });
+  document.querySelectorAll('[data-home-prompt]').forEach(button=>button.addEventListener('click',()=>{
+    input.value=(button.getAttribute('data-home-prompt')||'')+input.value;
+    input.focus(); fitInput();
+  }));
+  $id('homeChatVoice')?.addEventListener('click',()=>{
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SpeechRecognition){setStatus('Is browser mein voice typing available nahi hai. Keyboard se likh sakte hain.');return;}
+    const recognition=new SpeechRecognition();
+    const savedLanguage=localStorage.getItem('tnsStudioLanguage')||'hi';
+    recognition.lang=savedLanguage==='hi'?'hi-IN':savedLanguage==='en'?'en-IN':savedLanguage;
+    recognition.interimResults=false;
+    recognition.maxAlternatives=1;
+    setStatus('Suniye… ab boliye.');
+    recognition.onresult=event=>{
+      const spoken=event.results?.[0]?.[0]?.transcript||'';
+      input.value=(input.value ? input.value+' ' : '')+spoken;
+      fitInput(); input.focus(); setStatus('Aapki baat text mein aa gayi. Bhejne se pehle check kar lein.');
+    };
+    recognition.onerror=()=>setStatus('Voice input nahi ho saka. Aap type karke bhej sakte hain.');
+    recognition.onend=()=>{if(status?.textContent==='Suniye… ab boliye.')setStatus('');};
+    try{recognition.start();}catch{setStatus('Voice input shuru nahi ho saka.');}
+  });
+  form.addEventListener('submit',async event=>{
+    event.preventDefault();
+    const message=input.value.trim();
+    if(!message && !attachedFile)return;
+    if(attachedFile && attachedFile.size>1200*1024){
+      setStatus('Filhaal is browser workflow mein 1.2 MB se chhoti file use karein.');
+      return;
+    }
+    const shownMessage=message || `Is file ko samajhne mein madad karein: ${attachedFile.name}`;
+    addBubble(shownMessage+(attachedFile?`\n\n📎 ${attachedFile.name}`:''),'user');
+    input.value=''; fitInput();
+    const fileToSend=attachedFile;
+    attachedFile=null;
+    if(fileInput)fileInput.value='';
+    if(preview){preview.classList.add('hidden');preview.textContent='';}
+    setStatus(researchEnabled?'Research request par kaam ho raha hai…':'TNS jawab taiyar kar raha hai…');
+    const pending=addBubble('Soch raha hoon…','assistant');
+    try{
+      let result;
+      if(fileToSend){
+        const dataUrl=await new Promise((resolve,reject)=>{
+          const reader=new FileReader();
+          reader.onload=()=>resolve(reader.result);
+          reader.onerror=()=>reject(new Error('File padhne mein dikkat aayi.'));
+          reader.readAsDataURL(fileToSend);
+        });
+        result=await json('/api/tns-ai/understand',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({
+            message:message || `Please analyze this file and explain it in simple Hindi: ${fileToSend.name}`,
+            file:{name:fileToSend.name,type:fileToSend.type,data:dataUrl}
+          })
+        });
+      }else{
+        result=await json('/api/tns-ai/chat',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({message,research:researchEnabled})
+        });
+      }
+      pending.textContent=result.reply||result.text||'TNS se response nahi mila.';
+      pending.classList.remove('error');
+      setStatus(researchEnabled?'Response aa gaya. Live research ki completeness connected service par depend karti hai.':'Response aa gaya.');
+    }catch(error){
+      pending.textContent=`Abhi jawab nahi mil saka: ${error.message}. Aapka sawal yahin hai—dobara koshish kar sakte hain.`;
+      pending.classList.add('error');
+      setStatus('Request complete nahi hui.');
+    }
+    messages.scrollTop=messages.scrollHeight;
+  });
+})();

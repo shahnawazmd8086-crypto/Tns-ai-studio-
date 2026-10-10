@@ -1382,13 +1382,16 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   const messages = $id('homeChatMessages');
   const status = $id('homeChatStatus');
   const fileInput = $id('homeChatFile');
+  const photoInput = $id('homeChatPhoto');
+  const cameraInput = $id('homeChatCamera');
+  const attachMenu = $id('homeChatAttachMenu');
   const preview = $id('homeChatFilePreview');
   if (!form || !input || !messages) return;
   let researchEnabled = false;
   let attachedFile = null;
   let isSending = false;
   const MAX_FILE_BYTES = 1200 * 1024;
-  const allowedExtensions = new Set(['.png','.jpg','.jpeg','.webp','.gif','.pdf','.txt','.doc','.docx','.csv']);
+  const allowedExtensions = new Set(['.png','.jpg','.jpeg','.webp','.gif','.bmp','.heic','.heif','.pdf','.txt','.doc','.docx','.csv','.xls','.xlsx','.ppt','.pptx','.rtf','.odt','.ods','.odp','.json','.xml','.zip']);
   const fileExtension = name => { const i=String(name||'').lastIndexOf('.'); return i>=0?String(name).slice(i).toLowerCase():''; };
   const renderAttachment = () => {
     if (!preview) return;
@@ -1406,7 +1409,10 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     isSending=busy;
     form.querySelectorAll('button').forEach(button=>{ button.disabled=busy; });
     if(input) input.disabled=busy;
-    if(fileInput) fileInput.disabled=busy;
+    [fileInput,photoInput,cameraInput].forEach(el=>{if(el)el.disabled=busy;});
+    const attachButton=$id('homeChatAttach');
+    if(attachButton)attachButton.disabled=busy;
+    if(attachMenu)attachMenu.classList.add('hidden');
     form.classList.toggle('is-sending',busy);
   };
   const addBubble = (text, role='assistant', isError=false) => {
@@ -1428,20 +1434,53 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
       form.requestSubmit();
     }
   });
-  $id('homeChatAttach')?.addEventListener('click',()=>fileInput?.click());
-  fileInput?.addEventListener('change',()=>{
-    const selected=fileInput.files?.[0]||null;
-    if(selected && !allowedExtensions.has(fileExtension(selected.name))){
-      attachedFile=null; fileInput.value=''; renderAttachment();
-      setStatus('Yeh file type abhi supported nahi hai. Photo, PDF, TXT, DOC, DOCX ya CSV chunein.'); return;
-    }
-    if(selected && selected.size>MAX_FILE_BYTES){
-      attachedFile=null; fileInput.value=''; renderAttachment();
-      setStatus('File 1.2 MB se chhoti honi chahiye.'); return;
-    }
-    attachedFile=selected; renderAttachment();
-    if(attachedFile) setStatus('File attach ho gayi. Ab apna sawal likhkar bhejein.');
+  const clearOtherInputs = keep => [fileInput,photoInput,cameraInput].forEach(el=>{if(el && el!==keep)el.value='';});
+  const openPicker = picker => {
+    if(!picker)return;
+    if(attachMenu)attachMenu.classList.add('hidden');
+    picker.click();
+  };
+  $id('homeChatAttach')?.addEventListener('click',()=>{
+    if(!attachMenu)return;
+    const opening=attachMenu.classList.contains('hidden');
+    attachMenu.classList.toggle('hidden',!opening);
+    $id('homeChatAttach')?.setAttribute('aria-expanded',String(opening));
   });
+  $id('homeChatChoosePhoto')?.addEventListener('click',()=>openPicker(photoInput));
+  $id('homeChatChooseFile')?.addEventListener('click',()=>openPicker(fileInput));
+  $id('homeChatOpenCamera')?.addEventListener('click',()=>openPicker(cameraInput));
+  document.addEventListener('click',event=>{
+    if(attachMenu && !event.target.closest('.home-attach-wrap'))attachMenu.classList.add('hidden');
+  });
+  [fileInput,photoInput,cameraInput].forEach(picker=>picker?.addEventListener('change',()=>{
+    const selected=picker.files?.[0]||null;
+    if(!selected)return;
+    const ext=fileExtension(selected.name);
+    const isImage=selected.type.startsWith('image/') || ['.png','.jpg','.jpeg','.webp','.gif','.bmp','.heic','.heif'].includes(ext);
+    if(picker===photoInput && !isImage){
+      picker.value=''; setStatus('Photo option mein sirf image chunein.'); return;
+    }
+    if(picker===fileInput && !allowedExtensions.has(ext)){
+      picker.value=''; setStatus('Yeh document format abhi supported nahi hai. PDF, Office document, TXT, CSV ya ZIP chunein.'); return;
+    }
+    if(selected.size>MAX_FILE_BYTES){
+      picker.value=''; setStatus('File 1.2 MB se chhoti honi chahiye.'); return;
+    }
+    clearOtherInputs(picker);
+    attachedFile=selected;
+    // The existing send workflow reads the shared file input, so transfer selection to it.
+    if(picker!==fileInput){
+      try {
+        const transfer=new DataTransfer();
+        transfer.items.add(selected);
+        fileInput.files=transfer.files;
+      } catch {
+        // Keep the selected File object; submit logic below uses attachedFile directly.
+      }
+    }
+    renderAttachment();
+    setStatus(picker===cameraInput?'Camera photo attach ho gayi. Bhejne se pehle sawal likh sakte hain.':'Attachment jud gaya. Ab sawal likhein aur bhejein.');
+  }));
   $id('homeResearchBtn')?.addEventListener('click',event=>{
     researchEnabled=!researchEnabled;
     event.currentTarget.classList.toggle('active',researchEnabled);
@@ -1502,7 +1541,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     input.value=''; fitInput();
     const fileToSend=attachedFile;
     attachedFile=null;
-    if(fileInput)fileInput.value='';
+    [fileInput,photoInput,cameraInput].forEach(el=>{if(el)el.value='';});
     renderAttachment();
     setSending(true);
     setStatus(researchEnabled?'Research request par kaam ho raha hai…':'TNS jawab taiyar kar raha hai…');

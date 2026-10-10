@@ -1079,3 +1079,65 @@ body.profile-mode .profile-panel{padding-top:18px}
   .home-chat-starters-grid { grid-template-columns:1fr; }
   .home-starter-btn { padding:10px 12px; }
 }
+
+
+/* TNS dashboard usability refinement — mobile-first, less scrolling */
+#dashboard { padding: 0 0 calc(112px + env(safe-area-inset-bottom, 0px)); }
+#dashboard .home-assistant-shell {
+  width: min(820px, 100%);
+  min-height: 0;
+  padding: 10px 0 18px;
+  gap: 0;
+}
+#dashboard .home-assistant-intro { padding: 4px 10px 8px; }
+#dashboard .home-assistant-mark { width: 42px; height: 42px; border-radius: 13px; margin-bottom: 7px; }
+#dashboard .home-assistant-intro h1 { font-size: clamp(21px, 5vw, 29px); line-height: 1.18; margin-bottom: 6px; }
+#dashboard .home-assistant-intro p { font-size: 13px; line-height: 1.45; }
+#dashboard .home-chat-messages { min-height: 0; max-height: 30vh; padding: 7px 3px; gap: 8px; }
+#dashboard .home-welcome-card { width: 100%; padding: 12px 14px; border-radius: 16px; }
+#dashboard .home-welcome-card b { font-size: 15px; margin-bottom: 4px; }
+#dashboard .home-welcome-card p { font-size: 12px; line-height: 1.4; }
+#dashboard .home-chat-starters { padding: 2px 0 9px; }
+#dashboard .home-chat-starters-title { font-size: 11px; margin: 0 2px 7px; }
+#dashboard .home-chat-starters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+#dashboard .home-starter-btn { min-height: 62px; padding: 9px 10px; gap: 8px; border-radius: 13px; font-size: 17px; }
+#dashboard .home-starter-btn b { font-size: 12px; line-height: 1.25; }
+#dashboard .home-starter-btn small { font-size: 10px; line-height: 1.25; }
+#dashboard .home-chat-status { min-height: 0; padding: 0 5px 4px; }
+#dashboard .home-chat-composer { align-items: center; gap: 6px; padding: 7px; border-radius: 22px; }
+#dashboard .home-chat-composer textarea { min-height: 42px; max-height: 112px; font-size: 14px; padding: 10px 2px !important; overflow-y: auto; }
+#dashboard .home-composer-icon, #dashboard .home-send-btn { flex: 0 0 38px; width: 38px; height: 38px; }
+#dashboard .home-chat-tools { gap: 7px; padding: 9px 1px 7px; margin-right: -2px; }
+#dashboard .home-tool-chip { padding: 9px 11px; font-size: 12px; }
+#dashboard .home-chat-disclaimer { font-size: 10px; padding: 5px 8px 8px; }
+#dashboard .home-tools-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 420px) {
+  #dashboard .home-assistant-shell { padding-top: 6px; }
+  #dashboard .home-assistant-intro { padding-left: 8px; padding-right: 8px; }
+  #dashboard .home-assistant-mark { width: 38px; height: 38px; }
+  #dashboard .home-chat-starters-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #dashboard .home-starter-btn { min-height: 66px; padding: 8px 7px; gap: 6px; }
+  #dashboard .home-starter-btn > span { overflow-wrap: anywhere; }
+  #dashboard .home-starter-btn b { font-size: 11px; }
+  #dashboard .home-starter-btn small { font-size: 9px; }
+  #dashboard .home-chat-composer { gap: 4px; padding: 6px; }
+  #dashboard .home-composer-icon, #dashboard .home-send-btn { flex-basis: 34px; width: 34px; height: 34px; }
+}
+@media (max-width: 360px) {
+  #dashboard .home-chat-starters-grid { grid-template-columns: 1fr; }
+}
+/* Keep all dashboard content clear of the floating bottom navigation. */
+#dashboard .home-chat-disclaimer { margin-bottom: 8px; }
+
+/* Chat composer attachment menu: photo, document and camera are separate actions. */
+.home-attach-wrap { position:relative; flex:0 0 40px; width:40px; height:40px; }
+.home-attach-wrap > .home-composer-icon { width:40px; height:40px; }
+.home-attach-menu { position:absolute; z-index:100; left:0; bottom:calc(100% + 12px); width:min(245px, calc(100vw - 56px)); padding:7px; border:1px solid rgba(255,255,255,.18); border-radius:16px; background:#151927; box-shadow:0 12px 34px rgba(0,0,0,.42); }
+.home-attach-menu button { width:100%; display:flex; align-items:center; gap:11px; min-height:46px; padding:10px 12px; border:0; border-radius:10px; background:transparent; color:#f5f6ff; text-align:left; font:inherit; font-size:14px; cursor:pointer; }
+.home-attach-menu button:focus-visible,.home-attach-menu button:hover { outline:2px solid rgba(91,139,255,.7); background:rgba(255,255,255,.08); }
+.home-chat-composer textarea { min-height:40px; }
+@media (max-width:420px) {
+  .home-chat-composer { gap:6px; padding:7px; }
+  .home-attach-wrap,.home-attach-wrap > .home-composer-icon,.home-composer-icon,.home-send-btn { flex-basis:38px; width:38px; height:38px; }
+  .home-chat-composer textarea { font-size:15px; }
+}

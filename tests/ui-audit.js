@@ -5,10 +5,16 @@ const html=fs.readFileSync(path.join(__dirname,'..','public','index.html'),'utf8
 const requiredScreens=['splashScreen','authScreen','signupModal','otpScreen','languageScreen','dashboard','editor','generate','image','contact','projects','tnsAi','tnsAiVoice','help','premium','settings','premiumDetails','settingsApp','languageInside','contactInside','editorTools','exportVideo','appIcon','finalEditView'];
 for(const id of requiredScreens) assert(html.includes(`id="${id}"`),`Missing screen/section: ${id}`);
 const dashboard=html.slice(html.indexOf('id="dashboard"'),html.indexOf('</section>',html.indexOf('id="dashboard"')));
+for(const homeControl of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatVoice','homeResearchBtn','homeExploreToolsBtn','homeToolsGrid']) assert(dashboard.includes(`id="${homeControl}"`),`Missing chat-first home control: ${homeControl}`);
+assert(dashboard.includes('Namaste! TNS aapki kya madad kar sakta hai?'),'Missing TNS home greeting.');
+assert(dashboard.includes('home-tools-grid hidden'),'Tool shortcuts should be collapsed by default.');
+assert(!dashboard.includes('dashboard-feature'),'Old large dashboard feature cards must not be the primary home screen.');
 for(const feature of ['data-open="editor"','data-open="generate"','data-open="image"','data-open="projects"','data-open="contact"','data-open="tnsAi"']) assert(dashboard.includes(feature),`Dashboard missing ${feature}`);
 assert(!dashboard.includes('data-open="premium"'),'Premium must be in top menu, not dashboard grid.');
 assert(!dashboard.includes('data-open="help"'),'Help & Support must be in top menu, not dashboard grid.');
-const topbarMenu=html.match(/<div id="topbarMenu"[\s\S]*?<\/div>\s*<main>/)?.[0]||'';
+const menuStart=html.indexOf('id="topbarMenu"');
+const menuEnd=html.indexOf('<main>',menuStart);
+const topbarMenu=menuStart>=0&&menuEnd>menuStart?html.slice(menuStart,menuEnd):'';
 for(const x of ['data-menu-open="premium"','data-menu-open="help"','data-menu-open="settings"']) assert(topbarMenu.includes(x),`Missing top menu item: ${x}`);
 assert(!dashboard.includes('data-open="settings"'),'Settings card must not be in dashboard grid.');
 for(const x of ['videoCamera','characterConsistency','videoReference','videoNegativePrompt','imageQuality','imageVariations','imageReference','imageCharacter','saturation','sharpness','fadeIn','fadeOut','contactMediaFile','contactFile','voiceMessageBtn','tnsAiNewChat','tnsAiResearch']) assert(html.includes(`id="${x}"`),`Missing feature control: ${x}`);

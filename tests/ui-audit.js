@@ -5,14 +5,15 @@ const html=fs.readFileSync(path.join(__dirname,'..','public','index.html'),'utf8
 const requiredScreens=['splashScreen','authScreen','signupModal','otpScreen','languageScreen','dashboard','editor','generate','image','contact','projects','tnsAi','tnsAiVoice','help','premium','settings','premiumDetails','settingsApp','languageInside','contactInside','editorTools','exportVideo','appIcon','finalEditView'];
 for(const id of requiredScreens) assert(html.includes(`id="${id}"`),`Missing screen/section: ${id}`);
 const dashboard=html.slice(html.indexOf('id="dashboard"'),html.indexOf('</section>',html.indexOf('id="dashboard"')));
-for(const homeControl of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatPhoto','homeChatFile','homeChatCamera','homeChatAttachMenu','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatVoice','homeResearchBtn','homeExploreToolsBtn','homeToolsGrid','homeChatStarters']) assert(dashboard.includes(`id="${homeControl}"`),`Missing chat-first home control: ${homeControl}`);
-assert(dashboard.includes('Namaste! TNS aapki kya madad kar sakta hai?'),'Missing TNS home greeting.');
-for(const starter of ['data-home-starter="Mujhe sarkari kaam mein madad chahiye. Mera kaam hai: "','data-home-starter="Is document ya photo ko simple Hindi mein samjhao. Mera sawal hai: "','data-home-starter="Mujhe website ya app mein dikkat aa rahi hai. Kya ho raha hai: "','data-home-starter="Meri shikayat ko saaf, factual aur vinamra bhasha mein draft karo. Ghatna: "']) assert(dashboard.includes(starter),`Missing guided starter: ${starter}`);
+for(const homeControl of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatPhoto','homeChatFile','homeChatCamera','homeChatAttachMenu','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatVoice','homeResearchBtn','homeExploreToolsBtn','homeToolsGrid']) assert(dashboard.includes(`id="${homeControl}"`),`Missing chat-first home control: ${homeControl}`);
+assert(dashboard.includes('TNS se kuch bhi poochhiye') || fs.readFileSync(path.join(__dirname,'..','public','style.css'),'utf8').includes('TNS se kuch bhi poochhiye'),'Missing simple chat-first empty state.');
+assert(!dashboard.includes('home-chat-starters'),'Separate task-category starter cards should not appear on the chat-first dashboard.');
+assert(!dashboard.includes('Sarkari kaam</b>')&&!dashboard.includes('Document samjhein</b>')&&!dashboard.includes('Online problem</b>')&&!dashboard.includes('Shikayat likhein</b>'),'Separate category cards should be removed.');
 
 assert(dashboard.includes('home-tools-grid hidden'),'Tool shortcuts should be collapsed by default.');
 assert(dashboard.includes('aria-pressed="false"'),'Research toggle must expose its off state accessibly.');
 const appJs=fs.readFileSync(path.join(__dirname,'..','public','app.js'),'utf8');
-for(const uxRule of ['MAX_FILE_BYTES = 1200 * 1024','allowedExtensions','home-attachment-remove','if(isSending) return','setSending(true)','setSending(false)','data-home-starter','homeChatStarters','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatCamera']) assert(appJs.includes(uxRule),`Missing home chat usability safeguard: ${uxRule}`);
+for(const uxRule of ['MAX_FILE_BYTES = 1200 * 1024','allowedExtensions','home-attachment-remove','if(isSending) return','setSending(true)','setSending(false)','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatCamera']) assert(appJs.includes(uxRule),`Missing home chat usability safeguard: ${uxRule}`);
 assert(appJs.includes('live web search provider abhi connect nahi hai'),'Research mode must not imply live web search is connected.');
 assert(!dashboard.includes('dashboard-feature'),'Old large dashboard feature cards must not be the primary home screen.');
 for(const feature of ['data-open="editor"','data-open="generate"','data-open="image"','data-open="projects"','data-open="contact"','data-open="tnsAi"']) assert(dashboard.includes(feature),`Dashboard missing ${feature}`);
@@ -37,3 +38,7 @@ for(const x of ['premium-details','app-settings','language-inside','contact-insi
 }
 assert(html.includes('data-screen-number="24"'),'Missing 24-screen registry marker.');
 console.log('UI_AUDIT_OK');
+
+const mobileCss=fs.readFileSync(path.join(__dirname,'..','public','style.css'),'utf8');
+for(const uxRule of ['tns-chat-typing','#dashboard .home-chat-composer','display: none !important','TNS se kuch bhi poochhiye']) assert(mobileCss.includes(uxRule),`Missing compact chat layout rule: ${uxRule}`);
+assert(appJs.includes("input.addEventListener('focus', () => document.body.classList.add('tns-chat-typing'))"),'Composer focus should simplify the mobile writing view.');

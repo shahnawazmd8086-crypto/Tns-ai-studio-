@@ -1427,6 +1427,22 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   };
   const setStatus = text => { if (status) status.textContent = text || ''; };
   const fitInput = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,140)+'px'; };
+  // On phones, focusing the composer hides introductory cards and bottom navigation,
+  // giving the user a clear writing area while the on-screen keyboard is open.
+  input.addEventListener('focus', () => document.body.classList.add('tns-chat-typing'));
+  input.addEventListener('blur', () => {
+    window.setTimeout(() => {
+      if (document.activeElement !== input) document.body.classList.remove('tns-chat-typing');
+    }, 160);
+  });
+  $id('homeChatAttach')?.setAttribute('aria-expanded','false');
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && attachMenu && !attachMenu.classList.contains('hidden')) {
+      attachMenu.classList.add('hidden');
+      $id('homeChatAttach')?.setAttribute('aria-expanded','false');
+      $id('homeChatAttach')?.focus();
+    }
+  });
   input.addEventListener('input', fitInput);
   input.addEventListener('keydown', event => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -1438,6 +1454,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   const openPicker = picker => {
     if(!picker)return;
     if(attachMenu)attachMenu.classList.add('hidden');
+    $id('homeChatAttach')?.setAttribute('aria-expanded','false');
     picker.click();
   };
   $id('homeChatAttach')?.addEventListener('click',()=>{
@@ -1450,7 +1467,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   $id('homeChatChooseFile')?.addEventListener('click',()=>openPicker(fileInput));
   $id('homeChatOpenCamera')?.addEventListener('click',()=>openPicker(cameraInput));
   document.addEventListener('click',event=>{
-    if(attachMenu && !event.target.closest('.home-attach-wrap'))attachMenu.classList.add('hidden');
+    if(attachMenu && !event.target.closest('.home-attach-wrap')){attachMenu.classList.add('hidden');$id('homeChatAttach')?.setAttribute('aria-expanded','false');}
   });
   [fileInput,photoInput,cameraInput].forEach(picker=>picker?.addEventListener('change',()=>{
     const selected=picker.files?.[0]||null;
@@ -1500,13 +1517,6 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     input.value=(button.getAttribute('data-home-prompt')||'')+input.value;
     input.focus(); fitInput();
   }));
-  document.querySelectorAll('[data-home-starter]').forEach(button=>button.addEventListener('click',()=>{
-    const starter=button.getAttribute('data-home-starter')||'';
-    input.value=starter+input.value;
-    input.focus(); fitInput();
-    setStatus('Misaal message box mein aa gaya hai. Apni details bharein, phir bhejein.');
-    input.setSelectionRange(input.value.length,input.value.length);
-  }));
   $id('homeChatVoice')?.addEventListener('click',()=>{
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(!SpeechRecognition){setStatus('Is browser mein voice typing available nahi hai. Keyboard se likh sakte hain.');return;}
@@ -1536,8 +1546,6 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     }
     const shownMessage=message || `Is file ko samajhne mein madad karein: ${attachedFile.name}`;
     addBubble(shownMessage+(attachedFile?`\n\n📎 ${attachedFile.name}`:''),'user');
-    const starters=$id('homeChatStarters');
-    if(starters) starters.classList.add('hidden');
     input.value=''; fitInput();
     const fileToSend=attachedFile;
     attachedFile=null;

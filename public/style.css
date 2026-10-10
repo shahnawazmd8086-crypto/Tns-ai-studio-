@@ -1141,3 +1141,159 @@ body.profile-mode .profile-panel{padding-top:18px}
   .home-attach-wrap,.home-attach-wrap > .home-composer-icon,.home-composer-icon,.home-send-btn { flex-basis:38px; width:38px; height:38px; }
   .home-chat-composer textarea { font-size:15px; }
 }
+
+
+/* Checkpoint 6: compact, ChatGPT-like mobile home. Keep the existing TNS brand/header,
+   but prioritize the message composer over large welcome cards. */
+@media (max-width: 560px) {
+  #dashboard .home-assistant-shell {
+    min-height: calc(100dvh - 118px);
+    padding: 6px 0 calc(90px + env(safe-area-inset-bottom));
+    gap: 8px;
+  }
+  #dashboard .home-assistant-intro {
+    padding: 8px 12px 4px;
+  }
+  #dashboard .home-assistant-mark {
+    width: 42px;
+    height: 42px;
+    margin-bottom: 7px;
+    border-radius: 14px;
+  }
+  #dashboard .home-assistant-intro h1 {
+    font-size: 22px;
+    line-height: 1.22;
+    max-width: 360px;
+    margin-bottom: 5px;
+  }
+  #dashboard .home-assistant-intro p {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  #dashboard .home-chat-messages {
+    min-height: 0;
+    max-height: 28dvh;
+    padding: 4px 2px;
+  }
+  #dashboard .home-welcome-card {
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+  #dashboard .home-welcome-card p { font-size: 12px; line-height: 1.4; }
+  #dashboard .home-chat-starters { padding: 0 0 2px; }
+  #dashboard .home-chat-starters-title { font-size: 11px; margin: 0 2px 6px; }
+  #dashboard .home-chat-starters-grid {
+    display: flex;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 1px 1px 5px;
+    scrollbar-width: none;
+  }
+  #dashboard .home-chat-starters-grid::-webkit-scrollbar { display: none; }
+  #dashboard .home-starter-btn {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    padding: 8px 11px;
+    border-radius: 999px;
+    gap: 6px;
+    font-size: 12px;
+  }
+  #dashboard .home-starter-btn > span { display: block; }
+  #dashboard .home-starter-btn b { font-size: 12px; font-weight: 600; white-space: nowrap; }
+  #dashboard .home-starter-btn small { display: none; }
+  #dashboard .home-chat-status { font-size: 12px; line-height: 1.35; }
+  #dashboard .home-chat-composer {
+    position: sticky;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    z-index: 31;
+    width: 100%;
+    align-items: center;
+    border-radius: 28px;
+    padding: 7px;
+    gap: 6px;
+    background: #151821;
+    box-shadow: 0 5px 22px rgba(0,0,0,.3);
+  }
+  #dashboard .home-chat-composer textarea {
+    min-height: 42px;
+    max-height: 120px;
+    font-size: 16px;
+    padding: 9px 2px !important;
+  }
+  #dashboard .home-composer-icon,
+  #dashboard .home-send-btn {
+    width: 40px;
+    height: 40px;
+    flex-basis: 40px;
+    flex-shrink: 0;
+  }
+  #dashboard .home-chat-tools { padding: 3px 1px 7px; gap: 7px; }
+  #dashboard .home-tool-chip { padding: 8px 11px; font-size: 12px; }
+  #dashboard .home-chat-disclaimer { font-size: 10px; padding-top: 2px; }
+}
+/* When the message field is active, get out of the way so the keyboard and composer
+   become the focus, as in a modern chat app. */
+body.tns-chat-typing #dashboard .home-assistant-intro,
+body.tns-chat-typing #dashboard .home-welcome-card,
+body.tns-chat-typing #dashboard .home-chat-starters,
+body.tns-chat-typing #dashboard .home-chat-tools,
+body.tns-chat-typing #dashboard .home-chat-disclaimer {
+  display: none !important;
+}
+body.tns-chat-typing .bottom-nav { display: none !important; }
+body.tns-chat-typing #dashboard .home-assistant-shell {
+  min-height: 0;
+  padding-bottom: 12px;
+}
+body.tns-chat-typing #dashboard .home-chat-messages {
+  min-height: 0;
+  max-height: min(42dvh, 360px);
+}
+body.tns-chat-typing #dashboard .home-chat-composer {
+  position: sticky;
+  bottom: 8px;
+}
+
+
+/* Checkpoint 7: truly chat-first home — no separate task-category cards. */
+#dashboard .home-assistant-shell { display:flex; flex-direction:column; }
+#dashboard .home-chat-messages { flex:1 1 auto; min-height:clamp(180px, 42dvh, 480px); max-height:none; }
+#dashboard .home-chat-messages:empty::before {
+  content:"TNS se kuch bhi poochhiye"; display:flex; align-items:center; justify-content:center;
+  min-height:inherit; text-align:center; color:rgba(235,238,250,.56); font-size:17px; padding:16px;
+}
+@media (max-width:560px) {
+  #dashboard .home-assistant-shell { min-height:calc(100dvh - 118px); padding-top:8px; gap:8px; }
+  #dashboard .home-chat-messages { min-height:clamp(220px, 48dvh, 520px); padding:8px 3px; }
+  #dashboard .home-chat-composer { margin-top:auto; }
+}
+
+/* Checkpoint 8: remove the large welcome/intro area so chat gets the space. */
+#dashboard .home-assistant-intro,
+#dashboard .home-welcome-card {
+  display: none !important;
+}
+#dashboard .home-assistant-shell {
+  min-height: calc(100dvh - 118px);
+  padding-top: 8px;
+  padding-bottom: 10px;
+}
+#dashboard .home-chat-messages {
+  flex: 1 1 auto;
+  min-height: clamp(320px, 58dvh, 680px);
+  max-height: none;
+}
+@media (max-width: 560px) {
+  #dashboard .home-assistant-shell {
+    min-height: calc(100dvh - 110px);
+    gap: 6px;
+    padding-top: 5px;
+  }
+  #dashboard .home-chat-messages {
+    min-height: clamp(300px, 58dvh, 640px);
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+  #dashboard .home-chat-status { min-height: 0; padding-bottom: 2px; }
+}

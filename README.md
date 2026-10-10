@@ -1,40 +1,37 @@
-# TNS Studio
+# TNS — Chat-first digital assistant (working project)
 
-TNS Studio is the locked India-origin, worldwide-ready creator and communication workspace.
+## Product direction
+TNS is being moved toward a simple, chat-first assistant. A user should be able to open the home screen and immediately describe a problem, attach a supported file, or use supported voice input. The system should help find reliable information, plan next steps, perform only supported actions with permission, and distinguish a completed action from a verified result.
 
-## Locked product direction
-- Official name: **TNS Studio**
-- Official TNS Studio logo/icon
-- Final locked flow: Splash → Login/Signup → OTP → Language → Main Dashboard → AI Video / AI Image / Edit Video / TNS Contact / Projects / TNS AI / Premium / Settings
-- One global **TNS Studio Settings** access at the top of the main workspace.
-- Feature modules also have their own in-module settings.
-- TNS Contact stays free and ad-free.
-- India Premium target: ₹99/month; international pricing is regional/localized.
-- User chooses their own password; password show/hide controls are included.
-- Worldwide language/country architecture.
+The locked scope is recorded in `TNS_MASTER_LIST_LOCKED_v1.0.md`.
 
-## Security baseline
-- Server-authoritative sessions.
-- HttpOnly + SameSite=Strict cookies; Secure + `__Host-` in production.
-- Strong scrypt password hashing for new/changed passwords.
-- Login/OTP/reset throttling.
-- OTP expiry and attempt limits.
-- Security headers and no-store API responses.
-- Authenticated project/contact/job access.
-- Uploaded/exported media ownership checks.
-- No production secrets in source.
+## Current checkpoint
+The existing ZIP began as TNS Studio, a creator and communication workspace. This checkpoint changes the main dashboard to a chat-first home and keeps the existing creator modules available under **All tools**. It does not mean the complete universal TNS service is finished.
 
-## AI
-The AI layer is provider-independent. Development uses a mock provider; production requires a real provider or self-hosted TNS AI engine. See `AI_PROVIDER_SETUP.md` and `.env.example`.
+## Existing foundations
+- Node.js server and static frontend
+- Account/authentication and session code
+- Language configuration
+- Existing TNS AI chat and file-understanding endpoints
+- Project/media storage and creator modules
+- Video editing/export foundations
 
-## Languages
-The selector contains the ISO 639-1 language registry (184 languages) with RTL metadata. English and Hindi translation packs are included. Other languages use an English fallback until their translation packs are supplied.
+Each foundation must be verified before being relied upon. A source file or button is not proof that an external service is connected or that a workflow is production-ready.
 
-## Test
+## Verification
+Run:
 ```bash
 npm run syntax
 npm test
 ```
 
-## Important production note
-A ZIP cannot purchase or create external services by itself. Before public launch, connect the production database, private object storage, OTP provider, OAuth, real AI providers/TNS AI engine, push notifications, WebRTC/TURN, billing, ads, monitoring, backups and secrets manager. The source intentionally refuses to pretend those external services are live when their credentials/infrastructure are not configured.
+The included test suite checks JavaScript syntax, server smoke flows, and UI requirements. It is not a browser/device compatibility test, penetration test, or production readiness certification.
+
+## External services
+Real live web research, map/place search, email/SMS OTP, OAuth, production AI providers, persistent production storage, notifications, calling, and billing require the appropriate provider configuration or infrastructure. The app must not claim those integrations are live until verified.
+
+## Safety baseline
+- Do not invent live prices, addresses, availability, bookings, approvals, or status.
+- Require user approval for sensitive actions.
+- Do not collect or expose passwords or OTP secrets in chat.
+- Keep the user's personal data to the minimum necessary.

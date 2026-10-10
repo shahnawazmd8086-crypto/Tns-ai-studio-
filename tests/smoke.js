@@ -69,6 +69,12 @@ async function waitForHealth() {
     assert.strictEqual(me.json.user.mobile, '+919876543210');
     assert.strictEqual(me.json.user.email, 'test@example.com');
 
+    const unauthChat = await request('/api/tns-ai/chat', { method: 'POST', ...jsonOptions({ message: 'Meri madad karo' }) });
+    assert.strictEqual(unauthChat.status, 401, 'TNS AI chat must require a signed-in user.');
+    const authChat = await request('/api/tns-ai/chat', { method: 'POST', ...jsonOptions({ message: 'Meri madad karo', research: true }, cookie) });
+    assert.strictEqual(authChat.status, 200, authChat.body);
+    assert.match(authChat.json.reply || '', /development response|live web-search provider/i, 'Mock provider should clearly identify demo/research limitations.');
+
     const badLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'Wrong@2026' }) });
     assert.strictEqual(badLogin.status, 400);
     assert.match(badLogin.json.error, /Invalid email\/mobile number or password/i);

@@ -5,7 +5,7 @@ const html=fs.readFileSync(path.join(__dirname,'..','public','index.html'),'utf8
 const requiredScreens=['splashScreen','authScreen','signupModal','otpScreen','languageScreen','dashboard','editor','generate','image','contact','projects','tnsAi','tnsAiVoice','help','premium','settings','premiumDetails','settingsApp','languageInside','contactInside','editorTools','exportVideo','appIcon','finalEditView'];
 for(const id of requiredScreens) assert(html.includes(`id="${id}"`),`Missing screen/section: ${id}`);
 const dashboard=html.slice(html.indexOf('id="dashboard"'),html.indexOf('</section>',html.indexOf('id="dashboard"')));
-for(const homeControl of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatPhoto','homeChatFile','homeChatCamera','homeChatAttachMenu','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatVoice','homeResearchBtn','homeExploreToolsBtn','homeToolsGrid']) assert(dashboard.includes(`id="${homeControl}"`),`Missing chat-first home control: ${homeControl}`);
+for(const homeControl of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatPhoto','homeChatFile','homeChatCamera','homeChatAttachMenu','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatVoice','homeChatDictation','homeResearchBtn','homeExploreToolsBtn','homeToolsGrid']) assert(dashboard.includes(`id="${homeControl}"`),`Missing chat-first home control: ${homeControl}`);
 assert(dashboard.includes('TNS se kuch bhi poochhiye') || fs.readFileSync(path.join(__dirname,'..','public','style.css'),'utf8').includes('TNS se kuch bhi poochhiye'),'Missing simple chat-first empty state.');
 assert(!dashboard.includes('home-chat-starters'),'Separate task-category starter cards should not appear on the chat-first dashboard.');
 assert(!dashboard.includes('Sarkari kaam</b>')&&!dashboard.includes('Document samjhein</b>')&&!dashboard.includes('Online problem</b>')&&!dashboard.includes('Shikayat likhein</b>'),'Separate category cards should be removed.');
@@ -41,4 +41,11 @@ console.log('UI_AUDIT_OK');
 
 const mobileCss=fs.readFileSync(path.join(__dirname,'..','public','style.css'),'utf8');
 for(const uxRule of ['tns-chat-typing','#dashboard .home-chat-composer','display: none !important','TNS se kuch bhi poochhiye']) assert(mobileCss.includes(uxRule),`Missing compact chat layout rule: ${uxRule}`);
-assert(appJs.includes("input.addEventListener('focus', () => document.body.classList.add('tns-chat-typing'))"),'Composer focus should simplify the mobile writing view.');
+assert(appJs.includes("input.addEventListener('focus', () => { document.body.classList.add('tns-chat-typing'); positionComposerAboveKeyboard(); })"),'Composer focus should keep the mobile composer above the keyboard.');
+assert(html.includes('home-input-box') && html.includes('home-plus-btn'),'Plus button must sit outside the text input box.');
+assert(appJs.includes("actionButton.textContent = hasText ? '↑' : '🎙️'"),'Action button should switch between send and voice when text is empty.');
+
+const homeJs = appJs;
+assert(homeJs.includes('startSpeechInput(true)'), 'Voice conversation mode missing');
+assert(homeJs.includes('startSpeechInput(false)'), 'Dictation mode missing');
+assert(homeJs.includes('speechSynthesis.speak(utterance)'), 'TNS voice reply playback missing');

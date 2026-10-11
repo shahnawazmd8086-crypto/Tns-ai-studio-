@@ -1297,3 +1297,104 @@ body.tns-chat-typing #dashboard .home-chat-composer {
   }
   #dashboard .home-chat-status { min-height: 0; padding-bottom: 2px; }
 }
+
+
+/* Checkpoint 9: dashboard layout polish only — keep chat, composer and tools aligned on mobile. */
+#dashboard.panel.active {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0 12px calc(92px + env(safe-area-inset-bottom, 0px));
+}
+#dashboard .home-assistant-shell {
+  width: min(900px, 100%);
+  min-height: calc(100dvh - 150px);
+  margin: 0 auto;
+  padding: 6px 0 4px;
+  gap: 7px;
+}
+#dashboard .home-chat-messages {
+  flex: 1 1 0;
+  min-height: 180px;
+  max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+#dashboard .home-chat-composer {
+  flex: 0 0 auto;
+  width: 100%;
+  gap: 7px;
+  border-color: rgba(130, 154, 255, .24);
+  background: rgba(16, 22, 42, .94);
+  box-shadow: 0 8px 26px rgba(0, 0, 0, .2);
+}
+#dashboard .home-chat-composer textarea { min-width: 0; }
+#dashboard .home-chat-tools {
+  flex: 0 0 auto;
+  width: 100%;
+  margin: 0;
+  padding: 2px 1px 5px;
+  gap: 7px;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+#dashboard .home-chat-tools::-webkit-scrollbar { display: none; }
+#dashboard .home-tool-chip { flex: 0 0 auto; }
+#dashboard .home-tools-grid { padding-top: 4px; padding-bottom: 4px; }
+#dashboard .home-chat-disclaimer { padding: 2px 6px 0; }
+@media (max-width: 560px) {
+  #dashboard.panel.active { padding-left: 10px; padding-right: 10px; }
+  #dashboard .home-assistant-shell { min-height: calc(100dvh - 145px); gap: 6px; }
+  #dashboard .home-chat-messages { min-height: 150px; padding: 5px 2px; }
+  #dashboard .home-chat-composer { border-radius: 22px; }
+}
+@media (max-height: 620px) and (max-width: 900px) {
+  #dashboard .home-assistant-shell { min-height: calc(100dvh - 132px); }
+  #dashboard .home-chat-messages { min-height: 90px; }
+}
+body.tns-chat-typing #dashboard.panel.active { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); }
+body.tns-chat-typing #dashboard .home-assistant-shell { min-height: calc(100dvh - 78px); }
+
+
+/* Checkpoint 10: separated chat controls and keyboard-following composer. */
+#dashboard .home-chat-composer {
+  display:flex; align-items:center; gap:10px; padding:0; border:0; background:transparent;
+  box-shadow:none; border-radius:0; overflow:visible;
+}
+#dashboard .home-input-box {
+  flex:1 1 auto; min-width:0; display:flex; align-items:center; min-height:54px;
+  border:1px solid rgba(130,154,255,.30); border-radius:25px;
+  background:rgba(16,22,42,.96); box-shadow:0 5px 18px rgba(0,0,0,.20); padding:5px 13px;
+}
+#dashboard .home-input-box textarea { width:100%; min-height:42px; max-height:120px; padding:10px 1px !important; }
+#dashboard .home-composer-outside { flex:0 0 48px; width:48px; display:flex; align-items:center; justify-content:center; }
+#dashboard .home-plus-btn, #dashboard .home-action-btn {
+  flex:0 0 48px; width:48px; height:48px; min-width:48px; border:0;
+  background:rgba(255,255,255,.10); box-shadow:0 4px 13px rgba(0,0,0,.18);
+  font-size:25px; font-weight:700;
+}
+#dashboard .home-action-btn { background:#6578f5; color:#fff; font-size:23px; }
+#dashboard .home-action-btn.is-send { font-size:29px; background:var(--primary,#5268e8); }
+#dashboard .home-chat-composer .home-attach-menu { bottom:calc(100% + 10px); top:auto; left:0; }
+@media (max-width:560px) {
+  #dashboard .home-chat-composer { position:relative; gap:9px; }
+  #dashboard .home-composer-outside, #dashboard .home-plus-btn, #dashboard .home-action-btn { flex-basis:46px; width:46px; min-width:46px; height:46px; }
+  #dashboard .home-input-box { min-height:52px; padding:4px 11px; }
+  #dashboard .home-input-box textarea { font-size:16px; min-height:42px; }
+}
+body.tns-chat-typing #dashboard .home-chat-composer {
+  position:fixed !important; left:10px; right:10px; width:auto; z-index:1000;
+  bottom:8px; padding:0; margin:0; background:transparent; border:0; box-shadow:none;
+}
+body.tns-chat-typing #dashboard .home-input-box { box-shadow:0 5px 18px rgba(0,0,0,.3); }
+body.tns-chat-typing #dashboard .home-chat-messages { padding-bottom:76px; }
+
+/* Checkpoint 11: separate voice conversation from speech-to-text dictation. */
+#dashboard .home-input-box { gap:8px; }
+#dashboard .home-input-box textarea { flex:1 1 auto; min-width:0; }
+#dashboard .home-dictation-btn { flex:0 0 34px; width:34px; height:38px; border:0; border-radius:50%; background:transparent; color:#aebaff; font-size:22px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+#dashboard .home-dictation-btn:active { background:rgba(130,154,255,.18); }
+#dashboard .home-action-btn.is-voice-mode { background:#1eaa84; }
+#dashboard .home-action-btn.is-listening { animation:tnsVoicePulse 1s ease-in-out infinite alternate; }
+@keyframes tnsVoicePulse { from { transform:scale(1); } to { transform:scale(1.08); } }

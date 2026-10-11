@@ -1390,6 +1390,8 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   let researchEnabled = false;
   let attachedFile = null;
   let isSending = false;
+  let speakNextReply = false;
+  let voiceRecognition = null;
   const MAX_FILE_BYTES = 1200 * 1024;
   const allowedExtensions = new Set(['.png','.jpg','.jpeg','.webp','.gif','.bmp','.heic','.heif','.pdf','.txt','.doc','.docx','.csv','.xls','.xlsx','.ppt','.pptx','.rtf','.odt','.ods','.odp','.json','.xml','.zip']);
   const fileExtension = name => { const i=String(name||'').lastIndexOf('.'); return i>=0?String(name).slice(i).toLowerCase():''; };
@@ -1429,10 +1431,10 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
   const fitInput = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,140)+'px'; };
   // On phones, focusing the composer hides introductory cards and bottom navigation,
   // giving the user a clear writing area while the on-screen keyboard is open.
-  input.addEventListener('focus', () => document.body.classList.add('tns-chat-typing'));
+  input.addEventListener('focus', () => { document.body.classList.add('tns-chat-typing'); positionComposerAboveKeyboard(); });
   input.addEventListener('blur', () => {
     window.setTimeout(() => {
-      if (document.activeElement !== input) document.body.classList.remove('tns-chat-typing');
+      if (document.activeElement !== input) { document.body.classList.remove('tns-chat-typing'); form.style.bottom = ''; }
     }, 160);
   });
   $id('homeChatAttach')?.setAttribute('aria-expanded','false');
@@ -1443,7 +1445,52 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
       $id('homeChatAttach')?.focus();
     }
   });
-  input.addEventListener('input', fitInput);
+  const actionButton = $id('homeChatVoice');
+  const updateActionButton = () => {
+    const hasText = Boolean(input.value.trim());
+    if (!actionButton) return;
+    actionButton.classList.toggle('is-send', hasText);
+    actionButton.classList.toggle('is-voice-mode', !hasText);
+    actionButton.textContent = hasText ? '↑' : '🎙️';
+    actionButton.setAttribute('aria-label', hasText ? 'Send message' : 'TNS se voice mein baat karein');
+    actionButton.title = hasText ? 'Message bhejein' : 'TNS se voice mein baat karein';
+  };
+  const startSpeechInput = (conversationMode) => {
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SpeechRecognition){setStatus('Is browser mein microphone voice input supported nahi hai. Keyboard se likh sakte hain.');return;}
+    if(voiceRecognition){try{voiceRecognition.stop()}catch{} voiceRecognition=null;}
+    const recognition=new SpeechRecognition(); voiceRecognition=recognition;
+    const savedLanguage=localStorage.getItem('tnsStudioLanguage')||'hi';
+    recognition.lang=savedLanguage==='hi'?'hi-IN':savedLanguage==='en'?'en-IN':savedLanguage;
+    recognition.interimResults=false; recognition.maxAlternatives=1;
+    actionButton?.classList.add('is-listening');
+    setStatus(conversationMode?'Suniye… TNS se bolkar baat karne ke liye apna sawal boliye.':'Suniye… apna message boliye.');
+    recognition.onresult=event=>{
+      const spoken=event.results?.[0]?.[0]?.transcript||'';
+      if(!spoken.trim())return;
+      input.value=(input.value ? input.value+' ' : '')+spoken;
+      fitInput(); updateActionButton();
+      if(conversationMode){ speakNextReply=true; setStatus('Aapki baat samajh raha hoon… TNS jawab awaaz mein dega.'); form.requestSubmit(); }
+      else { input.focus(); setStatus('Aapki baat text mein aa gayi. Arrow dabakar bhejein; TNS text mein jawab dega.'); }
+    };
+    recognition.onerror=()=>setStatus('Voice input nahi ho saka. Microphone permission check karein ya type karein.');
+    recognition.onend=()=>{actionButton?.classList.remove('is-listening'); if(voiceRecognition===recognition)voiceRecognition=null;};
+    try{recognition.start()}catch{actionButton?.classList.remove('is-listening');setStatus('Voice input shuru nahi ho saka.');}
+  };
+  const positionComposerAboveKeyboard = () => {
+    if (!document.body.classList.contains('tns-chat-typing')) return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const keyboardGap = Math.max(8, window.innerHeight - viewport.height - viewport.offsetTop + 8);
+    form.style.bottom = `${keyboardGap}px`;
+  };
+  input.addEventListener('input', () => { fitInput(); updateActionButton(); });
+  updateActionButton();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', positionComposerAboveKeyboard);
+    window.visualViewport.addEventListener('scroll', positionComposerAboveKeyboard);
+  }
+  window.addEventListener('resize', positionComposerAboveKeyboard);
   input.addEventListener('keydown', event => {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -1518,23 +1565,10 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     input.focus(); fitInput();
   }));
   $id('homeChatVoice')?.addEventListener('click',()=>{
-    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SpeechRecognition){setStatus('Is browser mein voice typing available nahi hai. Keyboard se likh sakte hain.');return;}
-    const recognition=new SpeechRecognition();
-    const savedLanguage=localStorage.getItem('tnsStudioLanguage')||'hi';
-    recognition.lang=savedLanguage==='hi'?'hi-IN':savedLanguage==='en'?'en-IN':savedLanguage;
-    recognition.interimResults=false;
-    recognition.maxAlternatives=1;
-    setStatus('Suniye… ab boliye.');
-    recognition.onresult=event=>{
-      const spoken=event.results?.[0]?.[0]?.transcript||'';
-      input.value=(input.value ? input.value+' ' : '')+spoken;
-      fitInput(); input.focus(); setStatus('Aapki baat text mein aa gayi. Bhejne se pehle check kar lein.');
-    };
-    recognition.onerror=()=>setStatus('Voice input nahi ho saka. Aap type karke bhej sakte hain.');
-    recognition.onend=()=>{if(status?.textContent==='Suniye… ab boliye.')setStatus('');};
-    try{recognition.start();}catch{setStatus('Voice input shuru nahi ho saka.');}
+    if (input.value.trim()) { speakNextReply=false; form.requestSubmit(); return; }
+    startSpeechInput(true);
   });
+  $id('homeChatDictation')?.addEventListener('click',()=>startSpeechInput(false));
   form.addEventListener('submit',async event=>{
     event.preventDefault();
     if(isSending) return;
@@ -1546,7 +1580,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     }
     const shownMessage=message || `Is file ko samajhne mein madad karein: ${attachedFile.name}`;
     addBubble(shownMessage+(attachedFile?`\n\n📎 ${attachedFile.name}`:''),'user');
-    input.value=''; fitInput();
+    input.value=''; fitInput(); updateActionButton();
     const fileToSend=attachedFile;
     attachedFile=null;
     [fileInput,photoInput,cameraInput].forEach(el=>{if(el)el.value='';});
@@ -1581,10 +1615,24 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
       }
       pending.textContent=result.reply||result.text||'TNS se response nahi mila.';
       pending.classList.remove('error');
+      if(speakNextReply){
+        const spokenReply=pending.textContent;
+        if('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window){
+          window.speechSynthesis.cancel();
+          const utterance=new SpeechSynthesisUtterance(spokenReply);
+          const lang=localStorage.getItem('tnsStudioLanguage')||'hi';
+          utterance.lang=lang==='hi'?'hi-IN':lang==='en'?'en-IN':lang;
+          utterance.onend=()=>setStatus('Voice jawab poora hua.');
+          utterance.onerror=()=>setStatus('Jawab text mein aa gaya; is browser mein voice playback nahi chal saka.');
+          window.speechSynthesis.speak(utterance);
+        }else setStatus('Jawab text mein aa gaya; is browser mein voice playback supported nahi hai.');
+      }
+      speakNextReply=false;
       setStatus(researchEnabled?'Response aa gaya. Live research ki completeness connected service par depend karti hai.':'Response aa gaya.');
     }catch(error){
       pending.textContent=`Abhi jawab nahi mil saka: ${error.message}. Aapka sawal yahin hai—dobara koshish kar sakte hain.`;
       pending.classList.add('error');
+      speakNextReply=false;
       setStatus('Request complete nahi hui.');
     } finally {
       setSending(false);

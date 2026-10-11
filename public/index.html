@@ -51,17 +51,16 @@
     <input accept="image/*" class="hidden" id="homeChatPhoto" type="file"/>
     <input accept=".pdf,.txt,.doc,.docx,.csv,.xls,.xlsx,.ppt,.pptx,.rtf,.odt,.ods,.odp,.json,.xml,.zip" class="hidden" id="homeChatFile" type="file"/>
     <input accept="image/*" capture="environment" class="hidden" id="homeChatCamera" type="file"/>
-    <div class="home-attach-wrap">
-      <button class="home-composer-icon" type="button" id="homeChatAttach" aria-label="Photo, file ya camera options" title="Photo, file ya camera">＋</button>
+    <div class="home-attach-wrap home-composer-outside">
+      <button class="home-composer-icon home-plus-btn" type="button" id="homeChatAttach" aria-label="Photo, file ya camera options" title="Photo, file ya camera">＋</button>
       <div class="home-attach-menu hidden" id="homeChatAttachMenu" role="menu" aria-label="Attachment options">
         <button type="button" role="menuitem" id="homeChatChoosePhoto">🖼️ <span>Photo chunein</span></button>
         <button type="button" role="menuitem" id="homeChatChooseFile">📄 <span>File / document</span></button>
         <button type="button" role="menuitem" id="homeChatOpenCamera">📷 <span>Camera se photo</span></button>
       </div>
     </div>
-    <textarea id="homeChatInput" rows="1" maxlength="8000" placeholder="Yahan apna sawal likhiye…" aria-label="Message TNS"></textarea>
-    <button class="home-composer-icon" type="button" id="homeChatVoice" aria-label="Speak to TNS" title="Bolkar batayein">🎙</button>
-    <button class="home-send-btn" type="submit" aria-label="Send message" title="Send">↑</button>
+    <div class="home-input-box"><textarea id="homeChatInput" rows="1" maxlength="8000" placeholder="Yahan apna sawal likhiye…" aria-label="Message TNS"></textarea><button class="home-dictation-btn" type="button" id="homeChatDictation" aria-label="Voice se message likhein" title="Bolkar message likhein">🎙</button></div>
+    <button class="home-composer-icon home-action-btn" type="button" id="homeChatVoice" aria-label="TNS se voice mein baat karein" title="TNS se voice mein baat karein">🎙️</button>
   </form>
   <div class="home-chat-tools">
     <button type="button" class="home-tool-chip" id="homeResearchBtn" aria-pressed="false" title="Live web search requires a connected search service">🔎 Research</button>

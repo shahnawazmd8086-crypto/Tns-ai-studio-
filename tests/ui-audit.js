@@ -42,8 +42,8 @@ console.log('UI_AUDIT_OK');
 const mobileCss=fs.readFileSync(path.join(__dirname,'..','public','style.css'),'utf8');
 for(const uxRule of ['tns-chat-typing','#dashboard .home-chat-composer','display: none !important','TNS se kuch bhi poochhiye']) assert(mobileCss.includes(uxRule),`Missing compact chat layout rule: ${uxRule}`);
 assert(appJs.includes("input.addEventListener('focus', () => { document.body.classList.add('tns-chat-typing'); positionComposerAboveKeyboard(); })"),'Composer focus should keep the mobile composer above the keyboard.');
-assert(html.includes('home-input-box') && html.includes('home-plus-btn'),'Plus button must sit outside the text input box.');
-assert(appJs.includes("actionButton.textContent = hasText ? '↑' : '🎙️'"),'Action button should switch between send and voice when text is empty.');
+assert(html.includes('home-input-box') && html.includes('home-plus-btn') && html.indexOf('home-plus-btn') > html.indexOf('home-input-box'),'Plus button must sit inside the message composer box.');
+assert(appJs.includes("actionButton.innerHTML = hasText ? '↑'") && appJs.includes('home-wave-mic'),'Action button should switch between send arrow and premium waveform mic.');
 
 const homeJs = appJs;
 assert(homeJs.includes('startSpeechInput(true)'), 'Voice conversation mode missing');

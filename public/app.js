@@ -1451,7 +1451,7 @@ $('#voiceMessageBtn')?.addEventListener('click',async()=>{
     if (!actionButton) return;
     actionButton.classList.toggle('is-send', hasText);
     actionButton.classList.toggle('is-voice-mode', !hasText);
-    actionButton.textContent = hasText ? '↑' : '🎙️';
+    actionButton.innerHTML = hasText ? '↑' : '<span class="home-wave-mic" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>';
     actionButton.setAttribute('aria-label', hasText ? 'Send message' : 'TNS se voice mein baat karein');
     actionButton.title = hasText ? 'Message bhejein' : 'TNS se voice mein baat karein';
   };

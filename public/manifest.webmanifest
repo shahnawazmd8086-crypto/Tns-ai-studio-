@@ -1,0 +1,25 @@
+{
+  "name": "TNS Studio",
+  "short_name": "TNS Studio",
+  "description": "TNS Studio — AI creation, video editing and creator communication studio",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#040816",
+  "theme_color": "#070b18",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/assets/icons/tns-studio-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/icons/tns-studio-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

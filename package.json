@@ -2,11 +2,11 @@
   "name": "tns-studio",
   "version": "12.0.0",
   "private": true,
-  "description": "TNS Studio \u2014 AI creation, video editing and creator communication studio",
+  "description": "TNS Studio \u2014 AI video creation, editing and creator workspace",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "test": "node tests/smoke.js && node tests/ui-audit.js",
+    "test": "node tests/smoke.js && node tests/language-reply-audit.js && node tests/ui-audit.js && node tests/voice-dictation-audit.js && node tests/voice-conversation-mic-race-audit.js && node tests/voice-playback-audit.js && node tests/voice-playback-error-handling-audit.js && node tests/voice-playback-control-audit.js && node tests/voice-response-race-audit.js && node tests/voice-playback-language-match-audit.js && node tests/voice-language-choice-audit.js && node tests/voice-language-persistence-audit.js && node tests/voice-reply-language-match-audit.js && node tests/attachment-retry-audit.js && node tests/demo-provider-honesty-audit.js && node tests/chat-retry-button-audit.js && node tests/chat-duplicate-submit-audit.js && node tests/chat-retry-duplicate-bubble-audit.js && node tests/http-smoke.js && node tests/chat-combined-attachment-retry-audit.js && node tests/chat-attachment-validation-audit.js && node tests/chat-failure-messaging-audit.js && node tests/chat-input-edge-cases-audit.js",
     "syntax": "node tests/syntax.js"
   },
   "engines": {

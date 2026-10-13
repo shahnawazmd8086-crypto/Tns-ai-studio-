@@ -1,0 +1,14 @@
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const app=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+const html=fs.readFileSync(path.join(root,'public','index.html'),'utf8');
+assert(app.includes('function stopTnsVoicePlayback(showStatus=true)'), 'A stop handler must cancel current speech.');
+assert(app.includes('window.speechSynthesis.cancel()'), 'Stopping/replacing speech must cancel browser synthesis.');
+assert(app.includes('let tnsPlaybackSequence=0'), 'Playback must track utterance generations.');
+assert(app.includes('if(playbackId!==tnsPlaybackSequence)return;'), 'Callbacks from stale utterances must not overwrite current status.');
+assert(html.includes('id="stopTnsVoicePlayback"'), 'Dashboard voice options must expose a Stop Voice control.');
+assert(app.includes("window.dispatchEvent(new Event('tns:stop-voice-playback'))"), 'Stop Voice must invalidate pending dashboard auto speech too.');
+assert(app.includes('Voice playback stopped. Your text reply is still available.'), 'Stop status must preserve the text reply.');
+console.log('DASHBOARD_VOICE_PLAYBACK_CONTROL_AUDIT_OK');

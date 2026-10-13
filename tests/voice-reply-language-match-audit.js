@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const app=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+const server=fs.readFileSync(path.join(root,'server','server.js'),'utf8');
+const language=fs.readFileSync(path.join(root,'server','utils','language.js'),'utf8');
+assert(app.includes("replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'"),'Voice request must pass the chosen speech locale and explicit-selection flag.');
+assert(server.includes('normalizeLanguage(input.replyLanguage)'),'Server must normalize an explicitly selected reply language.');
+assert(server.includes('input.preferRequestedLanguage && input.replyLanguage'),'Manual voice language must take priority over script detection.');
+assert(server.includes(': detectReplyLanguage(message, String(input.replyLanguage || input.appLanguage || \'English\'))'),'Auto mode must continue to detect message language with selected/app fallback.');
+assert(language.includes('function languageInstruction(language)'),'Provider language instruction must be supplied.');
+console.log('VOICE_REPLY_LANGUAGE_MATCH_AUDIT_OK');

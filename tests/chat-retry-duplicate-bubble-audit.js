@@ -1,0 +1,15 @@
+const fs = require('fs');
+const assert = require('assert');
+const app = fs.readFileSync('public/app.js', 'utf8');
+const start = app.indexOf("form.addEventListener('submit',async event=>{");
+assert(start >= 0, 'Home chat submit handler must exist');
+const end = app.indexOf("\n  });\n})();", start);
+assert(end > start, 'Home chat submit handler should have a clear end');
+const handler = app.slice(start, end);
+assert(app.includes('let retryingPreviousMessage = false;'), 'Retry state must be explicit');
+assert(handler.includes('const isRetrySubmission=retryingPreviousMessage;'), 'Submit must recognize retry submissions');
+assert(handler.includes('retryingPreviousMessage=false;'), 'Retry state must be consumed when retry submission starts');
+assert(handler.includes("if(!isRetrySubmission) addBubble(shownMessage+"), 'Retry must not append a duplicate user bubble');
+assert(handler.includes('pending.remove();'), 'Previous failed response bubble must be removed before retry');
+assert(handler.includes('retryingPreviousMessage=true;'), 'Retry must mark the next submit as a retry');
+console.log('CHAT_RETRY_DUPLICATE_BUBBLE_AUDIT_OK');

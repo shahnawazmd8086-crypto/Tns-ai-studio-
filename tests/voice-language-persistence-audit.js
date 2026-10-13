@@ -1,0 +1,15 @@
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const js=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+assert(js.includes("localStorage.getItem('tnsVoiceLanguage')"),'Saved voice language should be restored after reload.');
+assert(js.includes("localStorage.setItem('tnsVoiceLanguage',voiceLanguageEl.value)"),'Voice language changes should be persisted.');
+assert(js.includes("localStorage.getItem('tnsVoiceRate')"),'Saved speech rate should be restored after reload.');
+assert(js.includes("localStorage.setItem('tnsVoiceRate',voiceRateEl.value)"),'Speech rate changes should be persisted.');
+assert(js.includes("localStorage.getItem('tnsVoiceURI')"),'Device voice preference should be restored when that voice is available.');
+assert(js.includes("localStorage.setItem('tnsVoiceURI',voiceChoiceEl.value)"),'Device voice preference should be persisted.');
+assert(js.includes("localStorage.getItem('tnsStudioLanguage')"),'App language must remain separately stored.');
+assert(js.includes("delete voiceLanguageEl.dataset.detectedLanguage"),'Manual voice-language choice should clear stale detected-language override.');
+assert(js.includes("localStorage.removeItem('tnsStudioLanguage')"),'Logout should still clear app-language selection.');
+console.log('VOICE_LANGUAGE_PERSISTENCE_AUDIT_OK');

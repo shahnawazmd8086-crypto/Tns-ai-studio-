@@ -1,0 +1,14 @@
+const assert = require('assert');
+const fs = require('fs');
+const app = fs.readFileSync('public/app.js', 'utf8');
+const start = app.indexOf("    }catch(error){", app.indexOf("form.addEventListener('submit',async event=>{"));
+assert(start >= 0, 'Chat submit error handler must exist');
+const end = app.indexOf("      pending.classList.add('error');", start);
+assert(end > start, 'Chat error handler must mark the failed response');
+const block = app.slice(start, end);
+assert(block.includes('const rawError=String(error?.message||\'Request failed.\').trim();'), 'Error message must be normalized safely');
+assert(block.includes('Internet ya server connection mein dikkat hai.'), 'Network failures must show a clear user-facing message');
+assert(block.includes('TNS AI service abhi connected ya available nahi hai.'), 'Unavailable AI provider must not be described as a successful answer');
+assert(block.includes('File padhne mein dikkat aayi. File dobara chunein'), 'File read errors must give a recovery step');
+assert(block.includes('Aapka sawal yahin hai—dobara koshish kar sakte hain.'), 'Failed request must preserve the retry guidance');
+console.log('CHAT_FAILURE_MESSAGING_AUDIT_OK');

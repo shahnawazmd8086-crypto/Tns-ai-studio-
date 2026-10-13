@@ -1,0 +1,10 @@
+const fs = require('fs');
+const assert = require('assert');
+const app = fs.readFileSync('public/app.js', 'utf8');
+assert(app.includes("window.addEventListener('tns:stop-voice-playback',()=>{homeSpeechGeneration++;});"), 'Stop Voice must invalidate pending home-chat auto speech.');
+assert(app.includes('const speechGenerationAtSubmit=homeSpeechGeneration;'), 'Each request must snapshot the speech generation.');
+assert(app.includes('const shouldSpeakThisReply=speakNextReply;'), 'Voice intent must be captured per request, not read from a later request.');
+assert(app.includes('shouldSpeakThisReply && speechGenerationAtSubmit===homeSpeechGeneration'), 'A late AI response must not start voice after Stop/new request.');
+assert(app.includes('if(playbackGeneration===homeSpeechGeneration)setStatus'), 'Stale utterance events must not overwrite the newer status.');
+assert(app.includes("window.dispatchEvent(new Event('tns:stop-voice-playback'))"), 'Voice panel Stop must cancel pending home-chat auto speech too.');
+console.log('VOICE_RESPONSE_RACE_AUDIT_OK');

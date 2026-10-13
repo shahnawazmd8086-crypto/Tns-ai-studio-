@@ -1,0 +1,20 @@
+const fs = require('fs');
+const assert = require('assert');
+const app = fs.readFileSync('public/app.js', 'utf8');
+const start = app.indexOf("form.addEventListener('submit',async event=>{");
+assert(start >= 0, 'Home chat submit handler must exist');
+const end = app.indexOf("\n  });\n})();", start);
+assert(end > start, 'Home chat submit handler should have a clear end');
+const handler = app.slice(start, end);
+
+assert(handler.includes('const originalMessage=message;'), 'Original message must be retained for retry');
+assert(handler.includes('const fileToSend=attachedFile;'), 'Original attachment must be retained for retry');
+assert(handler.includes('attachedFile=fileToSend;'), 'Retry must restore the same attachment object');
+assert(handler.includes('input.value=originalMessage;'), 'Retry must restore the original message text');
+assert(handler.includes('transfer.items.add(fileToSend);'), 'Retry should restore the same file into the picker when supported');
+assert(handler.includes('body:JSON.stringify({\n            message:message || `Please analyze this file and explain it in the selected language: ${fileToSend.name}`'), 'Combined message and attachment must be sent together');
+assert(handler.includes("if(fileToSend){ attachedFile=fileToSend; renderAttachment(); }"), 'A failed combined request must retain the attachment');
+assert(handler.includes("if(originalMessage && !input.value.trim()){ input.value=originalMessage; fitInput(); updateActionButton(); }"), 'A failed request must retain original text');
+assert(handler.includes("setStatus(fileToSend?'Request fail hui. Aapki file aur sawal dobara bhejne ke liye rakhe gaye hain.'"), 'Failure status must describe combined retry state');
+assert(handler.includes('const retryButton=document.createElement(\'button\');'), 'A subsequent failed retry should offer another retry button');
+console.log('CHAT_COMBINED_ATTACHMENT_RETRY_AUDIT_OK');

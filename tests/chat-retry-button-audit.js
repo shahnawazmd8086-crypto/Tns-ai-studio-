@@ -1,0 +1,13 @@
+const fs=require('fs');const assert=require('assert');
+const app=fs.readFileSync('public/app.js','utf8');
+const css=fs.readFileSync('public/style.css','utf8');
+assert(app.includes("retryButton.textContent='Dobara koshish karein'"),'Failed chat request should show a retry button');
+assert(app.includes("retryButton.setAttribute('aria-label','Pichhla sawal dobara bhejein')"),'Retry button needs an accessible label');
+assert(app.includes('let retryStarted=false;') && app.includes('if(retryStarted) return;') && app.includes('retryStarted=true;'),'Retry must guard against duplicate clicks and duplicate submissions');
+assert(app.includes("if(input.value.trim() || attachedFile) form.requestSubmit()"),'Retry should resubmit the restored message or attachment');
+assert(app.includes('// Retry the exact failed payload, not any newer text or attachment the user may have selected.'),'Retry must use the original failed payload');
+assert(app.includes('input.value=originalMessage;') && app.includes('attachedFile=fileToSend;'),'Retry must restore the exact failed message and file');
+assert(app.includes("if(fileToSend){ attachedFile=fileToSend; renderAttachment(); }"),'Failed file request must preserve attachment');
+assert(app.includes("if(originalMessage && !input.value.trim()){ input.value=originalMessage; fitInput(); updateActionButton(); }"),'Failed chat request must restore message');
+assert(css.includes('.home-chat-retry'),'Retry button needs styling');
+console.log('CHAT_RETRY_BUTTON_AUDIT_OK');

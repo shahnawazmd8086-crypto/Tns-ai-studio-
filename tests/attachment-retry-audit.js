@@ -1,0 +1,14 @@
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'public','index.html'),'utf8');
+const js=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+assert(html.includes('id="homeChatChoosePhoto"'),'Photo picker control missing');
+assert(html.includes('id="homeChatChooseFile"'),'File picker control missing');
+assert(html.includes('id="homeChatOpenCamera"'),'Camera picker control missing');
+assert(js.includes("[fileInput,photoInput,cameraInput].forEach(el=>{if(el)el.value='';}); renderAttachment(); setStatus('Attachment hata diya gaya.')"),'Remove attachment must clear all picker inputs');
+assert(js.includes('if(fileToSend){ attachedFile=fileToSend; renderAttachment(); }'),'Failed file request must preserve attachment for retry');
+assert(js.includes("if(originalMessage && !input.value.trim()){ input.value=originalMessage; fitInput(); updateActionButton(); }"),'Failed request must restore original user text');
+assert(js.includes('Aapki file aur sawal dobara bhejne ke liye rakhe gaye hain.'),'Failure status must explain retry state');
+console.log('ATTACHMENT_RETRY_AUDIT_OK');

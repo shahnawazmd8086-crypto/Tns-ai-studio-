@@ -1,0 +1,14 @@
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const js=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+const html=fs.readFileSync(path.join(root,'public','index.html'),'utf8');
+assert(js.includes("const speechText=String(text||'').trim();"),'Shared voice helper must normalize and trim reply text.');
+assert(js.includes("typeof window.SpeechSynthesisUtterance!=='function'"),'Voice output must check for missing utterance support.');
+assert(js.includes('Voice playback is not supported by this browser. You can still read the text reply.'),'Unsupported browsers must receive a useful fallback.');
+assert(js.includes('u.onerror=(event)=>{')&&js.includes('Voice playback could not start or was interrupted.'),'Voice playback errors must be handled.');
+assert(js.includes('window.speechSynthesis.speak(utterance)'),'Dashboard voice replies must be spoken through speech synthesis.');
+assert(js.includes('utterance.rate=Math.min(2,Math.max(0.5,Number(voiceRateEl?.value||1)))'),'Dashboard playback must respect selected speech speed.');
+assert(html.includes('id="voiceLanguage"')&&html.includes('id="voiceSystemVoice"')&&html.includes('id="voiceSpeechRate"'),'Dashboard must retain voice language/device voice/speed controls.');
+console.log('DASHBOARD_VOICE_PLAYBACK_AUDIT_OK');

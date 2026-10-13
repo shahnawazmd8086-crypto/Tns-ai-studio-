@@ -1,0 +1,12 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const path = require('path');
+const app = fs.readFileSync(path.join(__dirname, '..', 'public', 'app.js'), 'utf8');
+assert(app.includes("const targetLocale=localeKey(language);"), 'Playback must normalize the requested locale.');
+assert(app.includes("const targetBase=targetLocale.split('-')[0];"), 'Playback must support regional variants of a language.');
+assert(app.includes('return !!voiceLocale && (voiceLocale===targetLocale || voiceLocale.split(\'-\')[0]===targetBase);'), 'Device voices must match the requested language.');
+assert(app.includes('selectedVoice&&voiceMatchesLanguage(selectedVoice)'), 'A saved voice from a different language must not override the requested language.');
+assert(app.includes("availableVoices.find(voice=>localeKey(voice.lang)===targetLocale)"), 'An exact locale voice should be preferred.');
+assert(app.includes('||availableVoices.find(voice=>voiceMatchesLanguage(voice))'), 'A same-language regional voice should be used as fallback.');
+console.log('VOICE_PLAYBACK_LANGUAGE_MATCH_AUDIT_OK');

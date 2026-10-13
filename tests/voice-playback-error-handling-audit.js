@@ -1,0 +1,10 @@
+const fs=require('fs');
+const assert=require('assert');
+const app=fs.readFileSync('public/app.js','utf8');
+assert(app.includes('const matchingVoice=selectedVoice&&voiceMatchesLanguage(selectedVoice)'), 'Playback must resolve a compatible voice before speaking.');
+assert(app.includes('No matching ${targetBase.toUpperCase()} device voice was found.'), 'Missing matching voices must be reported clearly.');
+assert(app.includes("event?.error==='not-allowed'"), 'Blocked playback needs a helpful message.');
+assert(app.includes("event?.error==='language-unavailable'"), 'Unavailable language needs a helpful message.');
+assert(app.includes("event?.error==='voice-unavailable'"), 'Unavailable selected voice needs a helpful message.');
+assert(app.includes('Your text reply is still available.'), 'Errors must remind users the text reply remains available.');
+console.log('VOICE_PLAYBACK_ERROR_HANDLING_AUDIT_OK');

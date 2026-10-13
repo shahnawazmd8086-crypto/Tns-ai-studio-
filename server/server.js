@@ -1,4 +1,5 @@
 const http = require('http');
+const { detectReplyLanguage, languageInstruction, normalizeLanguage } = require('./utils/language');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -11,13 +12,11 @@ const { createSession, getSession, destroySession, clearExpiredSessions } = requ
 const Otp = require('./auth/Otp');
 const GoogleAuth = require('./auth/Google');
 const { create: createVideoJob, getJob: getVideoJob } = require('./jobs/video-job');
-const { create: createImageJob, getJob: getImageJob } = require('./jobs/image-job');
 const { create: createVoiceJob, getJob: getVoiceJob } = require('./jobs/voice-job');
 const { registerProvider, getProvider } = require('./providers/provider');
 const MockProvider = require('./providers/mock');
 const HttpProvider = require('./providers/http');
 const Uploads = require('./storage/Uploads');
-const Contact = require('./contact');
 const ProjectStore = require('./storage/Projects');
 const MediaAccess = require('./storage/MediaAccess');
 const GlobalConfig = require('./config/Global-config');
@@ -228,40 +227,6 @@ async function generateLocalAIVideo(input = {}, userId) {
   return { url: publicUrl(outputName), fileName: outputName, duration, width, height, provider: 'mock', mode: 'local-fallback', prompt, style, camera, workflow };
 }
 
-
-function aiImageDimensions(ratio, quality) {
-  const q = String(quality || 'HD').toLowerCase();
-  const base = q === '4k' ? 2160 : q === '2k' ? 1440 : q === 'full hd' ? 1080 : 720;
-  const r = String(ratio || '1:1');
-  if (r === '9:16') return [Math.floor((base * 9 / 16) / 2) * 2, base];
-  if (r === '16:9') return [base, Math.floor((base * 9 / 16) / 2) * 2];
-  if (r === '4:5') return [Math.floor((base * 4 / 5) / 2) * 2, base];
-  if (r === '4:3') return [base, Math.floor((base * 3 / 4) / 2) * 2];
-  return [base, base];
-}
-
-async function generateLocalAIImage(input = {}, userId) {
-  const [width, height] = aiImageDimensions(input.ratio, input.quality);
-  const count = Math.max(1, Math.min(4, Number(input.variations) || 1));
-  const prompt = String(input.prompt || 'TNS Studio AI Image').replace(/\s+/g, ' ').trim().slice(0, 220);
-  const safeText = prompt.replace(/[:'\\]/g, ' ').replace(/%/g, '\\%').replace(/,/g, '\\,');
-  const style = String(input.style || 'Photorealistic');
-  const outputs = [];
-  const backgrounds = ['0x172033','0x243447','0x1d2939','0x202938'];
-  for (let i = 0; i < count; i += 1) {
-    const outputName = `${crypto.randomUUID()}-tns-ai-image.jpg`;
-    const outputPath = path.join(UPLOAD_DIR, outputName);
-    const bg = backgrounds[i % backgrounds.length];
-    const titleSize = Math.max(30, Math.round(width / 22));
-    const bodySize = Math.max(22, Math.round(width / 42));
-    const draw = `drawtext=text='TNS Studio':fontcolor=white:fontsize=${titleSize}:x=(w-text_w)/2:y=h*0.18:box=1:boxcolor=black@0.35:boxborderw=12,drawtext=text='${safeText}':fontcolor=white:fontsize=${bodySize}:x=(w-text_w)/2:y=(h-text_h)/2:box=1:boxcolor=black@0.48:boxborderw=10,drawtext=text='${style}':fontcolor=white:fontsize=${Math.max(20, Math.round(width/50))}:x=(w-text_w)/2:y=h*0.78`;
-    const args = ['-y','-f','lavfi','-i',`color=c=${bg}:s=${width}x${height}`,'-frames:v','1','-vf',draw,'-q:v','2','-metadata',`comment=Local TNS Studio fallback | ${style} | variation ${i+1}`,outputPath];
-    await runCommand('ffmpeg', args);
-    MediaAccess.register(outputName, userId, { originalName: 'TNS Studio AI Image', createdAt: new Date().toISOString() });
-    outputs.push({ url: publicUrl(outputName), fileName: outputName, width, height, variation: i + 1 });
-  }
-  return { ...outputs[0], variations: outputs, provider: 'mock', mode: 'local-fallback', prompt, style };
-}
 
 function safePublicFile(requestPath) {
   let decoded;
@@ -553,90 +518,6 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true });
     }
 
-    if (req.method === 'GET' && url.pathname === '/api/contact/groups') {
-      const me = requireAuth(req, res); if (!me) return;
-      return sendJson(res, 200, { success: true, groups: Contact.listGroups(me.id) });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/contact/groups') {
-      const me = requireAuth(req, res); if (!me) return;
-      const input = await readBody(req, 1024 * 1024);
-      const members = Array.isArray(input.members) ? input.members.filter(id => id !== me.id && Auth.getUserById(id)).slice(0, 99) : [];
-      return sendJson(res, 201, { success: true, group: Contact.createGroup(me.id, input.name, members) });
-    }
-
-    if (req.method === 'GET' && url.pathname === '/api/contact/group-messages') {
-      const me = requireAuth(req, res); if (!me) return;
-      const groupId = String(url.searchParams.get('groupId') || '');
-      return sendJson(res, 200, { success: true, messages: Contact.listGroupMessages(groupId, me.id) });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/contact/group-messages') {
-      const me = requireAuth(req, res); if (!me) return;
-      const input = await readBody(req, 1024 * 1024);
-      const group = Contact.getGroup(String(input.groupId || ''), me.id);
-      if (!group) throw new Error('Group not found.');
-      return sendJson(res, 201, { success: true, message: Contact.addGroupMessage(group.id, me.id, input.text, { type: input.type, attachment: input.attachment }) });
-    }
-
-    if (req.method === 'GET' && url.pathname === '/api/contact/users') {
-      const me = requireAuth(req, res); if (!me) return;
-      const q = String(url.searchParams.get('q') || '').trim().toLowerCase();
-      const users = Auth.listUsers().filter((u) => u.id !== me.id && (!q || String(u.email || '').toLowerCase().includes(q) || String(u.mobile || '').includes(q) || String(u.name || '').toLowerCase().includes(q)));
-      return sendJson(res, 200, { success: true, users });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/contact/match') {
-      const me = requireAuth(req, res); if (!me) return;
-      const input = await readBody(req, 1024 * 1024);
-      const numbers = Array.isArray(input.numbers) ? input.numbers.map(Auth.normalizeMobile).filter(Boolean) : [];
-      const users = Auth.listUsers().filter((u) => u.id !== me.id && u.mobile && numbers.includes(u.mobile));
-      return sendJson(res, 200, { success: true, users });
-    }
-
-    if (req.method === 'GET' && url.pathname === '/api/contact/settings') {
-      const me = requireAuth(req, res); if (!me) return;
-      const other = String(url.searchParams.get('with') || '');
-      if (!other || !Auth.getUserById(other) || other === me.id) throw new Error('Valid contact is required.');
-      return sendJson(res, 200, { success: true, settings: Contact.getContactSettings(me.id, other) });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/contact/settings') {
-      const me = requireAuth(req, res); if (!me) return;
-      const input = await readBody(req, 1024 * 1024);
-      const other = String(input.contactId || '');
-      if (!other || !Auth.getUserById(other) || other === me.id) throw new Error('Valid contact is required.');
-      if (!Auth.verifyPassword(me.email || me.mobile, String(input.password || ''))) throw new Error('Incorrect TNS Studio password.');
-      if (input.action === 'unlockCheck') return sendJson(res, 200, { success: true, unlocked: true });
-      if (!['toggleLock','toggleHide'].includes(input.action)) throw new Error('Invalid contact security action.');
-      return sendJson(res, 200, { success: true, ...Contact.updateContactSettings(me.id, other, input.action) });
-    }
-
-    if (req.method === 'GET' && url.pathname === '/api/contact/chats') {
-      const me = requireAuth(req, res); if (!me) return;
-      const other = String(url.searchParams.get('with') || '');
-      if (!other || !Auth.getUserById(other) || other === me.id) throw new Error('Valid contact is required.');
-      return sendJson(res, 200, { success: true, messages: Contact.listMessages(me.id, other) });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/contact/chats') {
-      const me = requireAuth(req, res); if (!me) return;
-      const input = await readBody(req, 1024 * 1024);
-      if (!input.to || !Auth.getUserById(input.to) || String(input.to) === me.id) throw new Error('Valid contact is required.');
-      return sendJson(res, 201, { success: true, message: Contact.addMessage(me.id, input.to, input.text, { type: input.type, attachment: input.attachment }) });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/contact/status') {
-      const me = requireAuth(req, res); if (!me) return;
-      const input = await readBody(req, 1024 * 1024);
-      return sendJson(res, 200, { success: true, status: Contact.setStatus(me.id, input.text) });
-    }
-
-    if (req.method === 'GET' && url.pathname === '/api/contact/status') {
-      const me = requireAuth(req, res); if (!me) return;
-      return sendJson(res, 200, { success: true, status: Contact.getStatus(me.id) });
-    }
-
     if (req.method === 'POST' && url.pathname === '/api/uploads/video') {
       const user = requireAuth(req, res); if (!user) return;
       const parts = await readMultipart(req, 500 * 1024 * 1024);
@@ -923,8 +804,12 @@ const server = http.createServer(async (req, res) => {
       if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
       const provider = getProvider(providerName);
       if (!provider || typeof provider.chat !== 'function') return sendJson(res, 503, { error: 'Configured TNS AI provider does not support chat.' });
-      const result = await provider.chat({ message: String(input.message || ''), research: Boolean(input.research), userId: user.id });
-      return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '' });
+      const message = String(input.message || '');
+      const replyLanguage = input.preferRequestedLanguage && input.replyLanguage
+        ? normalizeLanguage(input.replyLanguage)
+        : detectReplyLanguage(message, String(input.replyLanguage || input.appLanguage || 'English'));
+      const result = await provider.chat({ message, research: Boolean(input.research), userId: user.id, replyLanguage, languageInstruction: languageInstruction(replyLanguage) });
+      return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '', replyLanguage: result?.replyLanguage || replyLanguage, provider: providerName, demo: providerName === 'mock' });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/understand') {
@@ -934,8 +819,11 @@ const server = http.createServer(async (req, res) => {
       if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
       const provider = getProvider(providerName);
       if (!provider) return sendJson(res, 503, { error: 'Configured TNS AI provider is unavailable.' });
-      if (typeof provider.understand === 'function') { const result = await provider.understand({ ...input, userId: user.id }); return sendJson(res, 200, { success: true, ...result }); }
-      if (typeof provider.chat === 'function') { const result = await provider.chat({ message: String(input.message || 'Analyze the supplied file/image.'), file: input.file || null, userId: user.id }); return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '' }); }
+      const message = String(input.message || 'Analyze the supplied file/image.');
+      const replyLanguage = detectReplyLanguage(message, String(input.replyLanguage || input.appLanguage || 'English'));
+      const languageContext = { replyLanguage, languageInstruction: languageInstruction(replyLanguage) };
+      if (typeof provider.understand === 'function') { const result = await provider.understand({ ...input, ...languageContext, userId: user.id }); return sendJson(res, 200, { success: true, ...result, replyLanguage: result?.replyLanguage || replyLanguage, provider: providerName, demo: providerName === 'mock' }); }
+      if (typeof provider.chat === 'function') { const result = await provider.chat({ message, file: input.file || null, ...languageContext, userId: user.id }); return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '', replyLanguage: result?.replyLanguage || replyLanguage }); }
       return sendJson(res, 503, { error: 'Configured TNS AI provider does not support file understanding.' });
     }
 
@@ -971,41 +859,6 @@ const server = http.createServer(async (req, res) => {
       if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Video job not found.' });
       const provider = getProvider(job.provider);
       const refreshed = await refreshProviderJob(provider, job, 'video', require('./jobs/video-job').update);
-      return sendJson(res, 200, refreshed || job);
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/image/jobs') {
-      const user = requireAuth(req, res); if (!user) return;
-      const input = await readBody(req);
-      const providerName = String(process.env.IMAGE_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
-      if (!providerName || (process.env.NODE_ENV === 'production' && providerName === 'mock')) return sendJson(res, 503, { error: 'A real image provider is not configured for production.' });
-      const provider = getProvider(providerName);
-      if (!provider) return sendJson(res, 503, { error: 'Configured image provider is unavailable.' });
-      const job = await createImageJob(providerName, { ...input, ownerId: user.id });
-      if (providerName === 'mock') {
-        job.status = 'processing';
-        job.progress = 5;
-        generateLocalAIImage(input, user.id).then(async result => {
-          await require('./jobs/image-job').update(job.id, { status: 'completed', progress: 100, result, error: null });
-        }).catch(async error => {
-          await require('./jobs/image-job').update(job.id, { status: 'failed', error: error.message });
-        });
-      } else if (provider && typeof provider.createImage === 'function') {
-        try {
-          job.providerJob = await provider.createImage(input);
-          if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }
-        } catch (error) { job.status = 'failed'; job.error = error.message; }
-      }
-      return sendJson(res, 202, job);
-    }
-
-    match = url.pathname.match(/^\/api\/image\/jobs\/([^/]+)$/);
-    if (req.method === 'GET' && match) {
-      const user = requireAuth(req, res); if (!user) return;
-      const job = await getImageJob(decodeURIComponent(match[1]));
-      if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Image job not found.' });
-      const provider = getProvider(job.provider);
-      const refreshed = await refreshProviderJob(provider, job, 'image', require('./jobs/image-job').update);
       return sendJson(res, 200, refreshed || job);
     }
 

@@ -15,11 +15,10 @@ for(const id of ['image','contact','tnsAi','tnsAiVoice','tnsAiUnderstanding','co
   assert(!html.includes(`id="${id}"`),`Removed module screen still present: ${id}`);
 }
 const dashboard=html.slice(html.indexOf('id="dashboard"'),html.indexOf('</section>',html.indexOf('id="dashboard"')));
-for(const control of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatPhoto','homeChatFile','homeChatCamera','homeChatAttachMenu','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatVoice','homeChatDictation','homeResearchBtn','homeExploreToolsBtn','homeToolsGrid','voiceLanguage','voiceSystemVoice','voiceSpeechRate']) {
+for(const control of ['homeChatMessages','homeChatForm','homeChatInput','homeChatAttach','homeChatPhoto','homeChatFile','homeChatCamera','homeChatAttachMenu','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatVoice','homeChatDictation','voiceLanguage','voiceSystemVoice','voiceSpeechRate']) {
   assert(dashboard.includes(`id="${control}"`),`Missing retained dashboard control: ${control}`);
 }
-assert(dashboard.includes('home-tools-grid hidden'),'Tool shortcuts should be collapsed by default.');
-assert(dashboard.includes('aria-pressed="false"'),'Research toggle must expose its off state accessibly.');
+assert(!dashboard.includes('homeResearchBtn')&&!dashboard.includes('Link samjho')&&!dashboard.includes('Address / jagah')&&!dashboard.includes('Compare options'),'Research/link/location/compare shortcuts should be removed from beneath chat.');
 for(const feature of ['data-open="editor"','data-open="generate"','data-open="projects"']) assert(dashboard.includes(feature),`Dashboard missing ${feature}`);
 for(const feature of ['data-open="image"','data-open="contact"','data-open="tnsAi"','data-open="shorts"','data-open="profile"']) assert(!dashboard.includes(feature),`Dashboard still offers removed feature ${feature}`);
 assert(!dashboard.includes('data-open="premium"')&&!dashboard.includes('data-open="help"'),'Premium and Help must remain in the top menu, not dashboard cards.');
@@ -34,8 +33,9 @@ for(const x of ['videoStep1','videoStep2','acceptedVideoIdea','editVideoIdeaBtn'
 for(const x of ['imageStep1','imageStep2','acceptedImageIdea','editImageIdeaBtn','imageContinueBtn','startTnsAiVoice','tnsAiUnderstandFile','tnsAiAnalyzeFile']) assert(!html.includes(`id="${x}"`),`Removed feature control still present: ${x}`);
 assert(html.includes('data-screen-number="24"'),'Missing 24-screen registry marker.');
 for(const uxRule of ['MAX_FILE_BYTES = 1200 * 1024','allowedExtensions','home-attachment-remove','if(isSending){','setSending(true)','setSending(false)','homeChatChoosePhoto','homeChatChooseFile','homeChatOpenCamera','homeChatCamera']) assert(appJs.includes(uxRule),`Missing home chat usability safeguard: ${uxRule}`);
-assert(appJs.includes('live web search provider abhi connect nahi hai'),'Research mode must not imply live web search is connected.');
-assert(appJs.includes('startSpeechInput(true)')&&appJs.includes('startSpeechInput(false)'),'Dashboard voice conversation and dictation must remain.');
+assert(html.includes('<b>Saare Tools</b>'),'All tools should be accessible from the top menu.');
+assert(appJs.includes('startSpeechInput(false)'),'Dashboard inner-mic dictation must remain.');
+assert(html.includes('id="voiceConversation"')&&appJs.includes("showPanel('voiceConversation')")&&appJs.includes('beginVoiceOnly();'),'Outer microphone must open the dedicated voice-only conversation screen.');
 assert(appJs.includes('speechSynthesis.speak(utterance)'),'Dashboard voice reply playback missing.');
 assert(css.includes('tns-chat-typing')&&css.includes('#dashboard .home-chat-composer'),'Missing compact chat layout rules.');
 console.log('UI_AUDIT_OK');

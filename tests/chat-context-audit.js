@@ -1,0 +1,17 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.join(__dirname, '..');
+const server = fs.readFileSync(path.join(root, 'server/server.js'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'public/app.js'), 'utf8');
+const http = fs.readFileSync(path.join(root, 'server/providers/http.js'), 'utf8');
+assert.match(app, /const conversationHistory = conversationMessages\(\)\.slice\(-12\)/, 'chat request should use sanitized saved conversation turns');
+assert.match(app, /slice\(-12\)/, 'browser should bound history to the latest 12 turns');
+assert.match(app, /history:conversationHistory/, 'chat request should send history');
+assert.match(server, /Array\.isArray\(input\.history\)/, 'server should validate supplied history');
+assert.match(server, /\.slice\(-12\)\.map\(turn => \(\{ role: turn\.role, content: turn\.content\.slice\(0, 12000\) \}\)\)/, 'server should bound turn count and content size');
+assert.match(server, /provider\.chat\(\{ message: providerMessage, originalMessage: message, history, research:/, 'provider should receive history');
+assert.match(http, /data\?\.choices\?\.\[0\]\?\.message\?\.content/, 'HTTP adapter should normalize common chat-completion content');
+assert.match(http, /data\?\.output_text/, 'HTTP adapter should normalize output_text responses');
+console.log('CHAT_CONTEXT_AUDIT_OK');

@@ -1,0 +1,18 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tns-task-recovery-'));
+const store = path.join(dir, 'tasks.json');
+const modulePath = path.resolve(__dirname, '../server/browser/TaskProgress.js');
+const run = source => spawnSync(process.execPath, ['-e', source], { encoding: 'utf8', env: { ...process.env, TNS_TASK_PROGRESS_FILE: store } });
+const first = run(`const t=require(${JSON.stringify(modulePath)}); const r=t.createTask('user-A',{goal:'Prepare a public contact form',steps:[{title:'Inspect page',website:'https://example.com'},{title:'Review preview',needsApproval:true},{title:'Submit after approval',needsApproval:true}]}); t.updateTask('user-A',{taskId:r.task.id,stepId:r.task.steps[0].id,status:'completed'}); console.log(r.task.id);`);
+assert.equal(first.status, 0, first.stderr);
+const taskId = first.stdout.trim().split(/\r?\n/).pop();
+const second = run(`const t=require(${JSON.stringify(modulePath)}); const l=t.listTasks('user-A'); if(l.tasks.length!==1) throw Error('task list missing'); const r=t.resumeTask('user-A',${JSON.stringify(taskId)}); if(r.resumeAt.title!=='Review preview') throw Error('wrong resume step'); if(r.actionExecuted!==false || r.approvalTicketsReused!==false || r.requiresFreshWebsiteCheck!==true) throw Error('unsafe recovery flags'); try { t.resumeTask('user-B',${JSON.stringify(taskId)}); process.exitCode=2; } catch(e) { if(e.statusCode!==403) throw e; } console.log('RECOVERY_OK');`);
+assert.equal(second.status, 0, second.stderr + second.stdout);
+assert.match(second.stdout, /RECOVERY_OK/);
+fs.rmSync(dir, { recursive: true, force: true });
+console.log('BROWSER_TASK_RECOVERY_AUDIT_OK');

@@ -1,0 +1,16 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const browser = require('../server/browser/BrowserAutomation');
+const source = fs.readFileSync(path.join(__dirname, '..', 'server/browser/BrowserAutomation.js'), 'utf8');
+const server = fs.readFileSync(path.join(__dirname, '..', 'server/server.js'), 'utf8');
+assert.equal(typeof browser.draftFormFill, 'function');
+assert(source.includes("mode: 'draft_fill_preview_only'"));
+assert(source.includes('page.screenshot'));
+assert(source.includes("type === 'password' || type === 'file'"));
+assert(source.includes('request.abort()'));
+assert(source.includes('Nothing was submitted, sent, published, uploaded, booked, or paid for'));
+assert(server.includes("url.pathname === '/api/tns-ai/browser/draft'"));
+assert(server.includes('BrowserAutomation.draftFormFill(pageUrl, input.values, input.formIndex)'));
+console.log('BROWSER_DRAFT_AUDIT_OK');

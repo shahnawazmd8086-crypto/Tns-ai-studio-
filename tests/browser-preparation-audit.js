@@ -1,0 +1,15 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const browser = require('../server/browser/BrowserAutomation');
+const source = fs.readFileSync(path.join(__dirname, '..', 'server/browser/BrowserAutomation.js'), 'utf8');
+const server = fs.readFileSync(path.join(__dirname, '..', 'server/server.js'), 'utf8');
+assert.equal(typeof browser.inspectInteractiveWebsite, 'function');
+assert(source.includes('querySelectorAll(\'input,textarea,select\')'));
+assert(source.includes("f.type !== 'hidden' && f.type !== 'password' && f.type !== 'file'"), 'Password, hidden and file input controls must not be exposed');
+assert(source.includes('read_only_form_preparation'));
+assert(source.includes('did not fill fields, upload files, click action buttons'));
+assert(server.includes("url.pathname === '/api/tns-ai/browser/prepare'"));
+assert(server.includes('BrowserAutomation.inspectInteractiveWebsite(pageUrl)'));
+console.log('BROWSER_PREPARATION_AUDIT_OK');

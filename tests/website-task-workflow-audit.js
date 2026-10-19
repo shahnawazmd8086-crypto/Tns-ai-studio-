@@ -1,0 +1,15 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const server = fs.readFileSync(path.join(__dirname, '..', 'server/server.js'), 'utf8');
+assert.match(server, /MULTI-WEBSITE TASK WORKFLOW/);
+assert.match(server, /official payment\/checkout link/);
+assert.match(server, /do not pay, enter payment details, or make a purchase/);
+assert.match(server, /Never ask for card numbers, passwords, OTPs, or banking secrets/);
+assert.match(server, /review\/preview link/);
+assert.match(server, /until the user clearly approves that exact action/);
+assert.match(server, /If browser control is unavailable, say so clearly/);
+assert.match(server, /CAPTCHA, access controls, site rules, or security checks/);
+assert.match(server, /\$\{message\}\$\{studySupportInstruction\}\$\{websiteWorkInstruction\}/);
+console.log('WEBSITE_TASK_WORKFLOW_AUDIT_OK');

@@ -1,0 +1,17 @@
+'use strict';
+const fs = require('node:fs');
+const assert = require('node:assert/strict');
+const html = fs.readFileSync('public/index.html', 'utf8');
+const js = fs.readFileSync('public/app.js', 'utf8');
+const css = fs.readFileSync('public/style.css', 'utf8');
+assert.match(html, /data-menu-open="savedTasks"/);
+assert.match(html, /id="savedTasks"/);
+assert.match(html, /id="savedTaskStatusFilter"/);
+assert.match(html, /id="savedTaskActiveOnly"/);
+assert.match(js, /target==='savedTasks'.*loadSavedTasks\(\)/);
+assert.match(js, /\/api\/tns-ai\/browser\/task\/list/);
+assert.match(js, /\/api\/tns-ai\/browser\/task\/resume/);
+assert.match(js, /data-saved-task-resume/);
+assert.match(css, /\.saved-task-card/);
+assert.match(css, /@media\(max-width:560px\).*saved-task-filters/s);
+console.log('SAVED_TASKS_MENU_UI_AUDIT_OK');

@@ -1,0 +1,17 @@
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const js=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'public','style.css'),'utf8');
+assert(js.includes("const setMicListeningUI = (listening) =>"),'A shared listening-state UI controller must exist.');
+assert(js.includes('const button = dictationButton;'),'Only the microphone inside the chat box must be controlled by this recording UI.');
+assert(js.includes("button.classList.toggle('is-listening', listening)"),'Inside microphone must show listening state.');
+assert(js.includes("button.setAttribute('aria-pressed', String(listening))"),'Listening state must be exposed accessibly.');
+assert(js.includes('🔴 Microphone CHALU hai'),'Starting the mic must show a clear active message.');
+assert(js.includes("if (voiceRecognition) { stopSpeechInput(); return; }"),'Tapping an active mic must stop listening.');
+assert(css.includes('#dashboard .home-action-btn.is-listening { background:linear-gradient(145deg,#ff4b5c'),'Existing outside microphone styling must remain unchanged.');
+assert(css.includes('#dashboard .home-dictation-btn.is-listening'),'Inside dictation mic must have a strong visible active state.');
+assert(css.includes('@keyframes tnsDictationWave'),'Inside microphone must show an animated waveform while recording.');
+assert(css.includes('prefers-reduced-motion:reduce'),'Animation must respect reduced-motion preference.');
+console.log('VOICE_MICROPHONE_VISUAL_STATE_AUDIT_OK');

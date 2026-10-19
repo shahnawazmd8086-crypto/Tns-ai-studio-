@@ -1,0 +1,18 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tns-task-list-filter-'));
+const store = path.join(dir, 'tasks.json');
+const modulePath = path.resolve(__dirname, '../server/browser/TaskProgress.js');
+const run = source => spawnSync(process.execPath, ['-e', source], { encoding: 'utf8', env: { ...process.env, TNS_TASK_PROGRESS_FILE: store } });
+const first = run(`const t=require(${JSON.stringify(modulePath)}); const a=t.createTask('u1',{goal:'Read public information',steps:[{title:'Read page'}]}).task; const b=t.createTask('u1',{goal:'Review application',steps:[{title:'Review details'}]}).task; t.updateTask('u1',{taskId:a.id,stepId:a.steps[0].id,status:'completed'}); const c=t.createTask('u2',{goal:'Other user task',steps:[{title:'Private task'}]}).task; console.log(JSON.stringify({a:a.id,b:b.id,c:c.id}));`);
+assert.equal(first.status, 0, first.stderr);
+const ids = JSON.parse(first.stdout.trim().split(/\r?\n/).pop());
+const second = run(`const t=require(${JSON.stringify(modulePath)}); const active=t.listTasks('u1',{activeOnly:true}); if(active.tasks.length!==1 || active.tasks[0].id!==${JSON.stringify(ids.b)}) throw Error('active filter leaked or included completed task'); if(active.counts.totalOwned!==2 || active.counts.active!==1 || active.counts.completed!==1) throw Error('incorrect counts'); const completed=t.listTasks('u1',{status:'completed'}); if(completed.tasks.length!==1 || completed.tasks[0].id!==${JSON.stringify(ids.a)}) throw Error('status filter failed'); const limited=t.listTasks('u1',{limit:1}); if(limited.tasks.length!==1) throw Error('limit failed'); try { t.listTasks('u1',{status:'not-a-state'}); throw Error('invalid filter accepted'); } catch(e) { if(!/supported task status/.test(e.message)) throw e; } if(t.listTasks('u1').tasks.some(x=>x.id===${JSON.stringify(ids.c)})) throw Error('another user task leaked'); console.log('TASK_LIST_FILTER_OK');`);
+assert.equal(second.status, 0, second.stderr + second.stdout);
+assert.match(second.stdout, /TASK_LIST_FILTER_OK/);
+fs.rmSync(dir, { recursive: true, force: true });
+console.log('BROWSER_TASK_LIST_FILTER_AUDIT_OK');

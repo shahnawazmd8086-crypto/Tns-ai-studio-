@@ -45,7 +45,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.strictEqual(health.status, 200, '/health should return HTTP 200');
     const healthBody = await health.json();
     assert.strictEqual(healthBody.ok, true, '/health should report ok=true');
-    assert.strictEqual(healthBody.name, 'TNS Studio API', '/health should identify TNS Studio');
+    assert.strictEqual(healthBody.name, 'TNS API', '/health should identify TNS');
 
     for (const [route, expectedType] of [
       ['/', 'text/html'],

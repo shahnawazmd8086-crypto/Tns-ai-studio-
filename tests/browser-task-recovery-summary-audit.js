@@ -1,0 +1,18 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tns-task-recovery-summary-'));
+const store = path.join(dir, 'tasks.json');
+const modulePath = path.resolve(__dirname, '../server/browser/TaskProgress.js');
+const run = source => spawnSync(process.execPath, ['-e', source], { encoding: 'utf8', env: { ...process.env, TNS_TASK_PROGRESS_FILE: store } });
+const first = run(`const t=require(${JSON.stringify(modulePath)}); const r=t.createTask('user-A',{goal:'Prepare application',steps:[{title:'Read official instructions',website:'https://example.com'},{title:'Review application details',needsApproval:true},{title:'Submit application',needsApproval:true}]}); t.updateTask('user-A',{taskId:r.task.id,stepId:r.task.steps[0].id,status:'completed'}); console.log(r.task.id);`);
+assert.equal(first.status, 0, first.stderr);
+const taskId = first.stdout.trim().split(/\r?\n/).pop();
+const second = run(`const t=require(${JSON.stringify(modulePath)}); const r=t.resumeTask('user-A',${JSON.stringify(taskId)}); if(r.summary.completedCount!==1 || r.summary.remainingCount!==2) throw Error('wrong step counts'); if(r.completedSteps[0].title!=='Read official instructions') throw Error('completed steps missing'); if(r.remainingSteps.length!==2) throw Error('remaining steps missing'); if(r.summary.approvalRequiredSteps.length!==2) throw Error('approval steps missing'); if(r.summary.nextAction!=='request_fresh_user_approval_before_action') throw Error('approval next action missing'); if(r.actionExecuted!==false || r.approvalTicketsReused!==false || r.requiresFreshWebsiteCheck!==true) throw Error('unsafe recovery response'); console.log('RECOVERY_SUMMARY_OK');`);
+assert.equal(second.status, 0, second.stderr + second.stdout);
+assert.match(second.stdout, /RECOVERY_SUMMARY_OK/);
+fs.rmSync(dir, { recursive: true, force: true });
+console.log('BROWSER_TASK_RECOVERY_SUMMARY_AUDIT_OK');

@@ -8,6 +8,7 @@ const ROOT = path.resolve(__dirname, '..');
 const PORT = 3187;
 const BASE = `http://127.0.0.1:${PORT}`;
 const DATA_DIR = path.join(ROOT, 'server', 'Data');
+const CHAT_HISTORY_TEST_DIR = fs.mkdtempSync(path.join(require('os').tmpdir(), 'tns-smoke-chat-history-'));
 const USER_FILE = path.join(DATA_DIR, 'users.json');
 const SESSION_FILE = path.join(DATA_DIR, 'sessions.json');
 
@@ -46,7 +47,7 @@ async function waitForHealth() {
   fs.writeFileSync(USER_FILE, '[]');
   fs.writeFileSync(SESSION_FILE, '{}');
 
-  const child = spawn(process.execPath, ['server/server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), NODE_ENV: 'test', SESSION_TIMEOUT_MINUTES: '1440', OTP_EXPOSE_CODE: 'true' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(process.execPath, ['server/server.js'], { cwd: ROOT, env: { ...process.env, PORT: String(PORT), NODE_ENV: 'test', SESSION_TIMEOUT_MINUTES: '1440', OTP_EXPOSE_CODE: 'true', CHAT_HISTORY_DIR: CHAT_HISTORY_TEST_DIR }, stdio: ['ignore', 'pipe', 'pipe'] });
   let stderr = '';
   child.stderr.on('data', (d) => { stderr += d.toString(); });
 
@@ -54,7 +55,7 @@ async function waitForHealth() {
     await waitForHealth();
     const health = await request('/health');
     assert.strictEqual(health.json.ok, true);
-    assert.strictEqual(health.json.name, 'TNS Studio API');
+    assert.strictEqual(health.json.name, 'TNS API');
 
     const signup = await request('/api/auth/signup', { method: 'POST', ...jsonOptions({ email: 'test@example.com', mobile: '+919876543210', password: 'MyOwnPass8' }) });
     assert.strictEqual(signup.status, 201, signup.body);
@@ -72,8 +73,36 @@ async function waitForHealth() {
     const unauthChat = await request('/api/tns-ai/chat', { method: 'POST', ...jsonOptions({ message: 'Meri madad karo' }) });
     assert.strictEqual(unauthChat.status, 401, 'TNS AI chat must require a signed-in user.');
     const authChat = await request('/api/tns-ai/chat', { method: 'POST', ...jsonOptions({ message: 'Meri madad karo', research: true }, cookie) });
-    assert.strictEqual(authChat.status, 200, authChat.body);
-    assert.match(authChat.json.reply || '', /development response|live web-search provider/i, 'Mock provider should clearly identify demo/research limitations.');
+    if (process.env.TAVILY_API_KEY) {
+      assert.ok([200, 429, 502].includes(authChat.status), authChat.body);
+    } else {
+      assert.strictEqual(authChat.status, 503, 'Research must clearly report missing live-search configuration instead of pretending it ran.');
+      assert.match(authChat.json.error || '', /TAVILY_API_KEY/i);
+    }
+
+    const unauthHistory = await request('/api/tns-ai/conversations');
+    assert.strictEqual(unauthHistory.status, 401, 'conversation history must require authentication');
+    const createConversation = await request('/api/tns-ai/conversations', { method: 'POST', ...jsonOptions({ messages: [{ role: 'user', content: 'History test question' }, { role: 'assistant', content: 'History test answer' }] }, cookie) });
+    assert.strictEqual(createConversation.status, 200, createConversation.body);
+    const conversationId = createConversation.json.conversation.id;
+    assert.strictEqual(createConversation.json.conversation.messages.length, 2, 'created conversation contains messages');
+    const listConversations = await request('/api/tns-ai/conversations', { headers: { Cookie: cookie } });
+    assert.strictEqual(listConversations.status, 200);
+    assert.ok(listConversations.json.conversations.some(item => item.id === conversationId), 'new conversation appears in history list');
+    const loadConversation = await request(`/api/tns-ai/conversations/${conversationId}`, { headers: { Cookie: cookie } });
+    assert.strictEqual(loadConversation.status, 200);
+    assert.strictEqual(loadConversation.json.conversation.messages[1].content, 'History test answer', 'saved conversation can be reopened');
+    const badConversationId = await request('/api/tns-ai/conversations/%2E%2E%2Fusers', { headers: { Cookie: cookie } });
+    assert.ok(!badConversationId.json?.conversation, 'unsafe conversation path must not return conversation data');
+    const secondSignup = await request('/api/auth/signup', { method: 'POST', ...jsonOptions({ email: 'second-chat-test@example.com', password: 'SecondPass8' }) });
+    assert.strictEqual(secondSignup.status, 201, secondSignup.body);
+    const secondCookie = secondSignup.headers['set-cookie'][0].split(';')[0];
+    const crossUserLoad = await request(`/api/tns-ai/conversations/${conversationId}`, { headers: { Cookie: secondCookie } });
+    assert.strictEqual(crossUserLoad.status, 404, 'another account cannot load this conversation');
+    const deleteConversation = await request(`/api/tns-ai/conversations/${conversationId}`, { method: 'DELETE', headers: { Cookie: cookie } });
+    assert.strictEqual(deleteConversation.status, 200, 'conversation can be deleted');
+    const deletedConversation = await request(`/api/tns-ai/conversations/${conversationId}`, { headers: { Cookie: cookie } });
+    assert.strictEqual(deletedConversation.status, 404, 'deleted conversation cannot be reopened');
 
     const badLogin = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'Wrong@2026' }) });
     assert.strictEqual(badLogin.status, 400);
@@ -116,6 +145,7 @@ async function waitForHealth() {
     await new Promise((r) => setTimeout(r, 100));
     if (backupUsers === null) { try { fs.unlinkSync(USER_FILE); } catch {} } else fs.writeFileSync(USER_FILE, backupUsers);
     if (backupSessions === null) { try { fs.unlinkSync(SESSION_FILE); } catch {} } else fs.writeFileSync(SESSION_FILE, backupSessions);
+    fs.rmSync(CHAT_HISTORY_TEST_DIR, { recursive: true, force: true });
     if (stderr.trim()) process.stderr.write(stderr);
   }
 })().catch((error) => { console.error(error); process.exit(1); });

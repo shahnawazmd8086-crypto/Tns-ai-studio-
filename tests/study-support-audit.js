@@ -1,0 +1,14 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const server = fs.readFileSync(path.join(__dirname, '..', 'server/server.js'), 'utf8');
+assert.match(server, /EDUCATION SUPPORT/);
+assert.match(server, /any subject and education level/);
+assert.match(server, /show the method step by step/);
+assert.match(server, /For maths\/science, show formulas, units, substitutions, and check the result/);
+assert.match(server, /For languages\/literature\/history\/social studies/);
+assert.match(server, /For coding, give runnable examples and explain them/);
+assert.match(server, /Do not invent facts, equations, citations, or certainty/);
+assert.match(server, /\$\{message\}\$\{studySupportInstruction\}/);
+console.log('STUDY_SUPPORT_AUDIT_OK');

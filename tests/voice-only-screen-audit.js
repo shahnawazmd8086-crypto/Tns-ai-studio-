@@ -1,0 +1,17 @@
+const assert=require('assert');
+const fs=require('fs');
+const path=require('path');
+const root=path.join(__dirname,'..');
+const html=fs.readFileSync(path.join(root,'public','index.html'),'utf8');
+const js=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
+const css=fs.readFileSync(path.join(root,'public','style.css'),'utf8');
+assert(html.includes('id="voiceConversation"'),'Dedicated voice-only screen is missing.');
+assert(html.includes('id="voiceOnlyStart"')&&html.includes('id="voiceOnlyStop"'),'Voice start/end controls are missing.');
+assert(html.includes('Voice-to-voice only')&&html.includes('No chat or messages'),'Voice-only screen must communicate no text chat.');
+assert(js.includes("$id('homeChatVoice')?.addEventListener('click',()=>{showPanel('voiceConversation')"),'Outside mic must navigate to voice-only screen.');
+assert(js.includes("json('/api/tns-ai/chat'")&&js.includes('history:[]'),'Voice-only turn must call AI without chat history.');
+assert(js.includes('window.speechSynthesis.speak(utterance)'),'Voice-only replies must be spoken.');
+assert(js.includes('setTimeout(startVoiceOnlyListening,250)'),'Listening must resume after TNS speaks.');
+assert(js.includes('voiceOnlyTurn++')&&js.includes('window.speechSynthesis?.cancel()'),'Ending voice session must invalidate pending turns and stop playback.');
+assert(css.includes('#voiceConversation.panel.active')&&css.includes('.voice-only-orb'),'Voice-only screen must have dedicated visual styling.');
+console.log('VOICE_ONLY_SCREEN_AUDIT_OK');

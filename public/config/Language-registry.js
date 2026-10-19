@@ -1,4 +1,4 @@
-// ISO 639 worldwide language registry for TNS Studio language selection.
+// ISO 639 worldwide language registry for TNS language selection.
 // Includes ISO 639-1 languages plus ISO 639-3 language entries so users can search languages worldwide.
 const TNSLanguageRegistry = [
   {

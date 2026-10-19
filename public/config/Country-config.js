@@ -1,4 +1,4 @@
-// TNS Studio worldwide mobile-country selector.
+// TNS worldwide mobile-country selector.
 // Mobile numbers are normalized to E.164 before authentication.
 const TNSCountryConfig = {
   defaultCountry: 'IN',

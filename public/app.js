@@ -6,6 +6,62 @@ function msg(id,text,type='info'){const e=$(id)||(id==='#voiceStatus'?$('#homeCh
 async function json(url,options={}){const r=await fetch(url,{credentials:'include',...options});let d={};try{d=await r.json()}catch{}if(!r.ok)throw new Error(d.error||d.message||'Request failed.');return d}
 function showPanel(id){$$('.panel').forEach(p=>p.classList.toggle('active',p.id===id));window.scrollTo({top:0,behavior:'smooth'});if(id==='projects')renderProjects();}
 
+async function loadSavedTasks(){
+  const status=$('#savedTaskStatus'), list=$('#savedTaskList'), counts=$('#savedTaskCounts'), detail=$('#savedTaskDetail');
+  if(!status||!list)return;
+  status.textContent='Loading saved tasks…'; list.innerHTML=''; counts.innerHTML=''; detail.classList.add('hidden');
+  try{
+    const filter=$('#savedTaskStatusFilter')?.value||'';
+    const activeOnly=Boolean($('#savedTaskActiveOnly')?.checked);
+    const data=await json('/api/tns-ai/browser/task/list',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:filter,activeOnly,limit:50})});
+    const c=data.counts||{};
+    counts.innerHTML=`<span>Total: <b>${Number(c.totalOwned)||0}</b></span><span>Active: <b>${Number(c.active)||0}</b></span><span>Completed: <b>${Number(c.completed)||0}</b></span>`;
+    const tasks=Array.isArray(data.tasks)?data.tasks:[];
+    if(!tasks.length){status.textContent='Is filter mein koi saved task nahi mila.';return;}
+    status.textContent=`${tasks.length} saved task(s) mile.`;
+    list.innerHTML=tasks.map(t=>`<article class="saved-task-card"><div class="saved-task-card-main"><b>${escapeHtml(t.goal)}</b><small>${escapeHtml(t.status||'unknown')} · ${Array.isArray(t.steps)?t.steps.filter(x=>x.status==='completed').length:0}/${Array.isArray(t.steps)?t.steps.length:0} steps complete</small><small>Updated: ${escapeHtml(t.updatedAt||'')}</small></div><button class="secondary" type="button" data-saved-task-resume="${escapeHtml(t.id)}">View task</button></article>`).join('');
+  }catch(e){status.textContent=e.message||'Saved tasks load nahi ho sake. Sign in karke dobara try karein.';}
+}
+async function showSavedTask(taskId){
+ const status=$('#savedTaskStatus'), detail=$('#savedTaskDetail');status.textContent='Task details loading…';detail.classList.remove('hidden');detail.innerHTML='';
+ try{
+  const d=await json('/api/tns-ai/browser/task/resume',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({taskId})});
+  const t=d.task||{}, summary=d.summary||{}, steps=Array.isArray(t.steps)?t.steps:[];
+  detail.innerHTML=`<div class="section-head"><div><p class="eyebrow">TASK DETAILS</p><h3>${escapeHtml(t.goal||'Saved task')}</h3><p class="muted">Status: ${escapeHtml(t.status||'unknown')} · ${Number(summary.completedCount)||0}/${Number(summary.totalSteps)||steps.length} steps complete</p></div><button class="back-btn" type="button" id="savedTaskDetailClose">Close</button></div><div class="saved-task-steps">${steps.map((s,i)=>`<div class="saved-task-step"><span>${s.status==='completed'?'✅':s.status==='failed'?'❌':s.status==='blocked'?'⚠️':s.needsApproval?'🔐':'⏳'}</span><div><b>${i+1}. ${escapeHtml(s.title)}</b><small>${escapeHtml(s.status||'pending')}${s.needsApproval?' · Fresh approval required':''}</small>${s.website?`<small>${escapeHtml(s.website)}</small>`:''}</div></div>`).join('')}</div><p class="status">Next step: ${escapeHtml(d.resumeAt?.title||'Task already completed')}</p><p class="tiny">${escapeHtml(d.note||'No action has been executed.')}</p>`;
+  status.textContent='Task details ready. Website action nahi chalaya gaya.';
+  $('#savedTaskDetailClose')?.addEventListener('click',()=>detail.classList.add('hidden'));
+ }catch(e){status.textContent=e.message||'Task recover nahi ho saka.';detail.classList.add('hidden');}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-saved-task-resume]');if(b)showSavedTask(b.dataset.savedTaskResume)});
+document.addEventListener('DOMContentLoaded',()=>{ $('#savedTaskRefresh')?.addEventListener('click',loadSavedTasks);$('#savedTaskStatusFilter')?.addEventListener('change',loadSavedTasks);$('#savedTaskActiveOnly')?.addEventListener('change',loadSavedTasks); });
+
+// Reliable top menu navigation. Delegated events also work if the app re-renders parts of the header.
+(function initTopbarMenu(){
+  function bindMenu(){
+    const menu=document.getElementById('topbarMenu');
+    const toggle=document.querySelector('.topbar-menu-btn');
+    if(!menu||!toggle||toggle.dataset.menuBound==='1')return;
+    toggle.dataset.menuBound='1';
+    const close=()=>{menu.classList.add('hidden');menu.setAttribute('aria-hidden','true');toggle.setAttribute('aria-expanded','false')};
+    const open=()=>{menu.classList.remove('hidden');menu.setAttribute('aria-hidden','false');toggle.setAttribute('aria-expanded','true')};
+    toggle.setAttribute('aria-expanded','false');
+    toggle.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();if(menu.classList.contains('hidden'))open();else close()});
+    menu.addEventListener('click',e=>{
+      const item=e.target.closest('[data-menu-open]');if(!item)return;
+      e.preventDefault();e.stopPropagation();const target=item.dataset.menuOpen;close();
+      if(target==='projects')showPanel('projects');
+      else if(target==='savedTasks'){showPanel('savedTasks');loadSavedTasks();}
+      else if(target==='editorTools')showPanel('editor');
+      else if(target==='settings')openSettings();
+      else if(target==='premium')showPanel('premium');
+      else if(target==='help')showPanel('help');
+    });
+    document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!toggle.contains(e.target))close()});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindMenu,{once:true});else bindMenu();
+})();
+
 function showAuthScreens(which){['authScreen','otpScreen','languageScreen'].forEach(id=>$( '#'+id).classList.toggle('hidden',id!==which))}
 function currentUser(){return authenticatedUser}
 function setUser(u){authenticatedUser=u||null;window.TNSAuth?.setLoggedIn?.(u||null)}
@@ -100,18 +156,18 @@ const SETTINGS_CATEGORIES=[
 
 const SETTINGS_ROWS={
  app:[['Language','Choose your app language','language'],['Dark Mode','Use the dark appearance','toggle:darkMode'],['Data Saver','Reduce media data usage','toggle:dataSaver'],['Default Video Quality','HD / Full HD / 4K','quality'],['Default Aspect Ratio','9:16 / 16:9 / 1:1','ratio']],
- help:[['Help & Support','Get help and answers','support'],['Report a Problem','Report bugs or issues','report'],['Privacy Policy','Read the privacy policy','privacyPolicy'],['Terms & Conditions','Read the terms and conditions','terms'],['About TNS Studio','Version and app information','about']]
+ help:[['Help & Support','Get help and answers','support'],['Report a Problem','Report bugs or issues','report'],['Privacy Policy','Read the privacy policy','privacyPolicy'],['Terms & Conditions','Read the terms and conditions','terms'],['About TNS','Version and app information','about']]
 };
 
 const SETTINGS_SUBPAGES={
- language:{title:'Language',eyebrow:'APP',description:'Choose the language for TNS Studio.',rows:[['English','Use English throughout the app.','choice:language'],['हिन्दी','Use Hindi throughout the app.','choice:languageHindi'],['Español','Use Spanish throughout the app.','choice:languageSpanish'],['Français','Use French throughout the app.','choice:languageFrench']]},
+ language:{title:'Language',eyebrow:'APP',description:'Choose the language for TNS.',rows:[['English','Use English throughout the app.','choice:language'],['हिन्दी','Use Hindi throughout the app.','choice:languageHindi'],['Español','Use Spanish throughout the app.','choice:languageSpanish'],['Français','Use French throughout the app.','choice:languageFrench']]},
  quality:{title:'Default Video Quality',eyebrow:'APP',description:'Choose the default export quality.',rows:[['HD (720p)','Smaller files and faster export.','choice:qualityHD'],['Full HD (1080p)','Recommended quality for most videos.','choice:qualityFHD'],['4K (2160p)','Highest available quality.','choice:quality4K']]},
  ratio:{title:'Default Aspect Ratio',eyebrow:'APP',description:'Choose the default video shape.',rows:[['9:16 (Portrait)','Best for vertical mobile video.','choice:ratio916'],['16:9 (Landscape)','Standard wide video.','choice:ratio169'],['1:1 (Square)','Square social format.','choice:ratio11']]},
- support:{title:'Help & Support',eyebrow:'HELP & ABOUT',description:'Find answers and contact TNS Studio support.',rows:[['Help Center','Find answers to common questions.','info'],['Contact Support','Send a support request.','info']]},
+ support:{title:'Help & Support',eyebrow:'HELP & ABOUT',description:'Find answers and contact TNS support.',rows:[['Help Center','Find answers to common questions.','info'],['Contact Support','Send a support request.','info']]},
  report:{title:'Report a Problem',eyebrow:'HELP & ABOUT',description:'Tell us about a bug or issue.',rows:[['Problem','Describe the problem you experienced.','reportForm']]},
- privacyPolicy:{title:'Privacy Policy',eyebrow:'HELP & ABOUT',description:'TNS Studio privacy information.',rows:[['Privacy','Your privacy information will be shown here.','info']]},
- terms:{title:'Terms & Conditions',eyebrow:'HELP & ABOUT',description:'TNS Studio terms of service.',rows:[['Terms','Your terms and conditions will be shown here.','info']]},
- about:{title:'About TNS Studio',eyebrow:'HELP & ABOUT',description:'App version and product information.',rows:[['TNS Studio','Your creator app for editing, AI creation and social sharing.','info']]}
+ privacyPolicy:{title:'Privacy Policy',eyebrow:'HELP & ABOUT',description:'TNS privacy information.',rows:[['Privacy','Your privacy information will be shown here.','info']]},
+ terms:{title:'Terms & Conditions',eyebrow:'HELP & ABOUT',description:'TNS terms of service.',rows:[['Terms','Your terms and conditions will be shown here.','info']]},
+ about:{title:'About TNS',eyebrow:'HELP & ABOUT',description:'App version and product information.',rows:[['TNS','Your creator app for editing, AI creation and social sharing.','info']]}
 };
 
 const SETTINGS_TOGGLE_DEFAULTS={darkMode:true,dataSaver:false,soundEffects:true};
@@ -232,7 +288,7 @@ async function waitForVideoJob(jobId, options = {}) {
   }
   throw new Error('Video generation timed out.');
 }
-$('#generateBtn')?.addEventListener('click',async()=>{const idea=$('#idea').value.trim();if(!idea)return msg('#jobBox','Describe your video first.','error');if(document.getElementById('videoStep2')?.classList.contains('hidden'))return msg('#jobBox','Press Continue first, then choose your video settings.','error');const ref=$('#videoReference')?.files?.[0];msg('#jobBox',ref?'Uploading reference media…':'Preparing your AI video…');try{let referenceUrl=null;if(ref){const fd=new FormData();fd.append('file',ref,ref.name);const uploaded=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const ud=await uploaded.json();if(!uploaded.ok)throw new Error(ud.error||'Reference upload failed.');referenceUrl=ud.media?.url||null;}msg('#jobBox','Generating video…');const d=await json('/api/video/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:idea,duration:Number($('#duration').value),format:$('#format').value,style:$('#style').value,quality:$('#videoQuality').value,camera:$('#videoCamera')?.value,characterConsistency:$('#characterConsistency')?.value,workflow:$('#videoWorkflow')?.value,negativePrompt:$('#videoNegativePrompt')?.value,referenceUrl,referenceName:ref?.name||null})});const job=d.status==='completed'?d:await waitForVideoJob(d.id||d.job?.id);const url=job.result?.url;if(!url)throw new Error('Video generation completed without a video result.');$('#videoResult').innerHTML=`<video controls playsinline src="${url}"></video><div class="video-result-meta"><span>${job.result?.width||''}×${job.result?.height||''}</span><span>${job.result?.duration||Number($('#duration').value)}s</span><span>${job.result?.mode==='local-fallback'?'Preview mode':'AI provider'}</span></div><a class="download-btn" href="${url}" download="tns-studio-ai-video.mp4">⬇ Download Video</a>`;msg('#jobBox','Video ready.','success');saveProject('AI Video',idea)}catch(err){msg('#jobBox',err.message,'error')}});
+$('#generateBtn')?.addEventListener('click',async()=>{const idea=$('#idea').value.trim();if(!idea)return msg('#jobBox','Describe your video first.','error');if(document.getElementById('videoStep2')?.classList.contains('hidden'))return msg('#jobBox','Press Continue first, then choose your video settings.','error');const ref=$('#videoReference')?.files?.[0];msg('#jobBox',ref?'Uploading reference media…':'Preparing your AI video…');try{let referenceUrl=null;if(ref){const fd=new FormData();fd.append('file',ref,ref.name);const uploaded=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const ud=await uploaded.json();if(!uploaded.ok)throw new Error(ud.error||'Reference upload failed.');referenceUrl=ud.media?.url||null;}msg('#jobBox','Generating video…');const d=await json('/api/video/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:idea,duration:Number($('#duration').value),format:$('#format').value,style:$('#style').value,quality:$('#videoQuality').value,camera:$('#videoCamera')?.value,characterConsistency:$('#characterConsistency')?.value,workflow:$('#videoWorkflow')?.value,negativePrompt:$('#videoNegativePrompt')?.value,referenceUrl,referenceName:ref?.name||null})});const job=d.status==='completed'?d:await waitForVideoJob(d.id||d.job?.id);const url=job.result?.url;if(!url)throw new Error('Video generation completed without a video result.');$('#videoResult').innerHTML=`<video controls playsinline src="${url}"></video><div class="video-result-meta"><span>${job.result?.width||''}×${job.result?.height||''}</span><span>${job.result?.duration||Number($('#duration').value)}s</span><span>${job.result?.mode==='local-fallback'?'Preview mode':'AI provider'}</span></div><a class="download-btn" href="${url}" download="tns-ai-video.mp4">⬇ Download Video</a>`;msg('#jobBox','Video ready.','success');saveProject('AI Video',idea)}catch(err){msg('#jobBox',err.message,'error')}});
 let editorVoiceRecorder=null; let editorVoiceChunks=[]; let editorVoiceStream=null;
 $('#recordEditorVoice')?.addEventListener('click',async()=>{
   const btn=$('#recordEditorVoice');
@@ -257,11 +313,11 @@ $('#preview')?.addEventListener('timeupdate',()=>{const v=$('#preview');const s=
 $('#exportBtn')?.addEventListener('click',async()=>{
   const c=editorApi();
   if(!currentMedia && !c?.state.timeline.length)return msg('#editStatus','Import a video first.','error');
-  msg('#editStatus','Exporting your TNS Studio project…');
+  msg('#editStatus','Exporting your TNS project…');
   try{
     const q=Number($('#exportQuality').value||1080); const ratio=$('#exportRatio')?.value||'9:16';
     const d=c?.state.timeline.length?await c.exportProject({quality:q,ratio,fps:30,videoBitrate:q>=2160?'20M':q>=1440?'12M':'8M',audioBitrate:'192k'}):await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputPath:currentMedia.url,trimStart:Number($('#trimStart').value||0),trimDuration:Number($('#trimDuration').value||0),brightness:Number($('#brightness').value||0),contrast:Number($('#contrast').value||1),filter:$('#filter').value,rotate:$('#rotate').value,speed:Number($('#speed').value||1),volume:Number($('#volume').value||1),saturation:Number($('#saturation')?.value||1),sharpness:Number($('#sharpness')?.value||0),fadeIn:Number($('#fadeIn')?.value||0),fadeOut:Number($('#fadeOut')?.value||0),quality:q,ratio})});
-    const a=document.createElement('a');a.href=d.result.url;a.download=d.result.fileName||'tns-studio-export.mp4';a.className='download-btn';a.textContent='⬇ Download exported MP4';$('#editStatus').replaceChildren(document.createTextNode('Export complete — '),a);saveProject('Edited Video',currentMedia?.originalName||'TNS Studio Edit');
+    const a=document.createElement('a');a.href=d.result.url;a.download=d.result.fileName||'tns-export.mp4';a.className='download-btn';a.textContent='⬇ Download exported MP4';$('#editStatus').replaceChildren(document.createTextNode('Export complete — '),a);saveProject('Edited Video',currentMedia?.originalName||'TNS Edit');
   }catch(err){msg('#editStatus',err.message,'error')}
 });
 $('#resetVideo')?.addEventListener('click',()=>{if($('#preview').src?.startsWith('blob:'))URL.revokeObjectURL($('#preview').src);$('#preview').removeAttribute('src');$('#preview').load();$('#videoFile').value='';currentMedia=null;window.currentMedia=null;editorApi()?.reset();renderEditorTimeline();msg('#editStatus','Editor reset.')});
@@ -327,7 +383,7 @@ $('#openExportFromEditor')?.addEventListener('click',()=>{$('#exportQuality').va
 // Add explicit navigation cards for the extra locked reference screens without changing the dashboard's 8-card layout.
 const extraScreenMap={premiumDetails:'Premium Details',settingsApp:'App Settings',languageInside:'Language Selection',editorTools:'Edit Video Tools',exportVideo:'Export Video',appIcon:'Mobile App Icon',finalEditView:'Final Editing View'};
 function addExtraNavigation(){
-  const help=$('#help .card');if(help&&!help.querySelector('.reference-screen-links')){help.insertAdjacentHTML('beforeend','<div class="reference-screen-links"><p class="eyebrow">TNS STUDIO SCREEN SYSTEM</p><h3>All module screens</h3><div class="screen-link-grid">'+Object.entries(extraScreenMap).map(([id,label])=>`<button data-open-screen="${id}">${escapeHtml(label)}</button>`).join('')+'</div></div>');help.querySelectorAll('[data-open-screen]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.openScreen)));}}
+  const help=$('#help .card');if(help&&!help.querySelector('.reference-screen-links')){help.insertAdjacentHTML('beforeend','<div class="reference-screen-links"><p class="eyebrow">TNS SCREEN SYSTEM</p><h3>All module screens</h3><div class="screen-link-grid">'+Object.entries(extraScreenMap).map(([id,label])=>`<button data-open-screen="${id}">${escapeHtml(label)}</button>`).join('')+'</div></div>');help.querySelectorAll('[data-open-screen]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.openScreen)));}}
 addExtraNavigation();
 
 /* ===== MASTER 24-SCREEN + FINAL FEATURE COMPLETION ===== */
@@ -335,7 +391,7 @@ addExtraNavigation();
   const screenRegistry = [
     ["1","splashScreen","Splash Screen"],["2","authScreen","Login Screen"],["3","signupModal","Signup Screen"],
     ["4","otpScreen","OTP Verification"],["5","languageScreen","Language Selection"],["6","dashboard","Main Dashboard"],
-    ["7","settings","TNS Studio Settings"],["8","editor","Edit Video"],["9","generate","AI Video"],["12","projects","Projects"],["16","help","Help & Support"],["17","premium","Premium"],
+    ["7","settings","TNS Settings"],["8","editor","Edit Video"],["9","generate","AI Video"],["12","projects","Projects"],["16","help","Help & Support"],["17","premium","Premium"],
     ["18","settingsApp","App Settings"],["19","languageInside","Language Selection (Inside)"],
     ["21","editorTools","Edit Video (Tools)"],["22","exportVideo","Export Video"],["23","appIcon","Mobile App Icon"],["24","finalEditView","Video Editing Final View"]
   ];
@@ -557,7 +613,7 @@ addExtraNavigation();
   function openEditorToolWorkspace(tool){
     if(!currentMedia)return msg('#editStatus','Import a video first.','error');
     let fields=''; const t=tool.toLowerCase();
-    if(['text','captions','subtitles','karaoke captions','text animation','fonts','templates','shadow','tts'].includes(t)) fields+=`<div style="grid-column:1/-1"><label>Text / Caption</label><textarea id="tool_text">TNS Studio</textarea></div><div><label>Start (sec)</label><input id="tool_textStart" type="number" min="0" step="0.1" value="0"></div><div><label>Duration (sec)</label><input id="tool_textDuration" type="number" min="0.1" step="0.1" value="3"></div><div><label>X</label><input id="tool_textX" type="number" min="0" step="1" value="40"></div><div><label>Y</label><input id="tool_textY" type="number" min="0" step="1" value="40"></div><div><label>Font Size</label><input id="tool_textFontSize" type="number" min="8" max="240" value="56"></div><div><label>Colour</label><input id="tool_textColor" type="text" value="white"></div>`;
+    if(['text','captions','subtitles','karaoke captions','text animation','fonts','templates','shadow','tts'].includes(t)) fields+=`<div style="grid-column:1/-1"><label>Text / Caption</label><textarea id="tool_text">TNS</textarea></div><div><label>Start (sec)</label><input id="tool_textStart" type="number" min="0" step="0.1" value="0"></div><div><label>Duration (sec)</label><input id="tool_textDuration" type="number" min="0.1" step="0.1" value="3"></div><div><label>X</label><input id="tool_textX" type="number" min="0" step="1" value="40"></div><div><label>Y</label><input id="tool_textY" type="number" min="0" step="1" value="40"></div><div><label>Font Size</label><input id="tool_textFontSize" type="number" min="8" max="240" value="56"></div><div><label>Colour</label><input id="tool_textColor" type="text" value="white"></div>`;
     if(['crop'].includes(t)) fields+=toolField('Width','width','number',720,'min="2"')+toolField('Height','height','number',1280,'min="2"')+toolField('X','x','number',0)+toolField('Y','y','number',0);
     if(['resize','ai enhance','ai upscale','auto reframe'].includes(t)) fields+=toolField('Width','width','number',1080,'min="2"')+toolField('Height','height','number',1920,'min="2"');
     if(['split'].includes(t)) fields+=toolField('Split at seconds','splitAt','number',1,'min="0.1" step="0.1"');
@@ -641,7 +697,7 @@ addExtraNavigation();
   });
 })();
 
-/* ===== TNS STUDIO EDITOR v12 — contextual tool system ===== */
+/* ===== TNS EDITOR v12 — contextual tool system ===== */
 (function initProfessionalEditor(){
   const categories = [
     {id:'edit',name:'Edit',icon:'✂️',tools:[['Trim','✂️'],['Cut','🔪'],['Split','➗'],['Merge','🧩'],['Ripple Delete','↔️'],['Duplicate Clip','⧉'],['Freeze Frame','❄️'],['Reverse','↩️'],['Speed','⏱️'],['Speed Curves','〰️'],['Time Remap','⌛'],['Scene Detection','🎬']]},
@@ -673,12 +729,12 @@ addExtraNavigation();
     else if(t==='trim'||t==='cut') controls=field('Start','start','number',0,'min="0" step="0.1"')+field('Duration','duration','number',selected()?.duration||3,'min="0.1" step="0.1"')+field('End','end','number',(Number(selected()?.start||0)+Number(selected()?.duration||3)).toFixed(1),'min="0" step="0.1"');
     else if(t==='split') controls=`<div class="full"><b>Playhead: ${fmtTime(editor()?.state.currentTime||0)}</b><p class="muted">Move the playhead above, then split the selected clip at that exact position.</p></div>`;
     else if(t==='speed'||t==='speed curves'||t==='time remap') controls=selectField('Mode','mode',['Normal','Curve','Time Remap'],'Normal')+field('Speed','speed','number',1,'min="0.1" max="10" step="0.05"')+field('Curve strength','curve','range',50,'min="0" max="100"');
-    else if(t==='text'||t==='captions'||t==='subtitles'||t==='karaoke captions'||t==='text animation'||t==='fonts'||t==='templates') controls=`<label class="full">Text<textarea id="pw_text" rows="3">TNS Studio</textarea></label>`+field('Start','textStart','number',0,'min="0" step="0.1"')+field('Duration','textDuration','number',3,'min="0.1" step="0.1"')+field('Size','fontSize','number',56,'min="8" max="240"')+field('X','textX','number',40,'min="0"')+field('Y','textY','number',40,'min="0"')+field('Opacity','textOpacity','range',100,'min="0" max="100"')+selectField('Font','font',['Inter','Sans','Serif','Mono','Display'],'Inter')+selectField('Alignment','align',['Left','Center','Right'],'Center')+`<label>Color<input id="pw_color" type="color" value="#ffffff"></label>`;
+    else if(t==='text'||t==='captions'||t==='subtitles'||t==='karaoke captions'||t==='text animation'||t==='fonts'||t==='templates') controls=`<label class="full">Text<textarea id="pw_text" rows="3">TNS</textarea></label>`+field('Start','textStart','number',0,'min="0" step="0.1"')+field('Duration','textDuration','number',3,'min="0.1" step="0.1"')+field('Size','fontSize','number',56,'min="8" max="240"')+field('X','textX','number',40,'min="0"')+field('Y','textY','number',40,'min="0"')+field('Opacity','textOpacity','range',100,'min="0" max="100"')+selectField('Font','font',['Inter','Sans','Serif','Mono','Display'],'Inter')+selectField('Alignment','align',['Left','Center','Right'],'Center')+`<label>Color<input id="pw_color" type="color" value="#ffffff"></label>`;
     else if(t==='effects'||t==='filters'||t==='transitions'||t==='stickers'||t==='shapes'||t==='lens'||t==='glow'||t==='glitch'||t==='film grain'||t==='light leak'||t==='vignette') {library=`<div class="full workspace-library">${['Original','Cinematic','Soft','Vivid','Mono','Fade','Zoom','Blur'].map(x=>`<button type="button" data-workspace-preset="${x}">${x}</button>`).join('')}</div>`+field('Intensity','intensity','range',70,'min="0" max="100"')+field('Duration','effectDuration','number',1,'min="0.1" step="0.1"');controls=library}
     else if(['brightness','contrast','saturation','sharpness','temperature','tint','exposure','highlights','shadows','hsl','curves','colour match','lut'].includes(t)) controls=field('Amount','amount','range',50,'min="0" max="100"')+field('Red / Hue','red','range',50,'min="0" max="100"')+field('Green / Saturation','green','range',50,'min="0" max="100"')+field('Blue / Lightness','blue','range',50,'min="0" max="100"')+(t==='curves'?'<div class="full curve-editor"><div class="curve-line"></div></div>':'')+(t==='lut'?selectField('LUT','lutPreset',['None','Cinematic','Warm','Cool','Film'],'None'):'');
     else if(t==='keyframes'||t==='pan & zoom'||t==='motion tracking') controls=selectField('Property','property',['Position','Scale','Rotation','Opacity'],'Position')+field('Value','keyValue','number',100,'min="0" step="1"')+`<div class="full"><b>Keyframe lane</b><div class="keyframe-lane"><span class="keyframe-point" style="left:12%"></span><span class="keyframe-point" style="left:52%"></span><span class="keyframe-point" style="left:82%"></span></div></div>`;
     else if(t==='music'||t==='sfx'||t==='extract audio'||t==='voice over'||t==='voice recorder') controls=`<div class="full"><button type="button" id="pwChooseAudio" class="secondary">Choose Audio File</button><input id="pwAudioFile" type="file" accept="audio/*" hidden></div>`+field('Start','audioStart','number',0,'min="0" step="0.1"')+field('Volume','audioVolume','range',100,'min="0" max="100"')+field('Fade In','fadeIn','number',0,'min="0" step="0.1"')+field('Fade Out','fadeOut','number',0,'min="0" step="0.1"');
-    else if(t==='tts'||t==='ai voice') controls=`<label class="full">Script<textarea id="pw_ttsText" rows="4">Hello from TNS Studio.</textarea></label>`+selectField('Voice','voice',['Default','Male','Female','Narrator'],'Default')+selectField('Speed','voiceSpeed',['0.75x','1x','1.25x','1.5x'],'1x');
+    else if(t==='tts'||t==='ai voice') controls=`<label class="full">Script<textarea id="pw_ttsText" rows="4">Hello from TNS.</textarea></label>`+selectField('Voice','voice',['Default','Male','Female','Narrator'],'Default')+selectField('Speed','voiceSpeed',['0.75x','1x','1.25x','1.5x'],'1x');
     else if(t==='chroma key'||t==='background removal'||t==='background replace') controls=`<label>Key color<input id="pw_keyColor" type="color" value="#00ff00"></label>`+field('Similarity','similarity','range',20,'min="1" max="90"')+field('Blend','blend','range',5,'min="0" max="100"')+field('Edge softness','edge','range',20,'min="0" max="100"');
     else if(t==='masks') controls=selectField('Mask','mask',['Rectangle','Circle','Linear','Mirror'],'Rectangle')+field('Feather','feather','range',20,'min="0" max="100"')+field('Size','maskSize','range',70,'min="1" max="100"')+selectField('Invert','invert',['Off','On'],'Off');
     else if(t==='stabilization') controls=selectField('Strength','strength',['Recommended','Minimum cut','Most stable'],'Recommended');
@@ -715,7 +771,7 @@ addExtraNavigation();
     const c=editor(),s=selected(),t=tool.toLowerCase();
     if(!c)return;
     if(['text','captions','subtitles','karaoke captions','text animation','fonts','templates'].includes(t)){
-      const text=String(val(box,'text','TNS Studio')).trim();if(!text)return setStatus('Enter text first.','error');
+      const text=String(val(box,'text','TNS')).trim();if(!text)return setStatus('Enter text first.','error');
       c.addItem({type:'text',name:`${tool} Layer`,text,start:Number(val(box,'textStart',0)),duration:Math.max(.1,Number(val(box,'textDuration',3))),x:Number(val(box,'textX',40)),y:Number(val(box,'textY',40)),fontSize:Number(val(box,'fontSize',56)),color:val(box,'color','#ffffff'),opacity:Number(val(box,'textOpacity',100))/100,font:val(box,'font','Inter'),align:val(box,'align','Center')});renderEditorTimeline();setStatus(`${tool} layer added to the timeline.`,'success');return;
     }
     if(!s && !['project versions','project backup','export presets'].includes(t))return setStatus('Select a clip on the timeline first.','error');
@@ -740,7 +796,7 @@ addExtraNavigation();
     const body={inputPath:window.currentMedia?.url||s?.src,tool};
     ['strength','similarity','blend','bpm','x','y','width','height','speed','amount','red','green','blue','minSilence','threshold'].forEach(k=>{if(box.querySelector('#pw_'+k))body[k]=Number(val(box,k,0))});
     if(t==='chroma key'||t==='background removal'||t==='background replace')body.color=val(box,'keyColor','#00ff00');
-    if(t==='tts'||t==='ai voice'){body.text=val(box,'ttsText','Hello from TNS Studio.');body.voice=val(box,'voice','Default')}
+    if(t==='tts'||t==='ai voice'){body.text=val(box,'ttsText','Hello from TNS.');body.voice=val(box,'voice','Default')}
     if(['effects','filters','transitions','vignette','glitch','glow','film grain','lens','light leak'].includes(t)){body.filter=val(box,'preset','Original');body.transition=val(box,'preset','Fade');body.duration=Number(val(box,'effectDuration',1))}
     if(t==='ai captions')body.language=val(box,'captionLang','Auto');
     if(!body.inputPath)return setStatus('Import media first.','error');
@@ -749,12 +805,12 @@ addExtraNavigation();
       const result=d.result||d.results?.[0];if(result){window.currentMedia={...(window.currentMedia||{}),...result};const v=document.getElementById('preview');if(v){v.src=result.url;v.load()}if(s)c.updateItem(s.id,{src:result.url,name:result.fileName});renderEditorTimeline();setStatus(`${tool} completed and the result is now in the editor.`,'success')}else setStatus(`${tool} completed.`,'success');
     }).catch(e=>{if(status)status.textContent=e.message;setStatus(e.message,'error')});
   }
-  function downloadProjectBackup(){const data={format:'tnsproject',version:1,createdAt:new Date().toISOString(),editor:editor()?.getState(),settings:JSON.parse(localStorage.getItem('tnsStudioModuleSettings_edit-video')||'{}')};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tns-studio-project-${Date.now()}.tnsproject.json`;a.click();URL.revokeObjectURL(a.href);setStatus('Project backup created.','success')}
+  function downloadProjectBackup(){const data={format:'tnsproject',version:1,createdAt:new Date().toISOString(),editor:editor()?.getState(),settings:JSON.parse(localStorage.getItem('tnsStudioModuleSettings_edit-video')||'{}')};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tns-project-${Date.now()}.tnsproject.json`;a.click();URL.revokeObjectURL(a.href);setStatus('Project backup created.','success')}
   function openExportModal(preset){
     if(document.getElementById('tnsExportModal'))document.getElementById('tnsExportModal').remove();
-    const c=editor(),dur=c?.getTimelineDuration()||0;document.body.insertAdjacentHTML('beforeend',`<div id="tnsExportModal" class="modal"><div class="modal-card glass"><button class="modal-close" id="closeTnsExport">×</button><p class="eyebrow">EXPORT VIDEO</p><h2>Export your TNS Studio project</h2><div class="export-summary"><b>Timeline</b><span>${c?.state.timeline.length||0} layers • ${fmtTime(dur)}</span></div><div class="export-modal-grid">${selectField('Resolution','exQuality',['720','1080','1440','2160'],preset?.includes('4K')?'2160':'1080')}${selectField('Aspect Ratio','exRatio',['9:16','16:9','1:1','4:5'],preset?.includes('16:9')?'16:9':'9:16')}${selectField('Frame Rate','exFps',['24','30','60'],'30')}${selectField('Format','exFormat',['MP4','MOV'],'MP4')}<label>Bitrate<input id="exBitrate" value="8M"></label><label>Audio<input id="exAudio" value="AAC 192k"></label></div><div class="setting-actions"><button id="runTnsExport" class="primary">Export / Download</button><button id="cancelTnsExport" class="secondary">Cancel</button></div><p id="tnsExportStatus" class="status"></p></div></div>`);
+    const c=editor(),dur=c?.getTimelineDuration()||0;document.body.insertAdjacentHTML('beforeend',`<div id="tnsExportModal" class="modal"><div class="modal-card glass"><button class="modal-close" id="closeTnsExport">×</button><p class="eyebrow">EXPORT VIDEO</p><h2>Export your TNS project</h2><div class="export-summary"><b>Timeline</b><span>${c?.state.timeline.length||0} layers • ${fmtTime(dur)}</span></div><div class="export-modal-grid">${selectField('Resolution','exQuality',['720','1080','1440','2160'],preset?.includes('4K')?'2160':'1080')}${selectField('Aspect Ratio','exRatio',['9:16','16:9','1:1','4:5'],preset?.includes('16:9')?'16:9':'9:16')}${selectField('Frame Rate','exFps',['24','30','60'],'30')}${selectField('Format','exFormat',['MP4','MOV'],'MP4')}<label>Bitrate<input id="exBitrate" value="8M"></label><label>Audio<input id="exAudio" value="AAC 192k"></label></div><div class="setting-actions"><button id="runTnsExport" class="primary">Export / Download</button><button id="cancelTnsExport" class="secondary">Cancel</button></div><p id="tnsExportStatus" class="status"></p></div></div>`);
     const close=()=>document.getElementById('tnsExportModal')?.remove();document.getElementById('closeTnsExport').onclick=close;document.getElementById('cancelTnsExport').onclick=close;
-    document.getElementById('runTnsExport').onclick=async()=>{const st=document.getElementById('tnsExportStatus');st.textContent='Rendering…';try{const d=await editor().exportProject({quality:Number(document.getElementById('exQuality').value),ratio:document.getElementById('exRatio').value,fps:Number(document.getElementById('exFps').value),videoBitrate:document.getElementById('exBitrate').value,audioBitrate:'192k'});if(d.result?.url){const a=document.createElement('a');a.href=d.result.url;a.download=d.result.fileName||'tns-studio-export.mp4';a.target='_blank';a.click();st.textContent='Export complete.';setStatus('Export completed successfully.','success')}else throw Error('Export did not return a file.')}catch(e){st.textContent=e.message;setStatus(e.message,'error')}};
+    document.getElementById('runTnsExport').onclick=async()=>{const st=document.getElementById('tnsExportStatus');st.textContent='Rendering…';try{const d=await editor().exportProject({quality:Number(document.getElementById('exQuality').value),ratio:document.getElementById('exRatio').value,fps:Number(document.getElementById('exFps').value),videoBitrate:document.getElementById('exBitrate').value,audioBitrate:'192k'});if(d.result?.url){const a=document.createElement('a');a.href=d.result.url;a.download=d.result.fileName||'tns-export.mp4';a.target='_blank';a.click();st.textContent='Export complete.';setStatus('Export completed successfully.','success')}else throw Error('Export did not return a file.')}catch(e){st.textContent=e.message;setStatus(e.message,'error')}};
   }
   function init(){
     if(!document.getElementById('editorCategoryTabs'))return;
@@ -806,7 +862,44 @@ addExtraNavigation();
   const cameraInput = $id('homeChatCamera');
   const attachMenu = $id('homeChatAttachMenu');
   const preview = $id('homeChatFilePreview');
+  const newChatButton = $id('homeChatNew');
+  const historySelect = $id('homeChatHistorySelect');
+  const deleteChatButton = $id('homeChatDelete');
   if (!form || !input || !messages) return;
+  let currentConversationId = null;
+  let historySaveTimer = null;
+  // Protect the visible chat from late network responses and stale history saves.
+  let conversationViewGeneration = 0;
+  const conversationMessages = () => Array.from(messages.querySelectorAll('.home-chat-message'))
+    .filter(node => !node.classList.contains('error') && !node.classList.contains('pending'))
+    .map(node => { const clone=node.cloneNode(true); clone.querySelectorAll('button').forEach(button=>button.remove()); return {role:node.classList.contains('user')?'user':'assistant',content:String(clone.textContent||'').trim().slice(0,8000)}; })
+    .filter(turn=>turn.content && turn.content!=='Soch raha hoon…').slice(-100);
+  const refreshConversationList = async (selectId='') => {
+    if(!historySelect)return true;
+    try { const data=await json('/api/tns-ai/conversations'); const items=Array.isArray(data.conversations)?data.conversations:[];
+      historySelect.replaceChildren(); const placeholder=document.createElement('option'); placeholder.value=''; placeholder.textContent='Saved chats'; historySelect.appendChild(placeholder);
+      items.forEach(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=(item.title||'Nayi chat').slice(0,80);historySelect.appendChild(option);});
+      historySelect.value=selectId||''; if(deleteChatButton)deleteChatButton.disabled=!historySelect.value;
+      return true;
+    } catch { return false; }
+  };
+  const saveConversation = async (expectedGeneration=conversationViewGeneration) => {
+    const turns=conversationMessages(); if(!turns.length || expectedGeneration!==conversationViewGeneration)return;
+    const targetId=currentConversationId;
+    try { const data=await json('/api/tns-ai/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,messages:turns})});
+      if(expectedGeneration!==conversationViewGeneration || currentConversationId!==targetId)return;
+      currentConversationId=data.conversation.id;
+      const refreshed=await refreshConversationList(currentConversationId);
+      if(!refreshed)setStatus('Chat save ho gayi, lekin saved-chat list refresh nahi hui. Connection check karke list dobara kholein.');
+    } catch { if(expectedGeneration===conversationViewGeneration)setStatus('Chat chal rahi hai, lekin history save nahi ho saki. Dobara login karke ya connection check karke koshish karein.'); }
+  };
+  const scheduleConversationSave = () => { clearTimeout(historySaveTimer); const generation=conversationViewGeneration; historySaveTimer=setTimeout(()=>saveConversation(generation),250); };
+  const startNewConversation = () => { conversationViewGeneration++; clearTimeout(historySaveTimer); currentConversationId=null; messages.replaceChildren(); const welcome=document.createElement('div'); welcome.className='home-welcome-card'; welcome.textContent='Namaste! Main TNS hoon. Aap kya karna chahenge?'; messages.appendChild(welcome); input.value='';fitInput();updateActionButton();if(historySelect)historySelect.value='';if(deleteChatButton)deleteChatButton.disabled=true;setStatus('Nayi chat shuru ho gayi.'); };
+  const openConversation = async id => { if(!id)return; const generation=++conversationViewGeneration; clearTimeout(historySaveTimer); try { const data=await json('/api/tns-ai/conversations/'+encodeURIComponent(id)); if(generation!==conversationViewGeneration)return; const c=data.conversation; if(!c)throw new Error('Conversation not found.'); currentConversationId=c.id; messages.replaceChildren(); (c.messages||[]).forEach(turn=>addBubble(turn.content,turn.role)); const hasAttachmentMarker=(c.messages||[]).some(turn=>/📎/.test(turn.content||'')); const refreshed=await refreshConversationList(c.id); if(generation!==conversationViewGeneration)return; if(deleteChatButton)deleteChatButton.disabled=false; setStatus(hasAttachmentMarker?'Purani chat khul gayi. Note: attached file khud save nahi hoti; sirf uska naam/message history mein hai.':(refreshed?'Purani chat khul gayi.':'Purani chat khul gayi, lekin saved-chat list refresh nahi hui.')); if(hasAttachmentMarker&&!refreshed)setStatus('Purani chat khul gayi; attachment dobara chahiye to file phir se chunein. Saved-chat list refresh nahi hui.'); } catch(error) { if(generation===conversationViewGeneration)setStatus(error.message||'Chat history nahi khul saki.'); } };
+  newChatButton?.addEventListener('click',startNewConversation);
+  historySelect?.addEventListener('change',()=>{if(historySelect.value)openConversation(historySelect.value);else if(deleteChatButton)deleteChatButton.disabled=true;});
+  deleteChatButton?.addEventListener('click',async()=>{const id=currentConversationId||historySelect?.value;if(!id)return;if(!window.confirm('Kya aap is chat ko delete karna chahte hain?'))return;try{await json('/api/tns-ai/conversations/'+encodeURIComponent(id),{method:'DELETE'});if(id===currentConversationId)startNewConversation();await refreshConversationList();setStatus('Chat delete ho gayi.');}catch(error){setStatus(error.message||'Chat delete nahi ho saki.');}});
+  refreshConversationList().then(ok=>{if(!ok)setStatus('Saved chat list abhi load nahi hui. Connection check karke dobara koshish karein.');});
   let researchEnabled = false;
   let attachedFile = null;
   let isSending = false;
@@ -847,6 +940,9 @@ addExtraNavigation();
     form.querySelectorAll('button').forEach(button=>{ button.disabled=busy; });
     if(input) input.disabled=busy;
     [fileInput,photoInput,cameraInput].forEach(el=>{if(el)el.disabled=busy;});
+    if(newChatButton)newChatButton.disabled=busy;
+    if(historySelect)historySelect.disabled=busy;
+    if(deleteChatButton)deleteChatButton.disabled=busy||!historySelect?.value;
     const attachButton=$id('homeChatAttach');
     if(attachButton)attachButton.disabled=busy;
     if(attachMenu)attachMenu.classList.add('hidden');
@@ -881,6 +977,77 @@ addExtraNavigation();
     }
   });
   const actionButton = $id('homeChatVoice');
+  const dictationButton = $id('homeChatDictation');
+  const recordingBar = $id('homeChatRecordingBar');
+  let dictationOriginalText = '';
+  let dictationTranscript = '';
+  // Inner-chat-microphone only: use the real input level to animate the recording waveform.
+  let dictationMeterStream = null;
+  let dictationMeterContext = null;
+  let dictationMeterFrame = 0;
+  const stopDictationMeter = () => {
+    if (dictationMeterFrame) cancelAnimationFrame(dictationMeterFrame);
+    dictationMeterFrame = 0;
+    if (dictationMeterStream) dictationMeterStream.getTracks().forEach(track => track.stop());
+    dictationMeterStream = null;
+    if (dictationMeterContext) { try { dictationMeterContext.close(); } catch {} }
+    dictationMeterContext = null;
+    recordingBar?.querySelectorAll('.recording-wave i').forEach(bar => { bar.style.removeProperty('--voice-level'); bar.style.opacity = ''; });
+  };
+  const startDictationMeter = async () => {
+    stopDictationMeter();
+    if (!navigator.mediaDevices?.getUserMedia || !window.AudioContext) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!dictationButton?.classList.contains('is-listening')) { stream.getTracks().forEach(track => track.stop()); return; }
+      dictationMeterStream = stream;
+      dictationMeterContext = new AudioContext();
+      const source = dictationMeterContext.createMediaStreamSource(stream);
+      const analyser = dictationMeterContext.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+      const samples = new Uint8Array(analyser.fftSize);
+      const bars = Array.from(recordingBar?.querySelectorAll('.recording-wave i') || []);
+      const draw = () => {
+        if (!dictationMeterContext || !dictationButton?.classList.contains('is-listening')) return;
+        analyser.getByteTimeDomainData(samples);
+        let sum = 0;
+        for (const sample of samples) { const normalized = (sample - 128) / 128; sum += normalized * normalized; }
+        const level = Math.min(1, Math.sqrt(sum / samples.length) * 5.5);
+        bars.forEach((bar, index) => {
+          const shape = 0.18 + Math.abs(Math.sin(index * 0.72 + performance.now() / 170)) * 0.25;
+          const height = 4 + level * 29 * shape * 2.4;
+          bar.style.setProperty('--voice-level', String(Math.min(1, height / 32)));
+          bar.style.opacity = String(0.55 + level * 0.45);
+        });
+        dictationMeterFrame = requestAnimationFrame(draw);
+      };
+      draw();
+    } catch {
+      // SpeechRecognition can still work if browser doesn't allow a second meter stream.
+      stopDictationMeter();
+    }
+  };
+  const showRecordingBar = (show) => { if(recordingBar) recordingBar.classList.toggle('hidden', !show); if(form) form.classList.toggle('is-dictating', show); };
+  const setMicListeningUI = (listening) => {
+    // Step 10: only the microphone inside the chat box owns this recording UI.
+    const button = dictationButton;
+    if (!button) return;
+    button.classList.toggle('is-listening', listening);
+    button.setAttribute('aria-pressed', String(listening));
+    button.dataset.listening = String(listening);
+    showRecordingBar(listening);
+    if (listening) startDictationMeter(); else stopDictationMeter();
+  };
+  const stopSpeechInput = () => {
+    const active = voiceRecognition;
+    if (!active) return false;
+    setMicListeningUI(false);
+    try { active.stop(); } catch {}
+    voiceRecognition = null;
+    setStatus('Microphone band ho gaya. Dobara bolne ke liye mic tap karein.');
+    return true;
+  };
   const updateActionButton = () => {
     const hasText = Boolean(input.value.trim());
     if (!actionButton) return;
@@ -896,21 +1063,21 @@ addExtraNavigation();
     if(voiceRecognition){try{voiceRecognition.stop()}catch{} voiceRecognition=null;}
     const recognition=new SpeechRecognition(); voiceRecognition=recognition;
     recognition.lang=selectedVoiceLanguage();
-    recognition.interimResults=false; recognition.maxAlternatives=1;
+    recognition.interimResults=true; recognition.maxAlternatives=1;
+    if(!conversationMode){dictationOriginalText=input.value;dictationTranscript='';}
     let receivedSpeech=false;
     let finalStatusSet=false;
-    actionButton?.classList.add('is-listening');
-    setStatus(conversationMode?'Suniye… TNS se bolkar baat karne ke liye apna sawal boliye.':'Suniye… apna message boliye.');
-    recognition.onstart=()=>{if(voiceRecognition!==recognition)return;setStatus(conversationMode?'Suniye… ab apna sawal boliye.':'Suniye… ab apna message boliye.');};
+    setMicListeningUI(true);
+    setStatus(conversationMode?'🔴 Microphone CHALU hai — ab boliye. Band karne ke liye mic dobara tap karein.':'🔴 Microphone CHALU hai — apna message boliye. Band karne ke liye mic dobara tap karein.');
+    recognition.onstart=()=>{if(voiceRecognition!==recognition)return;setMicListeningUI(true);setStatus(conversationMode?'🔴 Microphone CHALU hai — ab apna sawal boliye.':'🔴 Microphone CHALU hai — ab apna message boliye.');};
     recognition.onresult=event=>{
       if(voiceRecognition!==recognition)return;
-      const spoken=event.results?.[0]?.[0]?.transcript||'';
+      let spoken='';
+      for(let i=event.resultIndex||0;i<(event.results?.length||0);i++){const result=event.results[i];if(result.isFinal)spoken+=result?.[0]?.transcript||'';}
       if(!spoken.trim())return;
       receivedSpeech=true; finalStatusSet=true;
-      input.value=(input.value ? input.value+' ' : '')+spoken.trim();
-      fitInput(); updateActionButton();
-      if(conversationMode){ speakNextReply=true; setStatus('Aapki baat samajh raha hoon… TNS jawab awaaz mein dega.'); form.requestSubmit(); }
-      else { input.focus(); setStatus('Aapki baat text mein aa gayi. Yeh abhi send nahi hui—arrow dabakar bhejein.'); }
+      if(conversationMode){input.value=(input.value ? input.value+' ' : '')+spoken.trim();fitInput();updateActionButton();speakNextReply=true;setStatus('Aapki baat samajh raha hoon… TNS jawab awaaz mein dega.');form.requestSubmit();}
+      else {dictationTranscript=(dictationTranscript+' '+spoken.trim()).trim();input.value=(dictationOriginalText ? dictationOriginalText+' ' : '')+dictationTranscript;fitInput();updateActionButton();setStatus('Aap bol rahe hain… recording rokne ya bhejne ke liye neeche buttons use karein.');}
     };
     recognition.onnomatch=()=>{if(voiceRecognition!==recognition)return;finalStatusSet=true;setStatus('Awaaz samajh nahi aayi. Dobara boliye ya type karein.');};
     recognition.onerror=event=>{
@@ -924,11 +1091,12 @@ addExtraNavigation();
     };
     recognition.onend=()=>{
       if(voiceRecognition!==recognition)return;
-      actionButton?.classList.remove('is-listening');
+      setMicListeningUI(false);
       voiceRecognition=null;
+      if(dictationTranscript.trim()) showRecordingBar(true);
       if(!receivedSpeech&&!finalStatusSet)setStatus('Koi awaaz detect nahi hui. Dobara boliye ya type karein.');
     };
-    try{recognition.start()}catch{actionButton?.classList.remove('is-listening');if(voiceRecognition===recognition)voiceRecognition=null;setStatus('Voice input shuru nahi ho saka. Browser permission aur microphone check karein.');}
+    try{recognition.start()}catch{setMicListeningUI(false);if(voiceRecognition===recognition)voiceRecognition=null;setStatus('Voice input shuru nahi ho saka. Browser permission aur microphone check karein.');}
   };
   const positionComposerAboveKeyboard = () => {
     if (!document.body.classList.contains('tns-chat-typing')) return;
@@ -1003,7 +1171,7 @@ addExtraNavigation();
     event.currentTarget.classList.toggle('active',researchEnabled);
     event.currentTarget.setAttribute('aria-pressed',String(researchEnabled));
     event.currentTarget.textContent=researchEnabled?'🔎 Research On':'🔎 Research';
-    setStatus(researchEnabled ? 'Research request flag on hai; is ZIP mein live web search provider abhi connect nahi hai.' : 'Research mode band hai.');
+    setStatus(researchEnabled ? 'Live Web Research on: TNS website sources dhoondhega aur batayega kya kahan milega aur kaise aage badhna hai.' : 'Research mode band hai.');
   });
   $id('homeExploreToolsBtn')?.addEventListener('click',event=>{
     const grid=$id('homeToolsGrid');
@@ -1017,11 +1185,79 @@ addExtraNavigation();
     input.value=(button.getAttribute('data-home-prompt')||'')+input.value;
     input.focus(); fitInput();
   }));
-  $id('homeChatVoice')?.addEventListener('click',()=>{
-    if (input.value.trim()) { speakNextReply=false; form.requestSubmit(); return; }
-    startSpeechInput(true);
+  // Outer microphone opens a dedicated voice-to-voice screen. It never submits
+  // to the visible chat composer and never creates chat bubbles.
+  const voiceOnlyPanel=$id('voiceConversation');
+  const voiceOnlyStatus=$id('voiceOnlyStatus');
+  const voiceOnlyOrb=$id('voiceOnlyOrb');
+  const voiceOnlyStart=$id('voiceOnlyStart');
+  const voiceOnlyStop=$id('voiceOnlyStop');
+  let voiceOnlyRecognition=null;
+  let voiceOnlyActive=false;
+  let voiceOnlyBusy=false;
+  let voiceOnlyTurn=0;
+  const setVoiceOnlyStatus=text=>{if(voiceOnlyStatus)voiceOnlyStatus.textContent=text;};
+  const setVoiceOnlyState=state=>{if(voiceOnlyPanel)voiceOnlyPanel.dataset.state=state;if(voiceOnlyOrb)voiceOnlyOrb.dataset.state=state;};
+  const stopVoiceOnlyRecognition=()=>{const r=voiceOnlyRecognition;voiceOnlyRecognition=null;if(r){r.onresult=r.onerror=r.onend=null;try{r.abort()}catch{try{r.stop()}catch{}}}};
+  const endVoiceOnly=({returnToChat=true}={})=>{
+    voiceOnlyActive=false;voiceOnlyBusy=false;voiceOnlyTurn++;stopVoiceOnlyRecognition();
+    try{window.speechSynthesis?.cancel()}catch{}
+    setVoiceOnlyState('idle');setVoiceOnlyStatus('Voice conversation band hai.');
+    if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;
+    if(returnToChat)showPanel('dashboard');
+  };
+  const startVoiceOnlyListening=()=>{
+    if(!voiceOnlyActive||voiceOnlyBusy)return;
+    const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(!SpeechRecognition){setVoiceOnlyStatus('Is browser mein speech recognition supported nahi hai. Chrome ya supported browser mein try karein.');setVoiceOnlyState('error');voiceOnlyActive=false;if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;return;}
+    const recognition=new SpeechRecognition();voiceOnlyRecognition=recognition;recognition.lang=selectedVoiceLanguage();recognition.interimResults=true;recognition.continuous=false;recognition.maxAlternatives=1;
+    let finalText='';
+    recognition.onstart=()=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;setVoiceOnlyState('listening');setVoiceOnlyStatus('🎙 Aap sun raha hoon… boliye.');};
+    recognition.onresult=event=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;for(let i=event.resultIndex||0;i<(event.results?.length||0);i++){const res=event.results[i];const phrase=String(res?.[0]?.transcript||'').trim();if(res?.isFinal&&phrase)finalText+=(finalText?' ':'')+phrase;else if(phrase)setVoiceOnlyStatus('Aap: '+phrase);}};
+    recognition.onerror=event=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;voiceOnlyRecognition=null;if(event?.error==='not-allowed'||event?.error==='service-not-allowed'){setVoiceOnlyStatus('Microphone permission allow karke dobara Start dabayein.');setVoiceOnlyState('error');voiceOnlyActive=false;if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;}else if(event?.error==='no-speech'){setVoiceOnlyStatus('Awaaz nahi mili. Sun raha hoon—dobara boliye.');setTimeout(startVoiceOnlyListening,250);}else{setVoiceOnlyStatus('Voice input mein dikkat aayi. Dobara sunne ki koshish kar raha hoon.');setTimeout(startVoiceOnlyListening,500);}};
+    recognition.onend=()=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;voiceOnlyRecognition=null;if(finalText.trim())void handleVoiceOnlyTurn(finalText.trim());else if(!voiceOnlyBusy)setTimeout(startVoiceOnlyListening,180);};
+    try{recognition.start()}catch{voiceOnlyRecognition=null;setVoiceOnlyStatus('Microphone shuru nahi ho saka. Permission check karein.');setVoiceOnlyState('error');voiceOnlyActive=false;if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;}
+  };
+  const handleVoiceOnlyTurn=async spokenText=>{
+    if(!voiceOnlyActive||voiceOnlyBusy)return;voiceOnlyBusy=true;const turn=++voiceOnlyTurn;setVoiceOnlyState('thinking');setVoiceOnlyStatus('TNS aapki baat samajh raha hai…');
+    try{
+      const result=await json('/api/tns-ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:spokenText,history:[],research:false,appLanguage:localStorage.getItem('tnsStudioLanguage')||'hi',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})});
+      if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;
+      const reply=String(result.reply||result.text||'Maaf kijiye, jawab nahi mila.');
+      if(result.demo||result.provider==='mock')setVoiceOnlyStatus('Demo mode: asli AI service abhi connect nahi hai. Jawab awaaz mein sun rahe hain…');else setVoiceOnlyStatus('TNS jawab de raha hai…');
+      if(!('speechSynthesis' in window)||typeof window.SpeechSynthesisUtterance!=='function'){setVoiceOnlyStatus('Is browser mein voice playback supported nahi hai.');setVoiceOnlyState('error');voiceOnlyBusy=false;return;}
+      const utterance=new SpeechSynthesisUtterance(reply);utterance.lang=selectedVoiceLanguage();utterance.rate=Math.min(2,Math.max(.5,Number(voiceRateEl?.value||1)));
+      const voices=window.speechSynthesis.getVoices?.()||[];const wanted=String(utterance.lang).toLowerCase().replace('_','-');const chosen=voices.find(v=>v.voiceURI===voiceChoiceEl?.value&&String(v.lang||'').toLowerCase().startsWith(wanted.split('-')[0]))||voices.find(v=>String(v.lang||'').toLowerCase().replace('_','-')===wanted)||voices.find(v=>String(v.lang||'').toLowerCase().startsWith(wanted.split('-')[0]));if(chosen)utterance.voice=chosen;
+      utterance.onstart=()=>{if(voiceOnlyActive&&turn===voiceOnlyTurn){setVoiceOnlyState('speaking');setVoiceOnlyStatus('🔊 TNS bol raha hai…');}};
+      utterance.onend=()=>{if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;voiceOnlyBusy=false;setVoiceOnlyState('listening');setVoiceOnlyStatus('Aapki baari—boliye.');setTimeout(startVoiceOnlyListening,250);};
+      utterance.onerror=()=>{if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;voiceOnlyBusy=false;setVoiceOnlyState('error');setVoiceOnlyStatus('TNS ka voice jawab nahi chal saka. Dobara boliye.');setTimeout(startVoiceOnlyListening,500);};
+      window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
+    }catch(error){if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;voiceOnlyBusy=false;setVoiceOnlyState('error');setVoiceOnlyStatus(String(error?.message||'TNS se jawab nahi mil saka.'));setTimeout(startVoiceOnlyListening,900);}
+  };
+  const beginVoiceOnly=()=>{if(voiceOnlyActive)return;voiceOnlyActive=true;voiceOnlyBusy=false;voiceOnlyTurn++;if(voiceOnlyStart)voiceOnlyStart.disabled=true;if(voiceOnlyStop)voiceOnlyStop.disabled=false;setVoiceOnlyState('listening');setVoiceOnlyStatus('Microphone taiyar ho raha hai… boliye.');startVoiceOnlyListening();};
+  $id('homeChatVoice')?.addEventListener('click',()=>{showPanel('voiceConversation');setVoiceOnlyStatus('Voice-only mode shuru ho raha hai…');setVoiceOnlyState('idle');if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;beginVoiceOnly();});
+  voiceOnlyStart?.addEventListener('click',beginVoiceOnly);
+  voiceOnlyStop?.addEventListener('click',()=>endVoiceOnly());
+  $id('voiceOnlyClose')?.addEventListener('click',()=>endVoiceOnly());
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&voiceOnlyPanel?.classList.contains('active'))endVoiceOnly();});
+  $id('homeChatDictation')?.addEventListener('click',()=>{
+    if (voiceRecognition) { stopSpeechInput(); return; }
+    startSpeechInput(false);
   });
-  $id('homeChatDictation')?.addEventListener('click',()=>startSpeechInput(false));
+  $id('homeChatRecordingCancel')?.addEventListener('click',()=>{
+    if(voiceRecognition){const active=voiceRecognition;voiceRecognition=null;try{active.abort();}catch{try{active.stop();}catch{}}}
+    input.value=dictationOriginalText;dictationTranscript='';fitInput();updateActionButton();setMicListeningUI(false);showRecordingBar(false);setStatus('Voice recording cancel kar di gayi.');
+  });
+  $id('homeChatRecordingStop')?.addEventListener('click',()=>{
+    if(voiceRecognition){const active=voiceRecognition;try{active.stop();}catch{}voiceRecognition=null;}
+    setMicListeningUI(false);showRecordingBar(Boolean(dictationTranscript.trim()));setStatus(dictationTranscript?'Recording ruk gayi. Bhejne ke liye neela arrow dabayein.':'Recording ruk gayi. Koi speech text nahi mila.');
+  });
+  $id('homeChatRecordingSend')?.addEventListener('click',()=>{
+    if(voiceRecognition){const active=voiceRecognition;try{active.stop();}catch{}voiceRecognition=null;}
+    setMicListeningUI(false);showRecordingBar(false);
+    if(!dictationTranscript.trim()){setStatus('Pehle microphone mein boliye, phir bhejein.');return;}
+    input.value=(dictationOriginalText ? dictationOriginalText+' ' : '')+dictationTranscript;fitInput();updateActionButton();form.requestSubmit();dictationTranscript='';
+  });
   form.addEventListener('submit',async event=>{
     event.preventDefault();
     if(isSending){
@@ -1039,6 +1275,10 @@ addExtraNavigation();
     const shownMessage=message || `Is file ko samajhne mein madad karein: ${attachedFile.name}`;
     const originalMessage=message;
     const isRetrySubmission=retryingPreviousMessage;
+    const requestViewGeneration=conversationViewGeneration;
+    // Send a bounded conversation context to the AI provider. Capture it before
+    // adding this turn's user bubble so the current message is not duplicated.
+    const conversationHistory = conversationMessages().slice(-12);
     // Snapshot the one-shot voice request and invalidate events from older replies.
     homeSpeechGeneration++;
     try{window.speechSynthesis?.cancel()}catch{}
@@ -1079,10 +1319,15 @@ addExtraNavigation();
         result=await json('/api/tns-ai/chat',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({message,research:researchEnabled,appLanguage:localStorage.getItem('tnsStudioLanguage')||'en',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})
+          body:JSON.stringify({message,history:conversationHistory,research:researchEnabled,appLanguage:localStorage.getItem('tnsStudioLanguage')||'en',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})
         });
       }
-      pending.textContent=result.reply||result.text||'TNS se response nahi mila.';
+      if(requestViewGeneration!==conversationViewGeneration){ pending.remove(); return; }
+      let displayedReply=result.reply||result.text||'TNS se response nahi mila.';
+      if(result.research && Array.isArray(result.sources) && result.sources.length && !(result.provider==='mock')) {
+        displayedReply += '\n\nSources:\n' + result.sources.map((source,index)=>`${index+1}. ${source.title} — ${source.url}`).join('\n');
+      }
+      pending.textContent=displayedReply;
       pending.classList.remove('error');
       if(result.demo || result.provider==='mock') {
         setStatus('Demo jawab: abhi real AI service connected nahi hai.');
@@ -1111,10 +1356,11 @@ addExtraNavigation();
           window.speechSynthesis.speak(utterance);
         }else setStatus('Jawab text mein aa gaya; is browser mein voice playback supported nahi hai.');
       } else if(!(result.demo || result.provider==='mock')) {
-        setStatus(researchEnabled?'Response aa gaya. Live research ki completeness connected service par depend karti hai.':'Response aa gaya.');
+        setStatus(researchEnabled?'Research response aa gaya. Sources aur step-by-step details ko reply mein dekhein.':'Response aa gaya.');
       }
       speakNextReply=false;
     }catch(error){
+      if(requestViewGeneration!==conversationViewGeneration){ pending.remove(); return; }
       const rawError=String(error?.message||'Request failed.').trim();
       let friendlyError=rawError;
       if(/failed to fetch|networkerror|load failed|fetch failed|network request failed/i.test(rawError)){
@@ -1165,6 +1411,7 @@ addExtraNavigation();
     } finally {
       setSending(false);
     }
+    if(requestViewGeneration===conversationViewGeneration) scheduleConversationSave();
     messages.scrollTop=messages.scrollHeight;
   });
 })();

@@ -1,7 +1,7 @@
 {
-  "name": "TNS Studio",
-  "short_name": "TNS Studio",
-  "description": "TNS Studio — AI creation, video editing and creator communication studio",
+  "name": "TNS",
+  "short_name": "TNS",
+  "description": "TNS — AI creation, video editing and creator communication",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

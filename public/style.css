@@ -35,7 +35,7 @@
 @media(max-width:900px){.locked-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
 @media(max-width:520px){.locked-dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
-/* TNS Studio locked dashboard reference — dashboard-only update */
+/* TNS locked dashboard reference — dashboard-only update */
 .dashboard-hero{position:relative;display:flex;align-items:center;justify-content:space-between;overflow:hidden;margin-bottom:14px;padding:20px 24px;border-radius:24px;background:linear-gradient(115deg,rgba(18,30,78,.96),rgba(66,18,121,.82) 55%,rgba(7,91,139,.76));border:1px solid rgba(82,169,255,.38);box-shadow:0 16px 45px rgba(35,65,170,.18)}
 .dashboard-hero:after{content:"";position:absolute;inset:auto -20% -75% 25%;height:160px;background:radial-gradient(circle,rgba(0,210,255,.28),transparent 65%);pointer-events:none}
 .dashboard-hero-copy{position:relative;z-index:1}.dashboard-hero h1{margin:3px 0;font-size:29px}.dashboard-hero .eyebrow{margin:0}.dashboard-hero-logo{position:relative;z-index:1;width:104px;height:104px;object-fit:contain;filter:brightness(1.2) saturate(1.35) contrast(1.08) drop-shadow(0 0 22px rgba(70,175,255,.58))}
@@ -43,7 +43,7 @@
 @media(max-width:900px){.dashboard-quick-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.dashboard-hero-logo{width:82px;height:82px}}
 @media(max-width:560px){.dashboard-hero{padding:17px}.dashboard-hero h1{font-size:24px}.dashboard-hero-logo{width:72px;height:72px}.dashboard-quick-grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}.dashboard-quick-grid button{padding:7px 3px;font-size:15px}.dashboard-quick-grid button small{font-size:7px}.premium-features{grid-template-columns:1fr}.premium-pricing{grid-template-columns:1fr 1fr}.price-card strong{font-size:22px}}
 
-/* ===== TNS STUDIO 24-SCREEN FINAL UI ===== */
+/* ===== TNS 24-SCREEN FINAL UI ===== */
 .splash-screen{background:radial-gradient(circle at 50% 38%,rgba(101,79,255,.32),transparent 38%),#050817}
 .splash-card{text-align:center;padding:44px 34px;border-radius:34px;width:min(460px,92vw)}
 .splash-logo{width:130px;height:130px;object-fit:contain;filter:drop-shadow(0 0 34px rgba(50,175,255,.5));animation:tnsPulse 1.8s ease-in-out infinite}
@@ -106,7 +106,7 @@
  .tns-chat-empty{min-height:390px}
 }
 
-/* ===== PROFESSIONAL TNS STUDIO EDITOR WORKSPACE ===== */
+/* ===== PROFESSIONAL TNS EDITOR WORKSPACE ===== */
 
 .timeline-toolbar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:8px 0}.timeline-toolbar input{flex:1;min-width:120px}.timeline-toolbar button{padding:7px 10px}.timeline-ruler{display:flex;height:24px;align-items:flex-end;border-bottom:1px solid var(--line);margin-left:86px;min-width:max-content}.timeline-ruler span{font-size:9px;color:var(--muted);width:80px;flex:none}.timeline-track{position:relative;min-height:66px}.timeline-clip{position:relative;min-width:90px;width:var(--clip-width,180px);flex:none}.timeline-clip .clip-handle{position:absolute;top:0;bottom:0;width:5px;background:rgba(255,255,255,.25);cursor:ew-resize}.timeline-clip .clip-handle.left{left:0;border-radius:12px 0 0 12px}.timeline-clip .clip-handle.right{right:0;border-radius:0 12px 12px 0}.timeline-clip.locked{opacity:.55;cursor:not-allowed}.timeline-clip.hidden-clip{opacity:.3}.editor-inspector-grid{grid-template-columns:repeat(5,minmax(0,1fr))}.inspector-section{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}@media(max-width:700px){.editor-inspector-grid{grid-template-columns:1fr 1fr}}@media(max-width:480px){.editor-inspector-grid{grid-template-columns:1fr}}
 .editor-workspace-controls{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:12px 0}.editor-history,.editor-playback{display:flex;gap:7px;align-items:center;flex-wrap:wrap}.editor-playback{flex:1;min-width:260px}.editor-playback input{flex:1}.timeline{position:relative;min-height:190px;padding:14px;border-radius:18px;background:rgba(2,7,18,.72);border:1px solid var(--line);overflow-x:auto}.timeline-track{display:flex;align-items:stretch;gap:6px;min-width:max-content;padding:6px 0}.timeline-track-label{width:80px;flex:none;font-size:10px;color:var(--muted);padding:12px 6px}.timeline-clip{min-width:150px;min-height:54px;padding:9px 11px;border-radius:12px;border:1px solid rgba(100,130,255,.2);background:linear-gradient(135deg,rgba(60,90,180,.28),rgba(120,50,180,.18));cursor:grab;user-select:none}.timeline-clip.selected{outline:2px solid rgba(90,190,255,.75);background:linear-gradient(135deg,rgba(20,150,220,.32),rgba(120,70,220,.28))}.timeline-clip small{display:block;color:var(--muted);margin-top:5px}.editor-inspector{margin-top:12px;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--surface2)}.editor-inspector-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}.editor-inspector-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.editor-tool-workspace{margin-top:12px;padding:15px;border:1px solid rgba(91,133,255,.25);border-radius:18px;background:linear-gradient(135deg,rgba(25,35,80,.7),rgba(30,18,65,.6))}.editor-tool-workspace .tool-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.editor-tool-workspace textarea{min-height:80px}.editor-tool-workspace .tool-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}@media(max-width:700px){.editor-inspector-grid,.editor-tool-workspace .tool-fields{grid-template-columns:1fr 1fr}}@media(max-width:480px){.editor-inspector-grid,.editor-tool-workspace .tool-fields{grid-template-columns:1fr}.timeline{min-height:160px}}
@@ -118,7 +118,7 @@
 @media(max-width:700px){.accepted-idea{grid-template-columns:1fr}.accepted-idea span{white-space:normal}}
 .image-variation{display:grid;gap:8px}.image-variation img{width:100%;max-height:600px;object-fit:contain;border-radius:14px;background:#070a14}
 
-/* ===== TNS Studio Professional Editor v12 ===== */
+/* ===== TNS Professional Editor v12 ===== */
 .tns-editor-shell{overflow:hidden}.editor-top-head{align-items:flex-start}.editor-top-head .section-actions{flex-wrap:wrap}.editor-import-row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.editor-canvas-wrap{position:relative;min-height:300px;border:1px solid var(--line);border-radius:22px;background:#02050c;overflow:hidden;display:grid;place-items:center}.editor-preview{width:100%;height:min(58vh,620px);max-height:620px;object-fit:contain;background:#02050c}.editor-empty-state{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:6px;color:var(--muted);pointer-events:none}.editor-empty-state div{font-size:46px}.editor-empty-state b{color:#fff}.editor-empty-state.hidden{display:none}.editor-playback-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 0}.editor-playback-bar input{flex:1;min-width:120px}.editor-tool-navigation{margin-top:14px;border:1px solid var(--line);border-radius:20px;background:rgba(2,7,18,.5);padding:12px}.tool-nav-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:9px}.editor-category-tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:7px;scrollbar-width:none}.editor-category-tabs::-webkit-scrollbar,.editor-tool-strip::-webkit-scrollbar{display:none}.editor-category-tabs button{white-space:nowrap;padding:9px 13px;background:var(--surface2);border:1px solid var(--line);font-size:11px}.editor-category-tabs button.active{background:linear-gradient(135deg,rgba(100,90,255,.42),rgba(20,150,230,.26));border-color:rgba(100,150,255,.5)}.editor-tool-strip{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding:5px 2px 3px}.editor-tool-card{width:92px;min-width:92px;min-height:78px;display:grid;place-items:center;align-content:center;gap:5px;scroll-snap-align:start;padding:9px 7px;background:linear-gradient(145deg,rgba(100,75,190,.15),rgba(20,130,190,.08));border:1px solid var(--line);border-radius:15px;text-align:center}.editor-tool-card:hover{border-color:rgba(100,160,255,.55);transform:translateY(-1px)}.editor-tool-card .tool-icon{font-size:23px}.editor-tool-card b{font-size:10px;line-height:1.15}.editor-tool-card small{font-size:8px;color:var(--muted)}.editor-tool-workspace{position:relative;margin-top:12px;padding:15px;border:1px solid rgba(91,133,255,.3);border-radius:20px;background:linear-gradient(135deg,rgba(25,35,80,.8),rgba(30,18,65,.72));overflow:hidden}.editor-tool-workspace.hidden{display:none}.workspace-preview{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(240px,.65fr);gap:12px}.workspace-stage{min-height:230px;border-radius:16px;background:#02050c;border:1px solid var(--line);display:grid;place-items:center;overflow:hidden}.workspace-stage video,.workspace-stage .workspace-demo-text{max-width:100%;max-height:330px}.workspace-demo-text{font-size:30px;font-weight:800;text-align:center;padding:20px}.workspace-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-content:start}.workspace-controls .full{grid-column:1/-1}.workspace-controls input[type=range]{width:100%}.workspace-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.workspace-library{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.workspace-library button{min-height:70px;background:var(--surface2);border:1px solid var(--line);text-align:center}.workspace-library button.active{outline:2px solid rgba(100,180,255,.6)}.keyframe-lane{height:52px;border:1px solid var(--line);border-radius:12px;background:rgba(0,0,0,.2);position:relative;margin-top:10px}.keyframe-point{position:absolute;top:17px;width:16px;height:16px;transform:rotate(45deg);background:#8e7cff;border:2px solid #fff}.curve-editor{height:140px;border:1px solid var(--line);border-radius:14px;position:relative;background:linear-gradient(transparent 49%,rgba(255,255,255,.08) 50%,transparent 51%),linear-gradient(90deg,transparent 49%,rgba(255,255,255,.08) 50%,transparent 51%)}.curve-line{position:absolute;left:8%;right:8%;bottom:15%;height:2px;transform:rotate(-24deg);transform-origin:left;background:#8ec7ff}.editor-bottom-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.export-modal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.export-summary{padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface2)}.editor-search-results{display:grid;gap:6px;max-height:300px;overflow:auto}.editor-search-results button{text-align:left;background:var(--surface2);border:1px solid var(--line)}@media(max-width:700px){.workspace-preview{grid-template-columns:1fr}.workspace-controls,.export-modal-grid{grid-template-columns:1fr}.workspace-library{grid-template-columns:repeat(3,minmax(0,1fr))}.tool-nav-title{align-items:flex-start;flex-direction:column}.editor-canvas-wrap{min-height:250px}.editor-preview{height:52vh;max-height:480px}.editor-tool-card{width:86px;min-width:86px}}@media(max-width:480px){.workspace-library{grid-template-columns:repeat(2,minmax(0,1fr))}.editor-top-head .section-actions #editorSearchTool{display:none}.editor-tool-card{width:80px;min-width:80px}}
 .editor-tool-compatibility{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
 
@@ -142,7 +142,7 @@
 @media(max-width:480px){.otp-reference-card{padding:24px 18px 20px;border-radius:24px}.otp-reference-card h1{font-size:25px}.otp-boxes{gap:7px}.otp-digit{height:55px;min-height:55px;font-size:22px;border-radius:12px}}
 
 /* ===== STEP 3 — POST-OTP LANGUAGE SELECT =====
-   Uses the same TNS Studio dashboard visual system. Only the post-OTP
+   Uses the same TNS dashboard visual system. Only the post-OTP
    language selection presentation is changed; existing IDs/handlers remain intact. */
 .language-dashboard-screen{display:grid;place-items:center;padding:18px;background:transparent}
 .language-dashboard-card{width:min(920px,100%);min-height:min(760px,calc(100svh - 36px));padding:0;border-radius:26px;overflow:hidden;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
@@ -176,7 +176,7 @@
 @media(max-width:560px){}
 
 .language-results-meta{display:block;margin:6px 2px 10px;color:rgba(220,230,255,.68);font-size:.78rem;line-height:1.3;text-align:left}.language-results-meta:empty{display:none}
-/* Login logo replacement: preserve the existing login lockup sizing/glow while using the supplied TNS Studio mark. */
+/* Login logo replacement: preserve the existing login lockup sizing/glow while using the supplied TNS mark. */
 .login-logo-image{object-fit:contain;object-position:center;border-radius:18px;background:#020615;filter:drop-shadow(0 0 18px rgba(37,160,255,.38)) drop-shadow(0 0 16px rgba(179,55,255,.22))}
 
 /* ===== DASHBOARD HOME REFERENCE UI ONLY ===== */
@@ -375,7 +375,7 @@ body:has(#splashScreen:not(.hidden)) .bottom-nav {
   display: none !important;
 }
 
-/* TNS Studio dashboard topbar: swap menu/logo positions and use follower messages icon */
+/* TNS dashboard topbar: swap menu/logo positions and use follower messages icon */
 body:has(#dashboard.active) .topbar .brand-area{
   width:auto;
   min-height:40px;
@@ -422,7 +422,7 @@ body:has(#dashboard.active) #notifyBtn::after{
   line-height:1;
 }
 
-/* TNS Studio dashboard topbar: use the original branded T logo and add a compact notification icon beside follower messages. */
+/* TNS dashboard topbar: use the original branded T logo and add a compact notification icon beside follower messages. */
 body:has(#dashboard.active) .topbar .brand-area .logo-mini{
   visibility:visible;
   width:38px;
@@ -453,7 +453,7 @@ body:has(#dashboard.active) #notifyBtn{
   }
 }
 
-/* TNS Studio dashboard: 3 top cards + 2 bottom cards, same colors */
+/* TNS dashboard: 3 top cards + 2 bottom cards, same colors */
 .dashboard-color-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:13px}
 .dashboard-color-grid .dashboard-feature:nth-child(1),
 .dashboard-color-grid .dashboard-feature:nth-child(2),
@@ -754,7 +754,7 @@ body:has(#dashboard.active) #notifyBtn::after{content:none !important;}
 .settings-search-empty{padding:22px 12px;text-align:center;opacity:.7}
 .settings-search-empty.hidden{display:none}
 
-/* TNS Studio Settings & Activity — simple category workflow */
+/* TNS Settings & Activity — simple category workflow */
 .tns-settings-shell{max-width:720px;width:min(94vw,720px);max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
 .tns-settings-header{padding:4px 4px 10px}
 .tns-settings-header h2{margin:0 0 4px}
@@ -765,16 +765,16 @@ body:has(#dashboard.active) #notifyBtn::after{content:none !important;}
 .tns-settings-back{border:0;background:transparent;color:#63a8ff;font-weight:800;padding:8px 4px;cursor:pointer;font-size:14px}.tns-settings-sub #tnsSettingsSubBody>.settings-group-body{display:block}.tns-settings-body{display:none}.tns-settings-sub .settings-group-body{padding:0}
 .tns-settings-shell .hidden{display:none!important}
 
-/* ===== TNS STUDIO SETTINGS & ACTIVITY FLOW ===== */
+/* ===== TNS SETTINGS & ACTIVITY FLOW ===== */
 .settings-main-head{align-items:flex-start}.settings-search-wrap{display:flex;align-items:center;gap:10px;padding:0 15px;height:48px;border:1px solid var(--line);border-radius:15px;background:var(--surface2);margin:4px 0 18px}.settings-search-wrap span{font-size:21px;color:var(--muted)}.settings-search-wrap input{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}.settings-category-list,.settings-search-results,.settings-detail-list{display:grid;gap:10px}.settings-category{display:flex;align-items:center;gap:13px;width:100%;padding:15px;text-align:left;border:1px solid var(--line);border-radius:17px;background:var(--surface2);color:inherit;cursor:pointer}.settings-category:active{transform:scale(.99)}.settings-category-icon{width:42px;height:42px;flex:0 0 42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,rgba(104,91,255,.35),rgba(30,145,255,.25));font-size:20px}.settings-category-copy{flex:1;min-width:0}.settings-category-copy b{display:block;font-size:14px}.settings-category-copy small{display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.4}.settings-category-arrow{color:var(--muted);font-size:20px}.settings-search-result{padding:14px;border:1px solid var(--line);border-radius:15px;background:var(--surface2);text-align:left;cursor:pointer}.settings-search-result b{display:block}.settings-search-result small{color:var(--muted);font-size:10px}.settings-detail-head{display:flex;align-items:flex-start;gap:11px;margin:2px 0 18px}.settings-back-btn{width:42px;height:42px;border:1px solid var(--line);border-radius:13px;background:var(--surface2);color:inherit;font-size:21px;cursor:pointer}.settings-detail-head h3{margin:2px 0 3px;font-size:23px}.settings-detail-row{display:flex;align-items:center;gap:12px;padding:15px;border:1px solid var(--line);border-radius:16px;background:var(--surface2);text-align:left}.settings-detail-row .row-copy{flex:1;min-width:0}.settings-detail-row b{display:block;font-size:13px}.settings-detail-row small{display:block;color:var(--muted);font-size:10px;line-height:1.45;margin-top:4px}.settings-detail-row button,.settings-detail-row select{flex:0 0 auto}.settings-switch{width:46px;height:27px;border:0;border-radius:99px;padding:3px;background:#526078;cursor:pointer}.settings-switch i{display:block;width:21px;height:21px;border-radius:50%;background:#fff;transition:.18s}.settings-switch.on{background:#4b8dff}.settings-switch.on i{transform:translateX(19px)}.settings-danger{border-color:rgba(255,90,110,.3);background:rgba(255,70,90,.06)}.settings-danger b{color:#ff9aa8}.settings-logout{margin-top:18px}.settings-detail-card{padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--surface2)}.settings-detail-card h4{margin:0 0 6px}.settings-detail-card p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}@media(max-width:560px){.settings-category{padding:13px}.settings-category-icon{width:39px;height:39px;flex-basis:39px}.settings-detail-row{align-items:flex-start}.settings-detail-row button{margin-top:2px}}
 
-/* TNS Studio Settings — simple mobile workflow */
+/* TNS Settings — simple mobile workflow */
 .settings-main-head{position:relative;padding-right:48px}.settings-home-back-arrow{position:absolute;right:0;top:0;width:42px;height:42px;padding:0!important;display:grid;place-items:center;border:1px solid var(--line)!important;border-radius:13px!important;background:var(--surface2)!important;color:inherit!important;font-size:25px!important;line-height:1}.settings-detail-head{position:relative;min-height:48px;padding-right:54px}.settings-detail-head .settings-back-btn{position:absolute;right:0;top:0;width:44px;height:44px;padding:0;border:1px solid var(--line);border-radius:13px;background:var(--surface2);font-size:25px;line-height:1}.settings-switch{width:62px;height:34px;min-width:62px;border-radius:999px;padding:4px;background:#4a556c;box-shadow:inset 0 0 0 1px rgba(255,255,255,.10);display:flex;align-items:center;justify-content:flex-start}.settings-switch i{width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.28);transition:transform .18s ease}.settings-switch.on{background:#4b8dff}.settings-switch.on i{transform:translateX(28px)}.settings-inline-select{width:auto;min-width:92px;padding:9px 30px 9px 10px;border-radius:11px}.settings-detail-row{min-height:66px}.settings-home-back-arrow:focus-visible,.settings-back-btn:focus-visible,.settings-switch:focus-visible,.settings-inline-select:focus-visible{outline:2px solid #7198ff;outline-offset:2px}
 @media(max-width:560px){.settings-detail-row{align-items:center}.settings-inline-select{min-width:88px}.settings-switch{width:62px;height:34px;min-width:62px}}
 
 .settings-related-back-arrow{position:absolute;right:0;top:0;width:42px;height:42px;padding:0!important;display:grid;place-items:center;border:1px solid var(--line)!important;border-radius:13px!important;background:var(--surface2)!important;color:inherit!important;font-size:25px!important;line-height:1}.section-head:has(.settings-related-back-arrow){position:relative;padding-right:50px}
 
-/* ===== TNS Studio Settings — image-matched workflow ===== */
+/* ===== TNS Settings — image-matched workflow ===== */
 .settings-main-head{display:flex!important;align-items:flex-start!important;gap:12px!important;position:relative!important;padding-right:0!important}
 .settings-main-head>.settings-home-back-arrow{order:-1;position:static!important;flex:0 0 42px;width:42px!important;height:42px!important;margin-top:1px!important;padding:0!important;display:grid!important;place-items:center!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:10px!important;color:inherit!important;font-size:29px!important;line-height:1!important}
 .settings-main-head>.settings-home-back-arrow:hover{background:rgba(255,255,255,.06)!important}
@@ -846,7 +846,7 @@ body:has(#dashboard.active) #notifyBtn::after{content:none !important;}
 .settings-form-simple textarea{resize:vertical;min-height:120px}
 .settings-detail-head>.settings-nav-arrow{margin-left:auto}
 
-/* TNS Studio Settings — clean single-page navigation */
+/* TNS Settings — clean single-page navigation */
 .settings-page{padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
 .settings-main-head,.settings-detail-head{display:flex!important;align-items:center!important;gap:12px!important;min-height:48px!important;margin:0 0 14px!important;padding:0!important;border:0!important}
 .settings-main-head .settings-nav-arrow,.settings-detail-head .settings-nav-arrow{position:static!important;flex:0 0 40px!important;width:40px!important;height:40px!important;border:0!important;border-radius:10px!important;background:transparent!important;box-shadow:none!important;padding:0!important;display:grid!important;place-items:center!important;font-size:28px!important;line-height:1!important;color:inherit!important}
@@ -867,7 +867,7 @@ body:has(#dashboard.active) #notifyBtn::after{content:none !important;}
 
 
 
-/* TNS Studio — Instagram-style Settings polish: one clean list, one top back arrow, no card clutter. */
+/* TNS — Instagram-style Settings polish: one clean list, one top back arrow, no card clutter. */
 .settings-page{max-width:520px!important;margin:0 auto!important;padding:0 18px 96px!important}
 .settings-main-head{position:sticky!important;top:0!important;z-index:20!important;display:flex!important;align-items:center!important;gap:12px!important;min-height:56px!important;margin:0 -18px 10px!important;padding:0 18px!important;background:rgba(7,12,28,.97)!important;backdrop-filter:blur(14px)!important;border-bottom:1px solid var(--line)!important}
 .settings-main-head .settings-nav-arrow,.settings-detail-head .settings-nav-arrow{width:38px!important;height:38px!important;min-width:38px!important;border:0!important;background:transparent!important;box-shadow:none!important;border-radius:50%!important;padding:0!important;display:grid!important;place-items:center!important;font-size:30px!important;font-weight:400!important;color:#fff!important}
@@ -1282,8 +1282,17 @@ body.tns-chat-typing #dashboard .home-chat-messages { padding-bottom:76px; }
 #dashboard .home-dictation-btn { flex:0 0 34px; width:34px; height:38px; border:0; border-radius:50%; background:transparent; color:#aebaff; font-size:22px; font-weight:700; display:flex; align-items:center; justify-content:center; }
 #dashboard .home-dictation-btn:active { background:rgba(130,154,255,.18); }
 #dashboard .home-action-btn.is-voice-mode { background:#1eaa84; }
-#dashboard .home-action-btn.is-listening { animation:tnsVoicePulse 1s ease-in-out infinite alternate; }
+#dashboard .home-action-btn.is-listening { background:linear-gradient(145deg,#ff4b5c 0%,#d7193f 58%,#9f1239 100%) !important; box-shadow:0 0 0 4px rgba(255,65,92,.24),0 0 20px rgba(255,45,75,.72); animation:tnsVoicePulse 850ms ease-in-out infinite alternate; }
+#dashboard .home-action-btn.is-listening .home-wave-mic i { background:#fff; box-shadow:0 0 8px rgba(255,255,255,.95); animation:tnsMicBars 420ms ease-in-out infinite alternate; }
+#dashboard .home-action-btn.is-listening .home-wave-mic i:nth-child(2), #dashboard .home-action-btn.is-listening .home-wave-mic i:nth-child(4) { animation-delay:120ms; }
+#dashboard .home-action-btn.is-listening .home-wave-mic i:nth-child(3) { animation-delay:220ms; }
+#dashboard .home-dictation-btn.is-listening { position:relative; background:linear-gradient(145deg,#ff6877,#d7193f) !important; color:#fff; border-radius:14px; box-shadow:0 0 0 4px rgba(255,65,92,.24),0 0 16px rgba(255,45,75,.68); animation:tnsVoicePulse 850ms ease-in-out infinite alternate; }
+#dashboard .home-dictation-btn.is-listening::before { content:''; position:absolute; left:50%; top:50%; width:4px; height:10px; transform:translate(-50%,-50%); border-radius:4px; background:#fff; box-shadow:-7px 3px 0 #fff,-3px -3px 0 #fff,3px -2px 0 #fff,7px 2px 0 #fff; animation:tnsDictationWave 480ms ease-in-out infinite alternate; }
+#dashboard .home-dictation-btn.is-listening { font-size:0; }
+@keyframes tnsDictationWave { from { height:5px; } to { height:19px; } }
 @keyframes tnsVoicePulse { from { transform:scale(1); } to { transform:scale(1.08); } }
+@keyframes tnsMicBars { from { transform:scaleY(.55); } to { transform:scaleY(1.25); } }
+@media (prefers-reduced-motion:reduce) { #dashboard .home-action-btn.is-listening, #dashboard .home-action-btn.is-listening .home-wave-mic i, #dashboard .home-dictation-btn.is-listening { animation:none; } }
 
 /* Checkpoint 12: plus stays inside the composer; premium waveform voice control. */
 #dashboard .home-chat-composer { gap:9px; }
@@ -1304,3 +1313,95 @@ body.tns-chat-typing #dashboard .home-chat-messages { padding-bottom:76px; }
 #dashboard .home-wave-mic i:nth-child(3) { height:22px; }
 #dashboard .home-attach-menu { z-index:1200; }
 @media(max-width:560px) { #dashboard .home-input-box { padding:4px 8px; gap:6px; } #dashboard .home-composer-inside { flex-basis:31px; width:31px; } #dashboard .home-composer-inside .home-plus-btn { flex-basis:30px; width:30px; min-width:30px; height:30px; } #dashboard .home-dictation-btn { flex-basis:34px; width:34px; height:36px; } #dashboard .home-dictation-btn::before { top:5px; } #dashboard .home-dictation-btn::after { top:12px; } }
+/* Dashboard-first chat layout: keep the composer anchored at the bottom. */
+#dashboard .home-chat-messages { flex: 1 1 auto; min-height: 24vh; }
+#dashboard .home-chat-composer { order: 20; margin-top: auto; }
+#dashboard .home-voice-language-options { order: 21; }
+#dashboard .home-chat-disclaimer { order: 22; }
+#dashboard .home-assistant-shell { min-height: calc(100dvh - 100px); }
+.topbar-menu-popover { max-height: min(75dvh, 620px); overflow-y: auto; }
+
+
+/* Requested mobile layout adjustment: lower the dashboard chat area while keeping the composer at the bottom. */
+#dashboard { padding-top: 14px; }
+#dashboard .home-assistant-shell { min-height: calc(100dvh - 96px); padding-top: 20px; padding-bottom: 16px; }
+#dashboard .home-chat-messages { flex: 1 1 auto; }
+#dashboard .home-chat-composer { margin-top: auto; }
+@media (max-width: 560px) {
+  #dashboard { padding-top: 8px; }
+  #dashboard .home-assistant-shell { min-height: calc(100dvh - 88px); padding-top: 18px; padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
+
+/* MENU FIX: ensure the hamburger is visible/clickable and the opened menu sits above the dashboard. */
+.topbar .brand-area{position:relative;gap:9px;min-width:0;padding-left:0;background-image:none!important;width:auto!important}
+.topbar .brand-area .topbar-menu-btn{position:relative;z-index:10001;display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto;order:0;flex:0 0 38px;color:#f4f7ff;background:rgba(255,255,255,.06)}
+.topbar .brand-area .logo-mini{order:1;visibility:visible!important;flex:0 0 38px}
+.topbar .brand-area>div{order:2}
+.topbar-menu-popover{z-index:10000;pointer-events:auto}
+.topbar-menu-popover:not(.hidden){display:block!important;visibility:visible!important;opacity:1}
+.topbar-menu-popover.hidden{display:none!important}
+
+/* Dashboard text-chat conversation controls */
+.home-chat-history-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;max-width:100%;box-sizing:border-box;}
+.home-chat-history-bar button,.home-chat-history-bar select{min-width:0;max-width:100%;border:1px solid var(--border-color,rgba(130,150,180,.28));border-radius:12px;padding:8px 10px;background:var(--card-bg,rgba(255,255,255,.06));color:inherit;font:inherit;font-size:12px;}
+.home-chat-history-bar select{flex:1;}
+.home-chat-history-bar button:disabled{opacity:.45;}
+@media(max-width:480px){.home-chat-history-bar{gap:5px;padding:6px 8px}.home-chat-history-bar button,.home-chat-history-bar select{padding:7px 6px;font-size:11px}}
+
+/* Step 11: screenshot-style recording controls for the microphone INSIDE the chat box only. */
+#dashboard .home-dictation-recording { flex:1 1 100%; min-width:0; height:58px; padding:6px 8px; display:flex; align-items:center; gap:12px; border:1px solid rgba(255,255,255,.09); border-radius:34px; background:#242426; box-shadow:0 5px 18px rgba(0,0,0,.3); }
+#dashboard .home-dictation-recording.hidden { display:none !important; }
+#dashboard .home-chat-composer.is-dictating .home-input-box,
+#dashboard .home-chat-composer.is-dictating > #homeChatVoice { display:none !important; }
+#dashboard .home-chat-composer.is-dictating { flex-wrap:wrap; }
+#dashboard .home-dictation-recording button { flex:0 0 42px; width:42px; min-width:42px; height:42px; border:0; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+#dashboard .recording-cancel { background:transparent; color:#fff; font-size:34px; font-weight:300; }
+#dashboard .recording-wave { flex:1 1 auto; min-width:0; height:36px; display:flex; align-items:center; justify-content:center; gap:3px; overflow:hidden; }
+#dashboard .recording-wave i { display:block; flex:0 1 4px; min-width:2px; height:7px; border-radius:4px; background:#a7a7ad; animation:tnsRecordingWave .22s ease-in-out infinite alternate; }
+#dashboard .recording-wave i:nth-child(4n+1) { height:14px; animation-delay:.12s; }
+#dashboard .recording-wave i:nth-child(4n+2) { height:23px; animation-delay:.25s; }
+#dashboard .recording-wave i:nth-child(4n+3) { height:30px; animation-delay:.08s; }
+#dashboard .recording-wave i:nth-child(5n) { height:18px; animation-delay:.32s; }
+#dashboard .recording-stop { background:#3b3b3e; }
+#dashboard .recording-stop span { width:14px; height:14px; border-radius:3px; background:#f5f5f5; }
+#dashboard .recording-send { background:#3478f6; color:#fff; font-size:30px; line-height:1; font-weight:600; }
+#dashboard .home-dictation-recording button:focus-visible { outline:3px solid #fff; outline-offset:2px; }
+@keyframes tnsRecordingWave { from { transform:scaleY(calc(var(--voice-level, .45) * .72)); opacity:.65; } to { transform:scaleY(var(--voice-level, 1)); opacity:1; } }
+@media (prefers-reduced-motion:reduce) { #dashboard .recording-wave i { animation:none; } }
+@media (max-width:560px) { #dashboard .home-dictation-recording { gap:8px; height:58px; padding:6px; } #dashboard .home-dictation-recording button { flex-basis:38px; width:38px; min-width:38px; height:38px; } #dashboard .recording-wave { gap:2px; } }
+
+
+/* Step 13: dedicated voice-to-voice screen for the OUTSIDE chat microphone only. */
+#voiceConversation.panel.active{display:flex;align-items:center;justify-content:center;min-height:calc(100dvh - 70px);padding:clamp(12px,3vw,28px);box-sizing:border-box;overflow:hidden;background:radial-gradient(ellipse at 50% 34%,rgba(81,91,255,.2),transparent 36%),radial-gradient(ellipse at 12% 90%,rgba(0,199,255,.09),transparent 36%),#080b16;color:#f7f8ff}
+#voiceConversation .voice-only-card{width:min(100%,560px);min-height:min(84dvh,760px);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;text-align:center;padding:76px 24px 26px;border:1px solid rgba(167,183,255,.17);border-radius:34px;background:linear-gradient(155deg,rgba(24,29,57,.97),rgba(10,13,27,.99) 72%);box-shadow:0 28px 90px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.055);box-sizing:border-box;isolation:isolate}
+#voiceConversation .voice-only-card:before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(145deg,rgba(119,143,255,.32),transparent 35%,rgba(0,211,255,.13));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:-1}
+#voiceConversation .voice-only-back{position:absolute;top:20px;left:20px;display:flex;align-items:center;gap:7px;border:1px solid rgba(255,255,255,.12);border-radius:16px;background:rgba(255,255,255,.045);color:#dce3ff;padding:10px 14px;font-size:13px;font-weight:600;transition:background .2s,border-color .2s}
+#voiceConversation .voice-only-back span{font-size:25px;line-height:14px}#voiceConversation .voice-only-back:hover{background:rgba(255,255,255,.09);border-color:rgba(150,170,255,.32)}
+#voiceConversation .voice-only-brand{position:absolute;top:21px;right:22px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;letter-spacing:.13em;color:#e7ebff}
+#voiceConversation .voice-brand-mark{display:grid;place-items:center;width:27px;height:27px;border-radius:9px;background:linear-gradient(135deg,#67e4ff,#7c69ff 70%);color:white;font-size:17px;letter-spacing:0;box-shadow:0 4px 18px rgba(94,121,255,.28)}
+#voiceConversation .voice-only-brand b{color:#82dfff;font-weight:800}
+#voiceConversation .voice-only-eyebrow{display:flex;align-items:center;gap:8px;margin:4px 0 4px;padding:8px 12px;border:1px solid rgba(134,156,255,.17);border-radius:30px;background:rgba(95,115,220,.07);font-size:10px;letter-spacing:.16em;font-weight:800;color:#aebcf0}
+#voiceConversation .voice-live-dot{width:6px;height:6px;border-radius:50%;background:#64e8c0;box-shadow:0 0 12px rgba(100,232,192,.7)}
+#voiceConversation .voice-only-orb-wrap{width:260px;height:260px;max-width:72vw;max-height:72vw;position:relative;display:grid;place-items:center;margin:10px auto 12px}
+#voiceConversation .voice-only-orbit{position:absolute;border:1px solid rgba(117,142,255,.17);border-radius:50%;inset:12px;transform:rotate(-22deg) scaleY(.8)}#voiceConversation .orbit-two{inset:0 24px;transform:rotate(35deg) scaleY(.8);border-color:rgba(0,213,255,.13)}
+#voiceConversation .voice-only-orb{width:158px;height:158px;border-radius:50%;display:flex;align-items:center;justify-content:center;gap:7px;position:relative;background:radial-gradient(circle at 32% 22%,#a4efff 0%,#6c9aff 20%,#6465f5 48%,#7c43d6 72%,#1a2150 100%);box-shadow:0 0 24px rgba(95,126,255,.25),0 0 75px rgba(94,83,255,.19),inset 0 0 26px rgba(255,255,255,.26);border:1px solid rgba(255,255,255,.32);transition:transform .35s,box-shadow .35s,filter .35s}
+#voiceConversation .voice-only-orb:before{content:"";position:absolute;inset:9px;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
+#voiceConversation .voice-only-orb span{width:5px;height:18px;border-radius:8px;background:#fff;opacity:.9;transform:scaleY(.45);box-shadow:0 0 8px rgba(255,255,255,.35)}
+#voiceConversation .voice-only-orb[data-state="listening"] span{animation:tnsVoiceOrbWave .55s ease-in-out infinite alternate}#voiceConversation .voice-only-orb[data-state="listening"] span:nth-child(2),#voiceConversation .voice-only-orb[data-state="speaking"] span:nth-child(4){animation-delay:.16s}#voiceConversation .voice-only-orb[data-state="listening"] span:nth-child(3){animation-delay:.28s}
+#voiceConversation .voice-only-orb[data-state="speaking"]{box-shadow:0 0 40px rgba(82,190,255,.62),0 0 100px rgba(93,87,255,.3),inset 0 0 32px rgba(255,255,255,.36);transform:scale(1.055);filter:saturate(1.15)}#voiceConversation .voice-only-orb[data-state="speaking"] span{animation:tnsVoiceOrbWave .32s ease-in-out infinite alternate}#voiceConversation .voice-only-orb[data-state="thinking"]{animation:tnsVoiceOrbThink 1.1s ease-in-out infinite alternate}#voiceConversation .voice-only-orb[data-state="error"]{background:radial-gradient(circle at 35% 25%,#ff9b9b,#c73757 65%,#421b36)}
+#voiceConversation h2{margin:5px 0 5px;font-size:clamp(30px,6vw,42px);font-weight:750;letter-spacing:-.045em;line-height:1.12;color:#fbfcff}
+#voiceConversation .voice-only-subtitle{margin:0;color:#a8b5d8;font-size:14px;letter-spacing:.01em}
+#voiceConversation #voiceOnlyStatus{display:flex;align-items:center;justify-content:center;min-height:48px;max-width:370px;margin:18px 0 4px;padding:0 12px;color:#d4dcf7;font-size:14px;line-height:1.55}
+#voiceConversation .voice-only-controls{width:100%;display:flex;flex-direction:column;align-items:center;gap:11px;margin-top:14px}
+#voiceConversation .voice-only-controls button{width:min(100%,290px);min-height:50px;border-radius:17px;padding:13px 20px;font:inherit;font-size:14px;font-weight:750;letter-spacing:.01em;display:flex;align-items:center;justify-content:center;gap:9px;transition:transform .18s,opacity .18s,box-shadow .18s}
+#voiceConversation .voice-only-controls button:active:not(:disabled){transform:scale(.98)}
+#voiceConversation .voice-only-start{border:1px solid rgba(190,224,255,.42);background:linear-gradient(110deg,#55d7f7 0%,#7384ff 54%,#9c6aff 100%);color:#fff;box-shadow:0 8px 26px rgba(90,112,255,.26),inset 0 1px 0 rgba(255,255,255,.3)}
+#voiceConversation .voice-only-stop{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.055);color:#d8def2}#voiceConversation .voice-only-stop:disabled{opacity:.38}
+#voiceConversation .voice-only-footer{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:24px;color:#8290b7;font-size:11px;letter-spacing:.02em}#voiceConversation .voice-only-footer>span{color:#8bcfff;font-size:14px}#voiceConversation .voice-only-footer i{height:3px;width:3px;border-radius:50%;background:#5c6b91}
+@keyframes tnsVoiceOrbWave{from{transform:scaleY(.38)}to{transform:scaleY(1.65)}}@keyframes tnsVoiceOrbThink{from{transform:scale(.96);filter:hue-rotate(0deg)}to{transform:scale(1.035);filter:hue-rotate(18deg)}}
+@media(max-width:420px){#voiceConversation.panel.active{padding:8px}#voiceConversation .voice-only-card{min-height:calc(100dvh - 16px);padding:74px 17px 22px;border-radius:27px}#voiceConversation .voice-only-back{top:15px;left:14px;padding:9px 11px}#voiceConversation .voice-only-brand{top:17px;right:15px;font-size:11px}#voiceConversation .voice-brand-mark{width:24px;height:24px}#voiceConversation .voice-only-orb-wrap{margin:4px auto 8px}#voiceConversation .voice-only-orb{width:142px;height:142px}#voiceConversation .voice-only-controls{margin-top:9px}#voiceConversation .voice-only-footer{margin-top:19px}}
+@media(prefers-reduced-motion:reduce){#voiceConversation .voice-only-orb,#voiceConversation .voice-only-orb span{animation:none!important;transition:none}}
+}
+
+/* Saved Tasks inside the three-line menu: mobile-friendly task recovery UI. */
+.saved-task-filters{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;margin:16px 0}.saved-task-filters label{margin:0}.saved-task-filters .saved-task-active-label{display:flex;align-items:center;gap:8px;min-height:44px}.saved-task-active-label input{width:18px;height:18px;margin:0}.saved-task-counts{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}.saved-task-counts span{padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);font-size:12px}.saved-task-list{display:grid;gap:10px}.saved-task-card{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--surface2)}.saved-task-card-main{min-width:0}.saved-task-card-main b,.saved-task-card-main small{display:block;overflow-wrap:anywhere}.saved-task-card-main small{margin-top:5px;font-size:11px}.saved-task-steps{display:grid;gap:8px}.saved-task-step{display:flex;gap:10px;padding:12px;border:1px solid var(--line);border-radius:13px;background:var(--surface2)}.saved-task-step b,.saved-task-step small{display:block;overflow-wrap:anywhere}.saved-task-step small{margin-top:4px;font-size:11px}.saved-task-detail{margin-top:18px;padding:15px;border:1px solid var(--line);border-radius:18px}.saved-task-detail .section-head{align-items:flex-start}.saved-task-detail h3{overflow-wrap:anywhere}@media(max-width:560px){.saved-task-filters{grid-template-columns:1fr}.saved-task-card{align-items:flex-start;flex-direction:column}.saved-task-card button{width:100%}}

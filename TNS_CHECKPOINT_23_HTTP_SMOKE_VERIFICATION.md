@@ -1,11 +1,11 @@
-# TNS Studio — Checkpoint 23: HTTP Smoke Verification
+# TNS — Checkpoint 23: HTTP Smoke Verification
 
 ## Basis and scope
 Built from Checkpoint 22. No existing app feature code, UI, auth logic, chat retry logic, or editor logic was intentionally changed. This checkpoint adds a real HTTP smoke test to `npm test` and documents what was actually verified.
 
 ## New automated test
-`tests/http-smoke.js` starts the TNS Studio server on a free local port and checks:
-- `GET /health` returns HTTP 200 and `{ ok: true, name: "TNS Studio API" }`.
+`tests/http-smoke.js` starts the TNS server on a free local port and checks:
+- `GET /health` returns HTTP 200 and `{ ok: true, name: "TNS API" }`.
 - `GET /` returns non-empty HTML.
 - `GET /app.js` returns non-empty JavaScript.
 - `GET /style.css` returns non-empty CSS.

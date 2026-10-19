@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 33 — Voice Language and Device Voice Selection
+# TNS Checkpoint 33 — Voice Language and Device Voice Selection
 
 ## Scope
 

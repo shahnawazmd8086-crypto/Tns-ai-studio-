@@ -1,12 +1,12 @@
-# TNS Studio Edit Video — Mobile Workflow Rebuild Audit
+# TNS Edit Video — Mobile Workflow Rebuild Audit
 Date: 2026-09-30
 
 ## Target
-Rebuild the Edit Video user workflow around the documented CapCut-style mobile interaction model: import media, timeline-first editing, context-sensitive clip tools, horizontally scrollable tool categories, tool-specific workspaces, live preview, multi-track media, undo/redo, and export controls. This is an independent TNS Studio implementation; no CapCut proprietary source code or assets are used.
+Rebuild the Edit Video user workflow around the documented CapCut-style mobile interaction model: import media, timeline-first editing, context-sensitive clip tools, horizontally scrollable tool categories, tool-specific workspaces, live preview, multi-track media, undo/redo, and export controls. This is an independent TNS implementation; no CapCut proprietary source code or assets are used.
 
 ## Implemented in this build
 - Timeline-first mobile editor shell.
-- TNS Studio header with Undo/Redo and Export.
+- TNS header with Undo/Redo and Export.
 - Multiple video/photo import.
 - Separate video, text/overlay and audio timeline lanes.
 - Clip selection and context-sensitive quick tools.

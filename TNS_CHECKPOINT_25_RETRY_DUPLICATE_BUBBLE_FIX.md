@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 25: Retry Duplicate Bubble Fix
+# TNS — Checkpoint 25: Retry Duplicate Bubble Fix
 
 ## Scope
 - Based on Checkpoint 24.

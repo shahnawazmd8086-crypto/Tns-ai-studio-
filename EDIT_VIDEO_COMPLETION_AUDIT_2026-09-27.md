@@ -1,4 +1,4 @@
-# TNS Studio — Edit Video Completion Audit
+# TNS — Edit Video Completion Audit
 
 Date: 2026-09-27
 

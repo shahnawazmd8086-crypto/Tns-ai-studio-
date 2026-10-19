@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 34 — Same-language reply work
+# TNS Checkpoint 34 — Same-language reply work
 
 ## Scope
 - Added best-effort language detection for common writing systems and a small romanized-Hindi heuristic.

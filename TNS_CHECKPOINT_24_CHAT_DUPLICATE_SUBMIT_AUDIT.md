@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 24 Chat Duplicate-Submit Audit
+# TNS — Checkpoint 24 Chat Duplicate-Submit Audit
 
 ## Scope
 - Based on Checkpoint 23.

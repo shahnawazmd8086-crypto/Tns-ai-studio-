@@ -1,4 +1,4 @@
-# TNS Studio — Edit Video Professional Completion Audit
+# TNS — Edit Video Professional Completion Audit
 
 Source: latest GitHub-uploaded project ZIP supplied on 2026-09-28.
 

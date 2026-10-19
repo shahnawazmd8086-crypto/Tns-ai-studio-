@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 42 — Voice Playback Error Handling
+# TNS Checkpoint 42 — Voice Playback Error Handling
 
 ## Scope
 - Adds clearer UI status when no installed device voice matches the requested reply language.

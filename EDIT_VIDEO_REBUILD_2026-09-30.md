@@ -1,4 +1,4 @@
-# TNS Studio Edit Video — Mobile UX Rebuild (2026-09-30)
+# TNS Edit Video — Mobile UX Rebuild (2026-09-30)
 
 This build replaces the previous long-card editor presentation with a mobile-first editing workspace.
 
@@ -17,7 +17,7 @@ Add Media, Trim, Split, Crop, Text, Audio, Filters, Adjust, Speed, Export.
 ## Tool groups
 Edit, Canvas & Motion, Text & Captions, Effects & Transitions, Colour, Audio, AI Tools, Advanced.
 
-The implementation keeps TNS Studio branding and its existing editor state/export architecture. It uses the interaction pattern of modern mobile editors (preview → timeline → contextual horizontal tools) without copying CapCut's branding/assets.
+The implementation keeps TNS branding and its existing editor state/export architecture. It uses the interaction pattern of modern mobile editors (preview → timeline → contextual horizontal tools) without copying CapCut's branding/assets.
 
 ## Verification
 - `node --check public/app.js` PASS

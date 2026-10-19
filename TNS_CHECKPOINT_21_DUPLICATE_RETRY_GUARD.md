@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 21: Duplicate Retry Guard
+# TNS — Checkpoint 21: Duplicate Retry Guard
 
 ## Scope
 Built from Checkpoint 20. Only the failed-chat Retry click guard and its audit test were changed.

@@ -1,4 +1,4 @@
-# TNS Studio — Final Consolidated Audit Package
+# TNS — Final Consolidated Audit Package
 
 Source: `TNS_Studio_UPLOAD_READY.zip` (latest available package).
 
@@ -11,7 +11,7 @@ Source: `TNS_Studio_UPLOAD_READY.zip` (latest available package).
 - Security headers include an active Content-Security-Policy and same-origin checks for state-changing API requests.
 - `/api/editor/export` is present and connected to FFmpeg with trim, resize, brightness, contrast, filters, rotation, speed and volume handling.
 - FFmpeg speed export avoids duplicate audio filters.
-- Uploaded media paths are restricted to the TNS Studio uploads directory.
+- Uploaded media paths are restricted to the TNS uploads directory.
 - Server-side project CRUD is protected by authenticated owner checks.
 - Project IDs are sanitized before filesystem access.
 - removed communication module require authentication.

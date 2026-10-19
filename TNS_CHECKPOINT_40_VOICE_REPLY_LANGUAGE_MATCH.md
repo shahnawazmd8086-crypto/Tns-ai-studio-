@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 40 — Voice/AI Reply Language Matching
+# TNS Checkpoint 40 — Voice/AI Reply Language Matching
 
 ## Scope
 This checkpoint is limited to TNS AI voice conversation request language handling, the chat route's language selection, and an automated audit.

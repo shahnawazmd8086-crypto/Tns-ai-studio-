@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 35 — Language Fallback Normalization
+# TNS Checkpoint 35 — Language Fallback Normalization
 
 ## Scope
 - Built from Checkpoint 34.

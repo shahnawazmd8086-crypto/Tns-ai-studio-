@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 28 Attachment Validation
+# TNS — Checkpoint 28 Attachment Validation
 
 ## Scope
 Based on Checkpoint 27. This checkpoint changes only TNS home-chat attachment validation and adds an automated audit.

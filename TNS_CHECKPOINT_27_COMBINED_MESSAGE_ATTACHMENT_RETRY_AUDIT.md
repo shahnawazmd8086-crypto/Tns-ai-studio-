@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 27 — Combined Message + Attachment Retry Audit
+# TNS Checkpoint 27 — Combined Message + Attachment Retry Audit
 
 ## Scope
 - Based on Checkpoint 26.

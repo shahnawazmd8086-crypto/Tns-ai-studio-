@@ -1,4 +1,4 @@
-# TNS Studio — Launch Checklist
+# TNS — Launch Checklist
 
 ## Local audit completed
 - JavaScript syntax checks pass across the source tree.

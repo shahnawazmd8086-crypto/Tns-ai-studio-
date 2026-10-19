@@ -1,4 +1,4 @@
-# TNS Studio — Edit Video Completion Audit — 2026-09-28
+# TNS — Edit Video Completion Audit — 2026-09-28
 
 ## Current status
 The GitHub-uploaded project was used as the source of truth. The Edit Video module was completed to a professional local-editor workflow and verified after changes.
@@ -12,7 +12,7 @@ The GitHub-uploaded project was used as the source of truth. The Edit Video modu
 - Undo/Redo history is maintained up to 50 states.
 - Save Project / Load Project stores the editor project locally on the device.
 - Play/Pause and timeline scrubber are connected to the preview.
-- Editor tools open inside a TNS Studio Tool Workspace instead of using `prompt()` dialogs.
+- Editor tools open inside a TNS Tool Workspace instead of using `prompt()` dialogs.
 - Export supports 720p, 1080p, 1440p and 2160p/4K, plus 9:16, 16:9, 1:1 and 4:5 ratios.
 - Timeline export preserves clip audio when available and mixes added timeline audio.
 

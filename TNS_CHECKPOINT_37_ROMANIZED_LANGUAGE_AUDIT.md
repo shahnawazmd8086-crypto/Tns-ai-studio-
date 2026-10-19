@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 37 Romanized Language Audit
+# TNS — Checkpoint 37 Romanized Language Audit
 
 ## Scope
 - Built from Checkpoint 36 Language Matrix Audit.

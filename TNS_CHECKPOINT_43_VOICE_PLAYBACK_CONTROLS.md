@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 43: Voice Playback Controls
+# TNS — Checkpoint 43: Voice Playback Controls
 
 ## Scope
 Only the TNS AI Voice playback controls and their automated audit were updated. Login, dashboard structure, and unrelated features were not intentionally changed.

@@ -6,7 +6,7 @@ TNS is being moved toward a simple, chat-first assistant. A user should be able 
 The locked scope is recorded in `TNS_MASTER_LIST_LOCKED_v1.0.md`.
 
 ## Current checkpoint
-The existing ZIP began as TNS Studio, a creator and communication workspace. This checkpoint changes the main dashboard to a chat-first home and keeps the existing creator modules available under **All tools**. It does not mean the complete universal TNS service is finished.
+The existing ZIP began as TNS, a creator and communication workspace. This checkpoint changes the main dashboard to a chat-first home and keeps the existing creator modules available under **All tools**. It does not mean the complete universal TNS service is finished.
 
 ## Existing foundations
 - Node.js server and static frontend

@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 41 — Voice Playback Language Matching
+# TNS Checkpoint 41 — Voice Playback Language Matching
 
 ## Scope
 - Changed only `public/app.js`, `tests/voice-playback-language-match-audit.js`, and the `package.json` test command.

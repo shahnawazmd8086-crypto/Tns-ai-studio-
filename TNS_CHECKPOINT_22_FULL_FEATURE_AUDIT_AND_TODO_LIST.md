@@ -1,6 +1,6 @@
 > **Historical record only:** This checkpoint describes an earlier build. It is superseded by `TNS_CHECKPOINT_45_MODULES_REMOVED_AUDIT.md`; the five standalone modules listed there are not part of the current build.
 
-# TNS Studio — Checkpoint 22: Feature Audit & Master To-do List
+# TNS — Checkpoint 22: Feature Audit & Master To-do List
 
 ## Scope and honesty
 This audit was prepared from Checkpoint 21's source, its locked requirements, existing test scripts, server routes, and production-status notes. It is a **source/static audit**, not proof that every screen works in a real browser or on a phone. No application code, UI, or existing feature was changed for this audit; this file is the only intended addition in Checkpoint 22.
@@ -34,7 +34,7 @@ Routes are present for health, signup/login/logout/session, Google OAuth entry/c
 ## Feature-by-feature status against locked requirements
 | Feature | What source indicates | Current status |
 |---|---|---|
-| TNS Studio branding / chat-first home | Main app source and design references exist | Source present; real-device visual confirmation pending |
+| TNS branding / chat-first home | Main app source and design references exist | Source present; real-device visual confirmation pending |
 | Signup, email/mobile login, logout, session/password security | Auth routes and production-status notes exist; smoke tests pass | Partially verified by automated checks; full signup/login/recovery flow must be tested against a clean database and deployment |
 | OTP delivery | OTP request/verify routes exist | Provider-dependent; real email/SMS delivery not verified/configured here |
 | Google login | OAuth routes exist | Requires client credentials/callback configuration; not live-verified |

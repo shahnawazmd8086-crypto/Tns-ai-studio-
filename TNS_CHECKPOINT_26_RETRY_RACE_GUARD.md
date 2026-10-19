@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 26: Retry Race Guard
+# TNS — Checkpoint 26: Retry Race Guard
 
 ## Scope
 - Based on Checkpoint 25.

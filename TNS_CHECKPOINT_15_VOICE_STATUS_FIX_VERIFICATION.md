@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 15 Verification
+# TNS — Checkpoint 15 Verification
 
 ## Baseline protection
 - Checkpoint 13 remains the locked baseline and is not edited by this checkpoint.

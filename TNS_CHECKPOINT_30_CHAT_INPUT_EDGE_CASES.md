@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 30: Chat Input Edge-Case Audit
+# TNS — Checkpoint 30: Chat Input Edge-Case Audit
 
 ## Scope
 - Based on Checkpoint 29.

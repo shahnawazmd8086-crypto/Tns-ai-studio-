@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 16: Voice Dictation Hardening
+# TNS — Checkpoint 16: Voice Dictation Hardening
 
 ## Baseline and scope
 - Source ZIP: Checkpoint 15 (Voice Playback Status Fix).

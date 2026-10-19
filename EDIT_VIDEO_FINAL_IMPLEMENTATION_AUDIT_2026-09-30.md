@@ -1,7 +1,7 @@
-# TNS Studio Edit Video — Final Implementation Audit — 2026-09-30
+# TNS Edit Video — Final Implementation Audit — 2026-09-30
 
 ## Scope
-Reworked the Edit Video module from a long list of tool-name buttons into a contextual, horizontally scrollable professional editor workflow inspired by documented CapCut interaction patterns while retaining original TNS Studio branding and architecture.
+Reworked the Edit Video module from a long list of tool-name buttons into a contextual, horizontally scrollable professional editor workflow inspired by documented CapCut interaction patterns while retaining original TNS branding and architecture.
 
 ## Implemented
 - Preview/canvas-first editor layout.

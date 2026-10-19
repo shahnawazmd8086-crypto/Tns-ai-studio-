@@ -3,7 +3,7 @@
 ## Changes
 - Removed the separate Sarkari Kaam, Document Samjhein, Online Problem, and Shikayat Likhein dashboard cards.
 - Removed the large intro/welcome panels so the main screen is centered on the chat area and composer.
-- Kept the TNS Studio header and existing collapsed Saare Tools access.
+- Kept the TNS header and existing collapsed Saare Tools access.
 - Kept the plus menu with three distinct actions: Photo, File/Document, Camera.
 - Added a small empty-state hint inside the conversation area.
 - Removed obsolete starter-card JavaScript behavior.

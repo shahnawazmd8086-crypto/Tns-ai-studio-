@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 32 — Voice Playback Fallback
+# TNS Checkpoint 32 — Voice Playback Fallback
 
 ## Scope
 

@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 19 — Chat Retry Button
+# TNS Checkpoint 19 — Chat Retry Button
 
 ## Base and preservation
 - Built from Checkpoint 18 source.

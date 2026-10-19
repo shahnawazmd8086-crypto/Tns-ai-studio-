@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 36 Language Matrix Audit
+# TNS — Checkpoint 36 Language Matrix Audit
 
 ## Scope
 - Derived from Checkpoint 35.

@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 38 — Voice Language Matching
+# TNS Checkpoint 38 — Voice Language Matching
 
 ## Scope
 This checkpoint only expands the TNS AI voice language choices and strengthens the automated voice-language audit. Login, dashboard layout, editor, and unrelated modules were not intentionally changed.

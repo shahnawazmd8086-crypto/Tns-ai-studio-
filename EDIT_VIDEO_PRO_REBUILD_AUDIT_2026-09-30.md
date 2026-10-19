@@ -1,9 +1,9 @@
-# TNS Studio Edit Video — Pro Mobile Rebuild Audit
+# TNS Edit Video — Pro Mobile Rebuild Audit
 
 Date: 2026-09-30
 
 ## What changed
-- Replaced the old long-form tool-card editor presentation at runtime with a touch-first TNS Studio editor shell.
+- Replaced the old long-form tool-card editor presentation at runtime with a touch-first TNS editor shell.
 - Added horizontal editing categories: Edit, Audio, Text, Overlay, Effects, Filters, Adjust, AI, More.
 - Added mobile-first preview, playhead, scrubber, timeline clips, trim handles, clip selection and context workspaces.
 - Added actual upload flows for video, photo and audio using authenticated existing upload APIs.

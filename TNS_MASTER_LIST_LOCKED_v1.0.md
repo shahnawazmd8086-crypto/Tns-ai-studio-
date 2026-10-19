@@ -1,6 +1,6 @@
 # TNS Master List — Locked v1.0
 
-> **Current build override (2026-10-13):** By the user's explicit instruction, the following standalone modules have been removed from the current TNS Studio ZIP: TNS Contact, standalone TNS AI screens/module, AI Image generation module, Profile/Profile Settings social module, and Shorts/Short Video feed module. This does not remove dashboard Q&A/photo-file understanding/voice-language support, login/signup/OTP, general settings/help, AI Video, Edit Video, or Projects. See `TNS_CHECKPOINT_45_MODULES_REMOVED_AUDIT.md` for the current implementation scope.
+> **Current build override (2026-10-13):** By the user's explicit instruction, the following standalone modules have been removed from the current TNS ZIP: TNS Contact, standalone TNS AI screens/module, AI Image generation module, Profile/Profile Settings social module, and Shorts/Short Video feed module. This does not remove dashboard Q&A/photo-file understanding/voice-language support, login/signup/OTP, general settings/help, AI Video, Edit Video, or Projects. See `TNS_CHECKPOINT_45_MODULES_REMOVED_AUDIT.md` for the current implementation scope.
 
 **Status:** Locked planning reference  
 **Brand:** TNS  
@@ -32,7 +32,7 @@
 21. **Notifications** — show supported case updates and reminders without inventing statuses.
 22. **Help & Support** — onboarding, feedback, error reports, and support routes where available.
 23. **Simple Dashboard** — one chat-first home screen, with optional tools and saved work accessible without overwhelming the user.
-24. **Review Existing TNS Studio ZIP** — audit and reuse suitable authentication, language, dashboard AI, storage, project, server, and creator foundations. The user has explicitly approved removal of the five standalone modules named in the current build override.
+24. **Review Existing TNS ZIP** — audit and reuse suitable authentication, language, dashboard AI, storage, project, server, and creator foundations. The user has explicitly approved removal of the five standalone modules named in the current build override.
 25. **Testing & Quality** — test real functionality, security, error recovery, accessibility, and mobile usability before claiming completion.
 
 ## Five non-negotiable rules

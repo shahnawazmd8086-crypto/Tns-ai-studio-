@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 44 — Voice/response race guard
+# TNS Checkpoint 44 — Voice/response race guard
 
 ## Scope
 - Updated `public/app.js` only for voice-response race protection.

@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 20 — Exact Chat Retry Payload
+# TNS Checkpoint 20 — Exact Chat Retry Payload
 
 ## Scope
 Built only on Checkpoint 19. The only functional change is the existing failed-chat Retry button: clicking it restores the original failed message and the original failed attachment before resubmitting. This prevents a later draft or newly selected file from accidentally replacing the payload the user intended to retry.

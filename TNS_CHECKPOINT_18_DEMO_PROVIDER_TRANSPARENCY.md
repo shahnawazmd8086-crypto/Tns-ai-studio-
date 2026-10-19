@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 18: Demo Provider Transparency
+# TNS — Checkpoint 18: Demo Provider Transparency
 
 ## Base
 Created as a new copy of Checkpoint 17. Checkpoint 13 remains preserved as the locked baseline; Checkpoint 17 is not overwritten.

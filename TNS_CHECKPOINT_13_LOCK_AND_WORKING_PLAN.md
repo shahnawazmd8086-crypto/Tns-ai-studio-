@@ -1,4 +1,4 @@
-# TNS Studio — Locked Baseline and Working Feature Plan
+# TNS — Locked Baseline and Working Feature Plan
 
 ## Locked baseline
 - Baseline archive: `TNS-Chat-First-Checkpoint-13-Centered-Voice-Controls.zip`

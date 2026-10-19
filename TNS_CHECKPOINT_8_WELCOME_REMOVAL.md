@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 8: Remove Large Welcome Card
+# TNS — Checkpoint 8: Remove Large Welcome Card
 
 ## Requested change
 Remove the large welcome/intro area on the chat-first dashboard and allocate more vertical space to the chat area.

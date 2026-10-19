@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 45 — Voice microphone session race guard
+# TNS Checkpoint 45 — Voice microphone session race guard
 
 ## Pre-change audit
 - Opened and tested Checkpoint 44 before editing.

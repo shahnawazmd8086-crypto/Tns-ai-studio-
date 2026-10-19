@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 31 — Voice Recognition Race Guard
+# TNS Checkpoint 31 — Voice Recognition Race Guard
 
 ## Scope
 Started from Checkpoint 30. This checkpoint changes only the chat voice-input/dictation lifecycle and its automated audit.

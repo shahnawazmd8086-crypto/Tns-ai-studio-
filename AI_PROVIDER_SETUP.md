@@ -1,6 +1,6 @@
-# TNS Studio — AI Provider Setup
+# TNS — AI Provider Setup
 
-TNS Studio uses a provider-independent AI layer. No API key is stored in the repository.
+TNS uses a provider-independent AI layer. No API key is stored in the repository.
 
 ## Development
 The `mock` provider is available for local UI/testing only. It must not be used as the production AI service.
@@ -18,7 +18,7 @@ Set:
 - `TNS_VOICE_PROVIDER_STATUS_URL=...` (optional; use `{jobId}` or `{id}` for the provider job ID)
 - `TNS_AI_PROVIDER_API_KEY=...` (only if the selected provider requires a bearer key)
 
-The configured endpoints should return JSON describing the created job/result. This adapter is intentionally provider-neutral so TNS Studio can later use a commercial provider or a self-hosted TNS AI engine without redesigning the app.
+The configured endpoints should return JSON describing the created job/result. This adapter is intentionally provider-neutral so TNS can later use a commercial provider or a self-hosted TNS AI engine without redesigning the app.
 
 ## Production rule
 When `NODE_ENV=production`, the server refuses the `mock` provider and returns a configuration error until a real provider is connected.

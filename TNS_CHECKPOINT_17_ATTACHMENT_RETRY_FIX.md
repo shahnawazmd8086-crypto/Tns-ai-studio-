@@ -1,4 +1,4 @@
-# TNS Studio — Checkpoint 17: Attachment Retry Fix
+# TNS — Checkpoint 17: Attachment Retry Fix
 
 ## Base
 Built as a new copy from Checkpoint 16. Do not overwrite Checkpoint 13 or Checkpoint 16.

@@ -18,8 +18,12 @@ const MockProvider = require('./providers/mock');
 const HttpProvider = require('./providers/http');
 const Uploads = require('./storage/Uploads');
 const ProjectStore = require('./storage/Projects');
+const ChatHistory = require('./storage/ChatHistory');
 const MediaAccess = require('./storage/MediaAccess');
 const GlobalConfig = require('./config/Global-config');
+const BrowserAutomation = require('./browser/BrowserAutomation');
+const ActionReview = require('./browser/ActionReview');
+const TaskProgress = require('./browser/TaskProgress');
 
 registerProvider('mock', new MockProvider());
 registerProvider('http', new HttpProvider({ name: 'http' }));
@@ -28,6 +32,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const UPLOAD_DIR = path.join(PUBLIC_DIR, 'uploads');
 const PROJECT_DIR = path.join(__dirname, 'Data', 'projects');
+const CHAT_HISTORY_DIR = process.env.CHAT_HISTORY_DIR ? path.resolve(process.env.CHAT_HISTORY_DIR) : path.join(__dirname, 'Data', 'chat-history');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 fs.mkdirSync(PROJECT_DIR, { recursive: true });
 
@@ -45,6 +50,44 @@ const RATE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT = Math.max(30, Number(process.env.API_RATE_LIMIT) || 120);
 const AUTH_RATE_WINDOW_MS = 60 * 1000;
 const SESSION_TIMEOUT_MINUTES = Math.max(1, Number(process.env.SESSION_TIMEOUT_MINUTES) || GlobalConfig.auth.sessionTimeoutMinutes);
+
+// Live web research: configure TAVILY_API_KEY in the server environment.
+// Never pretend that research ran when the search service is not configured.
+async function runWebResearch(query, replyLanguage) {
+  const apiKey = String(process.env.TAVILY_API_KEY || '').trim();
+  if (!apiKey) {
+    const error = new Error('Live web research is not configured yet. Add TAVILY_API_KEY to the server environment.');
+    error.statusCode = 503;
+    throw error;
+  }
+  const response = await fetch('https://api.tavily.com/search', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(20000),
+    body: JSON.stringify({ api_key: apiKey, query, search_depth: 'advanced', topic: 'general', max_results: 6, include_answer: false, include_raw_content: false })
+  });
+  if (!response.ok) {
+    const error = new Error(response.status === 401 || response.status === 403
+      ? 'Web research API key was rejected. Check TAVILY_API_KEY.'
+      : `Web research service returned HTTP ${response.status}. Please try again later.`);
+    error.statusCode = response.status === 429 ? 429 : 502;
+    throw error;
+  }
+  const data = await response.json();
+  const sources = (Array.isArray(data.results) ? data.results : []).slice(0, 6).map(item => ({
+    title: String(item.title || item.url || 'Source').slice(0, 300),
+    url: String(item.url || ''),
+    snippet: String(item.content || '').slice(0, 1800),
+    score: Number.isFinite(Number(item.score)) ? Number(item.score) : null
+  })).filter(item => /^https?:\/\//i.test(item.url));
+  if (!sources.length) {
+    const error = new Error('Web research found no usable sources for this question. Try a more specific query.');
+    error.statusCode = 502;
+    throw error;
+  }
+  return { sources, researchContext: sources.map((item, i) => `[Source ${i + 1}] ${item.title}\nURL: ${item.url}\nExtract: ${item.snippet}`).join('\n\n') };
+}
+
 
 function sendJson(res, status, data, extraHeaders = {}) {
   res.writeHead(status, {
@@ -215,15 +258,15 @@ async function generateLocalAIVideo(input = {}, userId) {
   const [width, height] = aiVideoDimensions(input.format, input.quality);
   const outputName = `${crypto.randomUUID()}-tns-ai-video.mp4`;
   const outputPath = path.join(UPLOAD_DIR, outputName);
-  const prompt = String(input.prompt || 'TNS Studio AI Video').replace(/\s+/g, ' ').trim().slice(0, 180);
+  const prompt = String(input.prompt || 'TNS AI Video').replace(/\s+/g, ' ').trim().slice(0, 180);
   const safeText = prompt.replace(/[:'\\]/g, ' ').replace(/%/g, '\%').replace(/,/g, '\,');
   const style = String(input.style || 'Photorealistic');
   const camera = String(input.camera || 'Auto');
   const workflow = String(input.workflow || 'Script → Video');
-  const draw = `drawtext=text='TNS Studio':fontcolor=white:fontsize=${Math.max(28, Math.round(width/32))}:x=(w-text_w)/2:y=40:box=1:boxcolor=black@0.45:boxborderw=12,drawtext=text='${safeText}':fontcolor=white:fontsize=${Math.max(24, Math.round(width/48))}:x=(w-text_w)/2:y=h-text_h-70:box=1:boxcolor=black@0.5:boxborderw=10`;
-  const args = ['-y','-f','lavfi','-i',`color=c=0x172033:s=${width}x${height}:r=30`,'-f','lavfi','-i',`sine=frequency=440:sample_rate=48000:duration=${duration}`, '-t', String(duration), '-vf', draw, '-map','0:v:0','-map','1:a:0','-c:v','libx264','-preset','veryfast','-pix_fmt','yuv420p','-b:v', width >= 3840 ? '20M' : width >= 2560 ? '12M' : width >= 1920 ? '8M' : '5M','-c:a','aac','-b:a','192k','-movflags','+faststart','-metadata',`comment=Local TNS Studio fallback | ${style} | ${camera} | ${workflow}` ,outputPath];
+  const draw = `drawtext=text='TNS':fontcolor=white:fontsize=${Math.max(28, Math.round(width/32))}:x=(w-text_w)/2:y=40:box=1:boxcolor=black@0.45:boxborderw=12,drawtext=text='${safeText}':fontcolor=white:fontsize=${Math.max(24, Math.round(width/48))}:x=(w-text_w)/2:y=h-text_h-70:box=1:boxcolor=black@0.5:boxborderw=10`;
+  const args = ['-y','-f','lavfi','-i',`color=c=0x172033:s=${width}x${height}:r=30`,'-f','lavfi','-i',`sine=frequency=440:sample_rate=48000:duration=${duration}`, '-t', String(duration), '-vf', draw, '-map','0:v:0','-map','1:a:0','-c:v','libx264','-preset','veryfast','-pix_fmt','yuv420p','-b:v', width >= 3840 ? '20M' : width >= 2560 ? '12M' : width >= 1920 ? '8M' : '5M','-c:a','aac','-b:a','192k','-movflags','+faststart','-metadata',`comment=Local TNS fallback | ${style} | ${camera} | ${workflow}` ,outputPath];
   await runCommand('ffmpeg', args);
-  MediaAccess.register(outputName, userId, { originalName: 'TNS Studio AI Video', createdAt: new Date().toISOString() });
+  MediaAccess.register(outputName, userId, { originalName: 'TNS AI Video', createdAt: new Date().toISOString() });
   return { url: publicUrl(outputName), fileName: outputName, duration, width, height, provider: 'mock', mode: 'local-fallback', prompt, style, camera, workflow };
 }
 
@@ -326,7 +369,29 @@ const server = http.createServer(async (req, res) => {
 
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
-    if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true, name: 'TNS Studio API' });
+    if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true, name: 'TNS API' });
+
+    // Per-account chat history: conversations are stored separately by authenticated user ID.
+    if (url.pathname === '/api/tns-ai/conversations' && req.method === 'GET') {
+      const user = requireAuth(req, res); if (!user) return;
+      return sendJson(res, 200, { success: true, conversations: ChatHistory.list(CHAT_HISTORY_DIR, user.id) });
+    }
+    if (url.pathname === '/api/tns-ai/conversations' && req.method === 'POST') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 1024 * 1024);
+      try { const conversation = ChatHistory.save(CHAT_HISTORY_DIR, user.id, input); return sendJson(res, 200, { success: true, conversation }); }
+      catch (error) { return sendJson(res, 400, { error: error.message || 'Could not save chat history.' }); }
+    }
+    const conversationMatch = url.pathname.match(/^\/api\/tns-ai\/conversations\/([A-Za-z0-9_-]+)$/);
+    if (conversationMatch && req.method === 'GET') {
+      const user = requireAuth(req, res); if (!user) return;
+      const conversation = ChatHistory.load(CHAT_HISTORY_DIR, user.id, conversationMatch[1]);
+      return conversation ? sendJson(res, 200, { success: true, conversation }) : sendJson(res, 404, { error: 'Conversation not found.' });
+    }
+    if (conversationMatch && req.method === 'DELETE') {
+      const user = requireAuth(req, res); if (!user) return;
+      return ChatHistory.remove(CHAT_HISTORY_DIR, user.id, conversationMatch[1]) ? sendJson(res, 200, { success: true }) : sendJson(res, 404, { error: 'Conversation not found.' });
+    }
 
     if (req.method === 'POST' && url.pathname === '/api/auth/signup') {
       const input = await readBody(req, 1024 * 1024);
@@ -555,7 +620,7 @@ const server = http.createServer(async (req, res) => {
         const outputPath = path.join(UPLOAD_DIR, outputName);
         const { exportTimeline } = require('./editor/export');
         const ratio = String(input.ratio || '9:16'); const ratioMap = {'9:16':[9,16],'16:9':[16,9],'1:1':[1,1],'4:5':[4,5]}; const dims=ratioMap[ratio]||ratioMap['9:16']; const width=ratio==='16:9'?Math.round(quality*dims[0]/dims[1]):quality; const height=ratio==='16:9'?quality:Math.round(quality*dims[1]/dims[0]); await exportTimeline(timeline, outputPath, { width, height, fps: Number(input.fps)||30, videoBitrate: input.videoBitrate, audioBitrate: input.audioBitrate });
-        MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio timeline export' });
+        MediaAccess.register(outputName, user.id, { originalName: 'TNS timeline export' });
         return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id, mode: 'timeline' } });
       }
       const inputPath = safeUploadPathFromUrl(input.inputPath);
@@ -582,7 +647,7 @@ const server = http.createServer(async (req, res) => {
         fadeIn: Number.isFinite(Number(input.fadeIn)) ? Math.max(0, Math.min(30, Number(input.fadeIn))) : 0,
         fadeOut: Number.isFinite(Number(input.fadeOut)) ? Math.max(0, Math.min(30, Number(input.fadeOut))) : 0
       });
-      MediaAccess.register(outputName, user.id, { originalName: 'TNS Studio export' });
+      MediaAccess.register(outputName, user.id, { originalName: 'TNS export' });
       return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
     }
 
@@ -597,7 +662,7 @@ const server = http.createServer(async (req, res) => {
       const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo, mergeVideos, mixAudio, transition, drawText, shape, vignette, color, balance, panZoomTool, keyframes, silenceRemoval, enhanceVoice, enhance, blurFace, removeObject, rotate, fadeAudio, syncBeats, detectScenes, smartCutTool, extendScene, tts, replaceBackground, applyFilter } = require('./editor/video-tools');
       const outputName = () => `${crypto.randomUUID()}-edit.mp4`;
       const outputPath = () => path.join(UPLOAD_DIR, outputName());
-      const register = (name, originalName = 'TNS Studio edit') => {
+      const register = (name, originalName = 'TNS edit') => {
         MediaAccess.register(name, user.id, { originalName, createdAt: new Date().toISOString() });
         return { fileName: name, url: publicUrl(name), ownerId: user.id };
       };
@@ -620,7 +685,7 @@ const server = http.createServer(async (req, res) => {
         } finally {
           await fs.promises.rm(listPath, { force: true });
         }
-        return sendJson(res, 200, { success: true, tool, result: register(mergedName, 'TNS Studio merged video') });
+        return sendJson(res, 200, { success: true, tool, result: register(mergedName, 'TNS merged video') });
       }
 
       if (tool === 'music' || tool === 'sfx' || tool === 'voice over' || tool === 'voice recorder' || tool === 'audio overlay') {
@@ -629,7 +694,7 @@ const server = http.createServer(async (req, res) => {
         if (!MediaAccess.canAccess(audioFileName, user.id)) throw new Error('Audio media access denied.');
         const name = outputName();
         await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume, start: input.start, audioBitrate: input.audioBitrate });
-        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS Studio ${tool}`) });
+        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS ${tool}`) });
       }
 
 
@@ -643,7 +708,7 @@ const server = http.createServer(async (req, res) => {
         const name = outputName();
         await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume || 1, start: input.start || 0 });
         await fs.promises.rm(audioPath, { force: true });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio TTS') });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS TTS') });
       }
 
       if (tool === 'transition') {
@@ -651,7 +716,7 @@ const server = http.createServer(async (req, res) => {
         if (!secondPath || !MediaAccess.canAccess(path.basename(secondPath), user.id)) throw new Error('Second video access denied.');
         const name = outputName();
         await transition(inputPath, secondPath, path.join(UPLOAD_DIR, name), { transition: input.transition, duration: input.duration, offset: input.offset });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio transition') });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS transition') });
       }
 
 
@@ -660,7 +725,7 @@ const server = http.createServer(async (req, res) => {
         if (!bgPath || !MediaAccess.canAccess(path.basename(bgPath), user.id)) throw new Error('Background media access denied.');
         const name = outputName();
         await replaceBackground(inputPath, bgPath, path.join(UPLOAD_DIR, name), { color: input.color, similarity: input.similarity, blend: input.blend });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio background replace') });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS background replace') });
       }
 
 
@@ -668,25 +733,25 @@ const server = http.createServer(async (req, res) => {
         const name = outputName();
         if (tool === 'ripple delete') await trim(inputPath, path.join(UPLOAD_DIR,name), Math.max(0,Number(input.start)||0), Number(input.duration)>0?Number(input.duration):null);
         else await exportVideo(inputPath, path.join(UPLOAD_DIR,name), { speed: Number(input.speed)>0?Number(input.speed):1.25, width: input.width||1080, height: input.height||1920 });
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
       }
       if (tool === 'mirror' || tool === 'motion tracking') {
         const name=outputName();
         if(tool==='mirror') await flip(inputPath,path.join(UPLOAD_DIR,name),'horizontal');
         else await blurFace(inputPath,path.join(UPLOAD_DIR,name),{x:input.x,y:input.y,width:input.width||240,height:input.height||240});
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
       }
       if (tool === 'templates' || tool === 'auto highlight') {
         const name=outputName();
-        if(tool==='templates') await drawText(inputPath,path.join(UPLOAD_DIR,name),input.text||'TNS Studio',{fontSize:input.fontSize||48});
+        if(tool==='templates') await drawText(inputPath,path.join(UPLOAD_DIR,name),input.text||'TNS',{fontSize:input.fontSize||48});
         else await smartCutTool(inputPath,path.join(UPLOAD_DIR,name),{minSilence:input.minSilence||0.35});
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
       }
-      if (tool === 'audio fade') { const name=outputName(); await fadeAudio(inputPath,path.join(UPLOAD_DIR,name),{fadeIn:input.fadeIn||1,fadeOut:input.fadeOut||1,totalDuration:input.totalDuration||10}); return sendJson(res,200,{success:true,tool,result:register(name,'TNS Studio audio fade')}); }
+      if (tool === 'audio fade') { const name=outputName(); await fadeAudio(inputPath,path.join(UPLOAD_DIR,name),{fadeIn:input.fadeIn||1,fadeOut:input.fadeOut||1,totalDuration:input.totalDuration||10}); return sendJson(res,200,{success:true,tool,result:register(name,'TNS audio fade')}); }
       if (tool === 'project versions' || tool === 'duplicate clip') {
         const name=outputName();
         await fs.promises.copyFile(inputPath,path.join(UPLOAD_DIR,name));
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS Studio ${tool}`)});
+        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
       }
       if (tool === 'export presets') return sendJson(res,200,{success:true,tool,presets:require('./editor/export').getExportPresets()});
 
@@ -696,34 +761,34 @@ const server = http.createServer(async (req, res) => {
         return sendJson(res, 200, { success: true, tool, result: register(name, originalName) });
       };
 
-      if (tool === 'rotate') return advanced(rotate, 'TNS Studio rotate', [Number(input.degrees ?? input.rotate ?? 90)]);
-      if (tool === 'pan & zoom') return advanced(panZoomTool, 'TNS Studio pan zoom', [{ scale: input.scale }]);
-      if (tool === 'keyframes') return advanced(keyframes, 'TNS Studio keyframes', [{ zoom: input.zoom, width: input.width, height: input.height, fps: input.fps }]);
-      if (tool === 'vignette') return advanced(vignette, 'TNS Studio vignette', [input.strength]);
-      if (tool === 'hsl' || tool === 'curves' || tool === 'colour match' || tool === 'lut') return advanced(color, 'TNS Studio colour adjustment', [{ saturation: input.saturation, brightness: input.brightness, contrast: input.contrast, gamma: input.gamma, hue: input.hue }]);
-      if (tool === 'temperature' || tool === 'tint') return advanced(balance, 'TNS Studio colour balance', [{ rs: input.red, gs: input.green, bs: input.blue }]);
-      if (tool === 'exposure' || tool === 'highlights' || tool === 'shadows') return advanced(color, 'TNS Studio tonal adjustment', [{ brightness: input.amount ?? input.brightness, contrast: input.contrast, saturation: input.saturation }]);
-      if (tool === 'captions' || tool === 'ai captions' || tool === 'subtitles' || tool === 'karaoke captions') return advanced(drawText, 'TNS Studio captions', [input.text || input.caption || 'TNS Studio', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration, color: input.color }]);
-      if (tool === 'text animation') return advanced(drawText, 'TNS Studio text animation', [input.text || 'TNS Studio', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration }]);
-      if (tool === 'stickers' || tool === 'shapes' || tool === 'mask' || tool === 'masks') return advanced(shape, 'TNS Studio shape/mask', [{ x: input.x, y: input.y, width: input.width, height: input.height, color: input.color, fill: input.fill, thickness: input.thickness }]);
-      if (tool === 'opacity') return advanced(color, 'TNS Studio opacity', [{ saturation: 1, brightness: 0, contrast: 1 }]);
-      if (tool === 'shadow') return advanced(drawText, 'TNS Studio shadow', [input.text || 'TNS Studio', { fontSize: input.fontSize, x: input.x, y: input.y, shadow: input.shadow || 6 }]);
-      if (tool === 'blur face' || tool === 'face blur') return advanced(blurFace, 'TNS Studio face blur', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
-      if (tool === 'object removal') return advanced(removeObject, 'TNS Studio object removal', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
-      if (tool === 'background removal' || tool === 'background replace') return advanced(chromaKey, 'TNS Studio background removal', [{ color: input.color || '0x00ff00', similarity: input.similarity || 0.1, blend: input.blend || 0.05 }]);
-      if (tool === 'ai enhance' || tool === 'ai upscale') return advanced(enhance, 'TNS Studio enhance', [{ width: input.width || 1920, height: input.height || 1080 }]);
-      if (tool === 'voice enhance' || tool === 'ai voice') return advanced(enhanceVoice, 'TNS Studio voice enhancement');
-      if (tool === 'silence removal') return advanced(silenceRemoval, 'TNS Studio silence removal', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
-      if (tool === 'smart cut') return advanced(smartCutTool, 'TNS Studio smart cut', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
-      if (tool === 'scene extend') return advanced(extendScene, 'TNS Studio scene extend', [input.duration || 2]);
-      if (tool === 'beat sync' || tool === 'auto beat') return advanced(syncBeats, 'TNS Studio beat sync', [{ bpm: input.bpm, speed: input.speed }]);
-      if (tool === 'scene detection') return advanced(detectScenes, 'TNS Studio scene detection', [{ threshold: input.threshold }]);
+      if (tool === 'rotate') return advanced(rotate, 'TNS rotate', [Number(input.degrees ?? input.rotate ?? 90)]);
+      if (tool === 'pan & zoom') return advanced(panZoomTool, 'TNS pan zoom', [{ scale: input.scale }]);
+      if (tool === 'keyframes') return advanced(keyframes, 'TNS keyframes', [{ zoom: input.zoom, width: input.width, height: input.height, fps: input.fps }]);
+      if (tool === 'vignette') return advanced(vignette, 'TNS vignette', [input.strength]);
+      if (tool === 'hsl' || tool === 'curves' || tool === 'colour match' || tool === 'lut') return advanced(color, 'TNS colour adjustment', [{ saturation: input.saturation, brightness: input.brightness, contrast: input.contrast, gamma: input.gamma, hue: input.hue }]);
+      if (tool === 'temperature' || tool === 'tint') return advanced(balance, 'TNS colour balance', [{ rs: input.red, gs: input.green, bs: input.blue }]);
+      if (tool === 'exposure' || tool === 'highlights' || tool === 'shadows') return advanced(color, 'TNS tonal adjustment', [{ brightness: input.amount ?? input.brightness, contrast: input.contrast, saturation: input.saturation }]);
+      if (tool === 'captions' || tool === 'ai captions' || tool === 'subtitles' || tool === 'karaoke captions') return advanced(drawText, 'TNS captions', [input.text || input.caption || 'TNS', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration, color: input.color }]);
+      if (tool === 'text animation') return advanced(drawText, 'TNS text animation', [input.text || 'TNS', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration }]);
+      if (tool === 'stickers' || tool === 'shapes' || tool === 'mask' || tool === 'masks') return advanced(shape, 'TNS shape/mask', [{ x: input.x, y: input.y, width: input.width, height: input.height, color: input.color, fill: input.fill, thickness: input.thickness }]);
+      if (tool === 'opacity') return advanced(color, 'TNS opacity', [{ saturation: 1, brightness: 0, contrast: 1 }]);
+      if (tool === 'shadow') return advanced(drawText, 'TNS shadow', [input.text || 'TNS', { fontSize: input.fontSize, x: input.x, y: input.y, shadow: input.shadow || 6 }]);
+      if (tool === 'blur face' || tool === 'face blur') return advanced(blurFace, 'TNS face blur', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
+      if (tool === 'object removal') return advanced(removeObject, 'TNS object removal', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
+      if (tool === 'background removal' || tool === 'background replace') return advanced(chromaKey, 'TNS background removal', [{ color: input.color || '0x00ff00', similarity: input.similarity || 0.1, blend: input.blend || 0.05 }]);
+      if (tool === 'ai enhance' || tool === 'ai upscale') return advanced(enhance, 'TNS enhance', [{ width: input.width || 1920, height: input.height || 1080 }]);
+      if (tool === 'voice enhance' || tool === 'ai voice') return advanced(enhanceVoice, 'TNS voice enhancement');
+      if (tool === 'silence removal') return advanced(silenceRemoval, 'TNS silence removal', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
+      if (tool === 'smart cut') return advanced(smartCutTool, 'TNS smart cut', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
+      if (tool === 'scene extend') return advanced(extendScene, 'TNS scene extend', [input.duration || 2]);
+      if (tool === 'beat sync' || tool === 'auto beat') return advanced(syncBeats, 'TNS beat sync', [{ bpm: input.bpm, speed: input.speed }]);
+      if (tool === 'scene detection') return advanced(detectScenes, 'TNS scene detection', [{ threshold: input.threshold }]);
       if (tool === 'transitions') {
         const secondPath = safeUploadPathFromUrl(input.secondInputPath || input.inputPaths?.[1] || '');
         if (!secondPath || !MediaAccess.canAccess(path.basename(secondPath), user.id)) throw new Error('Second video access denied.');
         const name = outputName();
         await transition(inputPath, secondPath, path.join(UPLOAD_DIR, name), { transition: input.transition || 'fade', duration: input.duration || 1, offset: input.offset || 0 });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS Studio transition') });
+        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS transition') });
       }
 
 
@@ -741,7 +806,7 @@ const server = http.createServer(async (req, res) => {
         else if (tool === 'proxy preview') filter = 'scale=640:-2';
         else if (tool === 'ai voice') filter = 'eq=contrast=1.05:saturation=1.05';
         await applyFilter(inputPath, path.join(UPLOAD_DIR, name), filter);
-        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS Studio ${tool}`) });
+        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS ${tool}`) });
       }
 
       if (tool === 'split') {
@@ -750,7 +815,7 @@ const server = http.createServer(async (req, res) => {
         const a = outputName();
         const b = outputName();
         await split(inputPath, path.join(UPLOAD_DIR, a), path.join(UPLOAD_DIR, b), point);
-        return sendJson(res, 200, { success: true, tool, results: [register(a, 'TNS Studio split part 1'), register(b, 'TNS Studio split part 2')] });
+        return sendJson(res, 200, { success: true, tool, results: [register(a, 'TNS split part 1'), register(b, 'TNS split part 2')] });
       }
 
       const name = outputName();
@@ -787,7 +852,7 @@ const server = http.createServer(async (req, res) => {
         const audioName = `${crypto.randomUUID()}-audio.m4a`;
         const audioPath = path.join(UPLOAD_DIR, audioName);
         await extractSound(inputPath, audioPath);
-        return sendJson(res, 200, { success: true, tool, result: register(audioName, 'TNS Studio extracted audio') });
+        return sendJson(res, 200, { success: true, tool, result: register(audioName, 'TNS extracted audio') });
       } else if (tool === 'export') {
         await exportVideo(inputPath, out, input.options || {});
       } else {
@@ -797,6 +862,137 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true, tool, result: register(name) });
     }
 
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/task/start') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 16 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try { return sendJson(res, 201, TaskProgress.createTask(user.id, input)); }
+      catch (error) { return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not start task tracking.' }); }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/task/update') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 8 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try { return sendJson(res, 200, TaskProgress.updateTask(user.id, input)); }
+      catch (error) { return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not update task progress.' }); }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/task/status') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 4 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try { return sendJson(res, 200, TaskProgress.getTask(user.id, input.taskId)); }
+      catch (error) { return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not retrieve task status.' }); }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/task/list') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 2 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try { return sendJson(res, 200, TaskProgress.listTasks(user.id, input)); }
+      catch (error) { return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not list tasks.' }); }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/task/resume') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 2 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try { return sendJson(res, 200, TaskProgress.resumeTask(user.id, input.taskId)); }
+      catch (error) { return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not recover task.' }); }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/inspect') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 16 * 1024);
+      let pageUrl;
+      try { pageUrl = BrowserAutomation.validatePublicHttpUrl(input.url); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid website URL.' }); }
+      try {
+        const result = await BrowserAutomation.inspectPublicWebsite(pageUrl);
+        return sendJson(res, 200, { ...result, requestedBy: user.id });
+      } catch (error) {
+        return sendJson(res, error.statusCode || 502, { success: false, error: error.message || 'Website inspection failed.' });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/prepare') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 16 * 1024);
+      let pageUrl;
+      try { pageUrl = BrowserAutomation.validatePublicHttpUrl(input.url); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid website URL.' }); }
+      try {
+        const result = await BrowserAutomation.inspectInteractiveWebsite(pageUrl);
+        return sendJson(res, 200, { ...result, requestedBy: user.id });
+      } catch (error) {
+        return sendJson(res, error.statusCode || 502, { success: false, error: error.message || 'Website preparation failed.' });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/review') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 8 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try {
+        const result = ActionReview.createActionReview(user.id, input);
+        return sendJson(res, 200, result);
+      } catch (error) {
+        return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not create final-action review.' });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/approve') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 8 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      try {
+        const result = ActionReview.approveActionReview(user.id, input);
+        return sendJson(res, 200, result);
+      } catch (error) {
+        return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Could not record action approval.' });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/draft') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 64 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      let pageUrl;
+      try { pageUrl = BrowserAutomation.validatePublicHttpUrl(input.url); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid website URL.' }); }
+      try {
+        const result = await BrowserAutomation.draftFormFill(pageUrl, input.values, input.formIndex);
+        return sendJson(res, 200, { ...result, requestedBy: user.id });
+      } catch (error) {
+        return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Form draft preview failed.' });
+      }
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/execute-approved') {
+      const user = requireAuth(req, res); if (!user) return;
+      let input;
+      try { input = await readBody(req, 8 * 1024); }
+      catch (error) { return sendJson(res, 400, { success: false, error: error.message || 'Invalid request body.' }); }
+      let approved;
+      try { approved = ActionReview.consumeApprovedExecution(user.id, input); }
+      catch (error) { return sendJson(res, error.statusCode || 400, { success: false, error: error.message || 'Approval ticket could not be used.' }); }
+      try {
+        const result = await BrowserAutomation.executeApprovedFormAction(approved.url, approved.values, approved.formIndex);
+        return sendJson(res, 200, { ...result, requestedBy: user.id });
+      } catch (error) {
+        return sendJson(res, error.statusCode || 502, { success: false, error: error.message || 'Approved website action failed.' });
+      }
+    }
+
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/chat') {
       const user = requireAuth(req, res); if (!user) return;
       const input = await readBody(req);
@@ -804,12 +1000,34 @@ const server = http.createServer(async (req, res) => {
       if (!providerName) return sendJson(res, 503, { error: 'TNS AI provider is not configured yet.' });
       const provider = getProvider(providerName);
       if (!provider || typeof provider.chat !== 'function') return sendJson(res, 503, { error: 'Configured TNS AI provider does not support chat.' });
-      const message = String(input.message || '');
+      const message = String(input.message || '').trim();
+      if (!message) return sendJson(res, 400, { error: 'Message cannot be empty.' });
+      if (message.length > 8000) return sendJson(res, 413, { error: 'Message is too long. Maximum is 8000 characters.' });
       const replyLanguage = input.preferRequestedLanguage && input.replyLanguage
         ? normalizeLanguage(input.replyLanguage)
         : detectReplyLanguage(message, String(input.replyLanguage || input.appLanguage || 'English'));
-      const result = await provider.chat({ message, research: Boolean(input.research), userId: user.id, replyLanguage, languageInstruction: languageInstruction(replyLanguage) });
-      return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '', replyLanguage: result?.replyLanguage || replyLanguage, provider: providerName, demo: providerName === 'mock' });
+      const history = Array.isArray(input.history) ? input.history
+        .filter(turn => turn && (turn.role === 'user' || turn.role === 'assistant') && typeof turn.content === 'string')
+        .slice(-12).map(turn => ({ role: turn.role, content: turn.content.slice(0, 12000) })) : [];
+      let researchData = null;
+      if (input.research) {
+        try {
+          researchData = await runWebResearch(message, replyLanguage);
+        } catch (error) {
+          return sendJson(res, error.statusCode || 502, { success: false, error: error.message || 'Live web research failed.' });
+        }
+      }
+      const studySupportInstruction = `\n\nEDUCATION SUPPORT: If the user's request is about studying, homework, an academic subject, an exam, a concept, a problem, or learning any topic, act as a patient, accurate tutor for any subject and education level. First identify the subject and likely level from the question; if level matters and is unclear, give a useful general answer and ask what class/level they need. Answer the actual question, show the method step by step for calculations or problem-solving, explain why each step works, define key terms in simple language, and give a short example when helpful. For maths/science, show formulas, units, substitutions, and check the result. For languages/literature/history/social studies, explain context and distinguish facts from interpretations. For coding, give runnable examples and explain them. For homework, teach the reasoning rather than only giving an unexplained final answer. Do not invent facts, equations, citations, or certainty; state uncertainty and ask for a clearer question/image when needed. Match the user's requested language (${replyLanguage}) and requested detail level. If it is not an education request, answer normally.`;
+      const websiteWorkInstruction = `\n\nMULTI-WEBSITE TASK WORKFLOW WITH EXPLICIT USER PERMISSION: When the user asks TNS to do a task across websites, take ownership of coordinating it but do not assume permission for sensitive or consequential actions. First restate the goal, list ordered steps and required websites, and identify which steps can be safely researched or prepared without further permission. Continue independent, reversible research/preparation where possible and keep a clear status of completed, pending, and blocked actions. BEFORE any action that needs the user's permission, stop and ask first in the user's language; clearly name the website, exact action, information/file that will be used or shared, and likely consequence. This permission checkpoint applies at minimum before signing in or creating an account on the user's behalf, sharing/uploading personal or private data, contacting another person, accepting legal terms or declarations, booking/ordering, paying, or final Submit/Publish/Send/Apply/Delete actions. Do not treat a vague request like 'do my task' as consent to every sensitive step. Ask one clear question and wait for an explicit affirmative response covering that specific action; if the user says no, is unclear, or changes the task, do not proceed with that action and offer a safe alternative. For payment, do not pay, enter payment details, or make a purchase; give the verified official payment/checkout link, amount and purpose when known, then wait for the user to pay independently and confirm. Never ask for card numbers, passwords, OTPs, or banking secrets in chat. Before final submission, prepare the draft and show a review/preview link or exact content, summarize what will be submitted and where, and ask: 'Is this correct, and do you authorize me to submit it?' Submit only after explicit confirmation for that exact final action; do not perform a consequential action until the user clearly approves that exact action. Afterward, report what actually happened, provide the resulting link/receipt/reference when available, and explain next steps; never claim success without evidence. After approval, perform an action only if an authorized website/browser-control tool is actually available. Web search or snippets alone do not mean TNS logged in, filled a form, uploaded a file, or operated a website. If browser control is unavailable, say so clearly and give the user the next safe steps instead of claiming the work is done. Never bypass CAPTCHA, access controls, site rules, or security checks; ask the user to complete those steps themselves. Match the user's language (${replyLanguage}).`;
+      const providerMessage = researchData
+        ? `${message}${studySupportInstruction}${websiteWorkInstruction}\n\nRESEARCH MODE: Answer in ${replyLanguage}. Act as a practical web researcher. Explain (1) what was found, (2) exactly which website/source has each useful piece of information, (3) what the user should click/open or search for on that site, and (4) clear step-by-step instructions for how to do the task when the question asks how. Compare sources, prefer official/primary sources where possible, distinguish verified facts from uncertainty, mention when search snippets are insufficient to verify a detail, and never claim you fully read a page if only its search snippet is available. Cite important claims inline using [Source N] and finish with a short “Where to go next” section when useful.\n\n${researchData.researchContext}`
+        : `${message}${studySupportInstruction}${websiteWorkInstruction}`;
+      const result = await provider.chat({ message: providerMessage, originalMessage: message, history, research: Boolean(input.research), researchSources: researchData?.sources || [], userId: user.id, replyLanguage, languageInstruction: languageInstruction(replyLanguage) });
+      let reply = result?.reply || result?.text || '';
+      if (researchData && providerName === 'mock') {
+        reply = `Live web search completed, but TNS AI is currently in demo mode, so an AI-written synthesis is not available yet. Here are the search results to review:\n\n${researchData.sources.map((source, i) => `${i + 1}. ${source.title}\n${source.snippet}\nSource: ${source.url}`).join('\n\n')}`;
+      }
+      return sendJson(res, 200, { success: true, reply, replyLanguage: result?.replyLanguage || replyLanguage, provider: providerName, demo: providerName === 'mock', research: Boolean(researchData), sources: researchData?.sources || [] });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/understand') {
@@ -889,7 +1107,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, refreshed || job);
     }
 
-    if (req.method === 'GET' && url.pathname === '/api') return sendJson(res, 200, { name: 'TNS Studio API', version: '3.0.0' });
+    if (req.method === 'GET' && url.pathname === '/api') return sendJson(res, 200, { name: 'TNS API', version: '3.0.0' });
 
     if (req.method === 'GET' && url.pathname.startsWith('/uploads/')) {
       const user = requireAuth(req, res); if (!user) return;
@@ -930,4 +1148,4 @@ setInterval(() => {
   GoogleAuth.cleanupStates();
 }, 60 * 1000).unref();
 
-server.listen(PORT, () => console.log(`TNS Studio running on port ${PORT}`));
+server.listen(PORT, () => console.log(`TNS running on port ${PORT}`));

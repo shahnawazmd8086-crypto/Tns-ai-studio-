@@ -49,7 +49,15 @@ class HttpProvider {
   async create(input = {}) { return callJson(this.videoUrl, this.apiKey, { type: 'video', ...input }, this.timeoutMs); }
   async createImage(input = {}) { return callJson(this.imageUrl, this.apiKey, { type: 'image', ...input }, this.timeoutMs); }
   async createVoice(input = {}) { return callJson(this.voiceUrl, this.apiKey, { type: 'voice', ...input }, this.timeoutMs); }
-  async chat(input = {}) { return callJson(this.aiUrl, this.apiKey, { type: 'chat', ...input }, this.timeoutMs); }
+  async chat(input = {}) {
+    const data = await callJson(this.aiUrl, this.apiKey, { type: 'chat', ...input }, this.timeoutMs);
+    // Normalize common chat-completion response shapes while retaining custom
+    // provider fields. The configured endpoint must still accept this app's payload.
+    let reply = data?.reply || data?.text || data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || data?.output_text;
+    if (Array.isArray(reply)) reply = reply.map(part => typeof part === 'string' ? part : (part?.text || part?.content || '')).join('');
+    if (!reply && Array.isArray(data?.content)) reply = data.content.map(part => part?.text || '').join('');
+    return { ...data, ...(typeof reply === 'string' ? { reply } : {}) };
+  }
   async getStatus(type, providerJob) {
     const url = buildStatusUrl(type, providerJob);
     if (!url) return providerJob || { status: 'processing' };

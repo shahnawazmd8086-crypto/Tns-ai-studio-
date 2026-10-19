@@ -172,7 +172,7 @@
     if (!form) return;
 
     /*
-     * Current TNS Studio login is handled by app.js.
+     * Current TNS login is handled by app.js.
      * This file only exposes the reusable login functions.
      * No second submit listener is attached here.
      */

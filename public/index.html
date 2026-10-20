@@ -66,6 +66,15 @@
 <div class="home-assistant-shell">
 <div class="home-chat-history-bar" aria-label="Chat history controls"><button id="homeChatNew" type="button">＋ New chat</button><select id="homeChatHistorySelect" aria-label="Saved conversations"><option value="">Saved chats</option></select><button id="homeChatDelete" type="button" disabled>Delete chat</button></div>
 <div aria-live="polite" class="home-chat-messages" id="homeChatMessages"></div>
+<div class="home-chat-starters" id="homeChatStarters" aria-label="Suggested ways to start">
+  <p class="home-chat-starters-title">Shuru karne ke liye ek option chunein</p>
+  <div class="home-chat-starters-grid">
+    <button class="home-starter-btn" type="button" data-starter-prompt="Mujhe is topic ko aasaan Hindi mein samjhao."><span aria-hidden="true">💡</span><span><b>Kisi topic ko samjhein</b><small>Aasaan Hindi mein jawab paayein</small></span></button>
+    <button class="home-starter-btn" type="button" data-starter-prompt="Meri upload ki hui file ka summary aur important points batao."><span aria-hidden="true">📄</span><span><b>File ka analysis</b><small>File attach karke sawal poochhein</small></span></button>
+    <button class="home-starter-btn" type="button" data-starter-prompt="Mere kaam ko chhote, step-by-step tasks mein baant do."><span aria-hidden="true">🧭</span><span><b>Kaam ka plan banayein</b><small>Agla step samajhne mein madad</small></span></button>
+    <button class="home-starter-btn" type="button" data-starter-prompt="Mujhe Hindi mein jawab do aur zaroorat ho to step-by-step samjhao."><span aria-hidden="true">🌐</span><span><b>Hindi mein madad</b><small>Apni bhasha mein baat karein</small></span></button>
+  </div>
+</div>
 <div class="home-chat-status" id="homeChatStatus" role="status"></div>
 <div class="home-attachment-preview hidden" id="homeChatFilePreview"></div>
 <form class="home-chat-composer" id="homeChatForm">

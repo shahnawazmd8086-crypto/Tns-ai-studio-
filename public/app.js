@@ -865,7 +865,29 @@ addExtraNavigation();
   const newChatButton = $id('homeChatNew');
   const historySelect = $id('homeChatHistorySelect');
   const deleteChatButton = $id('homeChatDelete');
+  const starterContainer = $id('homeChatStarters');
   if (!form || !input || !messages) return;
+  const updateStarterVisibility = (forceShow = false) => {
+    if (!starterContainer) return;
+    const hasConversation = !!messages.querySelector('.home-chat-message');
+    const hasDraft = !!input.value.trim();
+    const composerFocused = document.activeElement === input;
+    const shouldHide = !forceShow && (hasConversation || hasDraft || composerFocused);
+    starterContainer.classList.toggle('hidden', shouldHide);
+    starterContainer.setAttribute('aria-hidden', String(shouldHide));
+  };
+  input.addEventListener('input', () => updateStarterVisibility());
+  input.addEventListener('focus', () => updateStarterVisibility());
+  input.addEventListener('blur', () => window.setTimeout(() => updateStarterVisibility(), 180));
+  updateStarterVisibility();
+  starterContainer?.querySelectorAll('[data-starter-prompt]').forEach(button => {
+    button.addEventListener('click', () => {
+      if (input.disabled) return;
+      input.value = button.getAttribute('data-starter-prompt') || '';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.focus();
+    });
+  });
   let currentConversationId = null;
   let historySaveTimer = null;
   // Protect the visible chat from late network responses and stale history saves.
@@ -894,8 +916,8 @@ addExtraNavigation();
     } catch { if(expectedGeneration===conversationViewGeneration)setStatus('Chat chal rahi hai, lekin history save nahi ho saki. Dobara login karke ya connection check karke koshish karein.'); }
   };
   const scheduleConversationSave = () => { clearTimeout(historySaveTimer); const generation=conversationViewGeneration; historySaveTimer=setTimeout(()=>saveConversation(generation),250); };
-  const startNewConversation = () => { conversationViewGeneration++; clearTimeout(historySaveTimer); currentConversationId=null; messages.replaceChildren(); const welcome=document.createElement('div'); welcome.className='home-welcome-card'; welcome.textContent='Namaste! Main TNS hoon. Aap kya karna chahenge?'; messages.appendChild(welcome); input.value='';fitInput();updateActionButton();if(historySelect)historySelect.value='';if(deleteChatButton)deleteChatButton.disabled=true;setStatus('Nayi chat shuru ho gayi.'); };
-  const openConversation = async id => { if(!id)return; const generation=++conversationViewGeneration; clearTimeout(historySaveTimer); try { const data=await json('/api/tns-ai/conversations/'+encodeURIComponent(id)); if(generation!==conversationViewGeneration)return; const c=data.conversation; if(!c)throw new Error('Conversation not found.'); currentConversationId=c.id; messages.replaceChildren(); (c.messages||[]).forEach(turn=>addBubble(turn.content,turn.role)); const hasAttachmentMarker=(c.messages||[]).some(turn=>/📎/.test(turn.content||'')); const refreshed=await refreshConversationList(c.id); if(generation!==conversationViewGeneration)return; if(deleteChatButton)deleteChatButton.disabled=false; setStatus(hasAttachmentMarker?'Purani chat khul gayi. Note: attached file khud save nahi hoti; sirf uska naam/message history mein hai.':(refreshed?'Purani chat khul gayi.':'Purani chat khul gayi, lekin saved-chat list refresh nahi hui.')); if(hasAttachmentMarker&&!refreshed)setStatus('Purani chat khul gayi; attachment dobara chahiye to file phir se chunein. Saved-chat list refresh nahi hui.'); } catch(error) { if(generation===conversationViewGeneration)setStatus(error.message||'Chat history nahi khul saki.'); } };
+  const startNewConversation = () => { conversationViewGeneration++; clearTimeout(historySaveTimer); currentConversationId=null; messages.replaceChildren(); const welcome=document.createElement('div'); welcome.className='home-welcome-card'; welcome.textContent='Namaste! Main TNS hoon. Aap kya karna chahenge?'; messages.appendChild(welcome); input.value='';fitInput();updateActionButton();updateStarterVisibility(true);if(historySelect)historySelect.value='';if(deleteChatButton)deleteChatButton.disabled=true;setStatus('Nayi chat shuru ho gayi.'); };
+  const openConversation = async id => { if(!id)return; const generation=++conversationViewGeneration; clearTimeout(historySaveTimer); try { const data=await json('/api/tns-ai/conversations/'+encodeURIComponent(id)); if(generation!==conversationViewGeneration)return; const c=data.conversation; if(!c)throw new Error('Conversation not found.'); currentConversationId=c.id; messages.replaceChildren(); (c.messages||[]).forEach(turn=>addBubble(turn.content,turn.role)); updateStarterVisibility(); const hasAttachmentMarker=(c.messages||[]).some(turn=>/📎/.test(turn.content||'')); const refreshed=await refreshConversationList(c.id); if(generation!==conversationViewGeneration)return; if(deleteChatButton)deleteChatButton.disabled=false; setStatus(hasAttachmentMarker?'Purani chat khul gayi. Note: attached file khud save nahi hoti; sirf uska naam/message history mein hai.':(refreshed?'Purani chat khul gayi.':'Purani chat khul gayi, lekin saved-chat list refresh nahi hui.')); if(hasAttachmentMarker&&!refreshed)setStatus('Purani chat khul gayi; attachment dobara chahiye to file phir se chunein. Saved-chat list refresh nahi hui.'); } catch(error) { if(generation===conversationViewGeneration)setStatus(error.message||'Chat history nahi khul saki.'); } };
   newChatButton?.addEventListener('click',startNewConversation);
   historySelect?.addEventListener('change',()=>{if(historySelect.value)openConversation(historySelect.value);else if(deleteChatButton)deleteChatButton.disabled=true;});
   deleteChatButton?.addEventListener('click',async()=>{const id=currentConversationId||historySelect?.value;if(!id)return;if(!window.confirm('Kya aap is chat ko delete karna chahte hain?'))return;try{await json('/api/tns-ai/conversations/'+encodeURIComponent(id),{method:'DELETE'});if(id===currentConversationId)startNewConversation();await refreshConversationList();setStatus('Chat delete ho gayi.');}catch(error){setStatus(error.message||'Chat delete nahi ho saki.');}});
@@ -955,6 +977,7 @@ addExtraNavigation();
     node.className = `home-chat-message ${role}${isError ? ' error' : ''}`;
     node.textContent = text;
     messages.appendChild(node);
+    updateStarterVisibility();
     messages.scrollTop = messages.scrollHeight;
     return node;
   };
@@ -962,7 +985,13 @@ addExtraNavigation();
   const fitInput = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,140)+'px'; };
   // On phones, focusing the composer hides introductory cards and bottom navigation,
   // giving the user a clear writing area while the on-screen keyboard is open.
-  input.addEventListener('focus', () => { document.body.classList.add('tns-chat-typing'); positionComposerAboveKeyboard(); });
+  input.addEventListener('focus', () => {
+    document.body.classList.add('tns-chat-typing');
+    // Mobile keyboards may resize the visual viewport a moment after focus.
+    positionComposerAboveKeyboard();
+    window.requestAnimationFrame(positionComposerAboveKeyboard);
+    window.setTimeout(positionComposerAboveKeyboard, 120);
+  });
   input.addEventListener('blur', () => {
     window.setTimeout(() => {
       if (document.activeElement !== input) { document.body.classList.remove('tns-chat-typing'); form.style.bottom = ''; }
@@ -1101,11 +1130,20 @@ addExtraNavigation();
   const positionComposerAboveKeyboard = () => {
     if (!document.body.classList.contains('tns-chat-typing')) return;
     const viewport = window.visualViewport;
-    if (!viewport) return;
-    const keyboardGap = Math.max(8, window.innerHeight - viewport.height - viewport.offsetTop + 8);
-    form.style.bottom = `${keyboardGap}px`;
+    // The visual viewport's lower edge is the reliable boundary above the
+    // on-screen keyboard; clamp the value to avoid negative/huge offsets.
+    if (viewport) {
+      const keyboardGap = Math.max(8, Math.min(window.innerHeight,
+        window.innerHeight - (viewport.offsetTop + viewport.height) + 8));
+      form.style.bottom = `${keyboardGap}px`;
+    } else {
+      form.style.bottom = '8px';
+    }
   };
   input.addEventListener('input', () => { fitInput(); updateActionButton(); });
+  window.addEventListener('orientationchange', () => {
+    window.setTimeout(() => { fitInput(); positionComposerAboveKeyboard(); }, 180);
+  });
   updateActionButton();
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', positionComposerAboveKeyboard);

@@ -7,9 +7,14 @@ const appJs=fs.readFileSync(path.join(root,'public','app.js'),'utf8');
 const css=fs.readFileSync(path.join(root,'public','style.css'),'utf8');
 
 // Retained core screens.
-for(const id of ['splashScreen','authScreen','signupModal','otpScreen','languageScreen','dashboard','editor','generate','projects','help','premium','settings','premiumDetails','settingsApp','languageInside','editorTools','exportVideo','appIcon','finalEditView']) {
+for(const id of ['splashScreen','authScreen','otpScreen','dashboard','editor','generate','projects','help','premium','settings','premiumDetails','settingsApp','languageInside','editorTools','exportVideo','appIcon','finalEditView']) {
   assert(html.includes(`id="${id}"`),`Missing retained screen/section: ${id}`);
 }
+// Login is intentionally OTP-only: two entry choices, no password/signup/language gate.
+for(const id of ['loginEmail','loginMobile','loginCountry','otpRequestBtn','otpScreen','otpCode','verifyOtpBtn']) assert(html.includes(`id=\"${id}\"`),`Missing OTP login control: ${id}`);
+for(const id of ['loginPassword','showPassword','forgotPasswordBtn','signupModal','signupPassword','languageScreen','continueLanguage']) assert(!html.includes(`id=\"${id}\"`),`Removed login step still present: ${id}`);
+assert(appJs.includes("json('/api/auth/otp/request'")&&appJs.includes("json('/api/auth/otp/login'"),'Email/mobile OTP login flow is not wired.');
+assert(appJs.includes('function enterTns(user)')&&appJs.includes("$('#app')?.classList.remove('hidden')"),'OTP success must enter TNS directly.');
 // Removed modules must be physically absent from the HTML, not merely hidden.
 for(const id of ['image','contact','tnsAi','tnsAiVoice','tnsAiUnderstanding','contactInside','shorts','profile']) {
   assert(!html.includes(`id="${id}"`),`Removed module screen still present: ${id}`);

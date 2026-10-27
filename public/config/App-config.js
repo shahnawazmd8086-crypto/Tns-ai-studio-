@@ -46,7 +46,7 @@ const TNSAppConfig = {
     voiceGeneration: true,
     videoEditor: true,
     projects: true,
-    languageSelection: true,
+    languageSelection: false,
     mobileSupport: true,
     downloads: true,
     autoSave: true

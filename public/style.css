@@ -1616,3 +1616,42 @@ body.tns-chat-typing #dashboard .home-chat-messages { padding-bottom:76px; }
 .login-reference-card{width:min(520px,calc(100vw - 38px));padding:clamp(24px,5vh,42px) clamp(20px,5vw,34px) clamp(24px,4vh,34px);border-radius:30px;background:linear-gradient(180deg,rgba(4,14,39,.96),rgba(2,8,24,.985));border:1px solid rgba(71,139,255,.32);box-shadow:0 25px 90px rgba(0,0,0,.48),0 0 38px rgba(20,89,255,.10),inset 0 1px 0 rgba(255,255,255,.055)}
 .login-logo-lockup{margin-bottom:20px}.login-logo-image{width:clamp(86px,20vw,118px);height:clamp(86px,20vw,118px);border-radius:27px;box-shadow:0 0 35px rgba(0,107,255,.32),0 0 45px rgba(168,36,255,.15)}.login-reference-card .brand-big{font-size:clamp(32px,7vw,42px);letter-spacing:.2px}.login-reference-card h1{font-size:clamp(27px,6vw,34px);letter-spacing:-.6px;margin:8px 0 7px}.login-subtitle{font-size:14px;line-height:1.45;margin:0 0 22px;color:#aebbd8}.auth-tabs{gap:10px;margin:25px 0 18px}.auth-mode{min-height:66px;border:1px solid rgba(83,123,220,.13);border-radius:19px;background:linear-gradient(145deg,rgba(14,31,73,.94),rgba(15,26,62,.94));font-weight:800;font-size:15px;transition:transform .18s,border-color .18s,box-shadow .18s}.auth-mode.active{background:linear-gradient(115deg,#087cff 0%,#315eff 50%,#8c32ff 100%);border-color:rgba(118,181,255,.62);box-shadow:0 10px 30px rgba(0,91,255,.28),0 0 22px rgba(97,70,255,.18)}.auth-mode:active{transform:scale(.985)}.login-reference-card label{font-size:13px;color:#f0f4ff;margin-top:12px}.login-reference-card input,.login-reference-card select{min-height:56px;border-radius:17px;background:linear-gradient(145deg,rgba(9,30,71,.96),rgba(8,23,56,.96));border:1px solid rgba(65,139,255,.43);box-shadow:inset 0 1px 0 rgba(255,255,255,.025);font-size:15px}.login-reference-card input::placeholder{color:#8b9bbc}.login-reference-card input:focus,.login-reference-card select:focus{border-color:#22baff;box-shadow:0 0 0 3px rgba(31,157,255,.13),0 0 24px rgba(16,131,255,.15)}.login-main-btn{min-height:59px;margin-top:17px;border-radius:18px;background:linear-gradient(105deg,#078bff 0%,#3264ff 42%,#9235ff 72%,#d72fe8 100%);box-shadow:0 12px 32px rgba(36,93,255,.28),0 0 24px rgba(153,49,255,.12);font-size:16px;font-weight:900}.login-main-btn:hover{filter:brightness(1.08)}.login-reference-card .status{font-size:12px;line-height:1.45}.otp-reference-card{background:linear-gradient(180deg,rgba(4,14,39,.97),rgba(2,8,24,.99));border-color:rgba(71,139,255,.34);box-shadow:0 25px 90px rgba(0,0,0,.48),0 0 38px rgba(20,89,255,.12),inset 0 1px 0 rgba(255,255,255,.055)}.otp-logo-lockup .logo-mark{width:clamp(86px,20vw,118px);height:clamp(86px,20vw,118px);border-radius:27px;box-shadow:0 0 35px rgba(0,107,255,.32),0 0 45px rgba(168,36,255,.15)}.otp-reference-card .brand-big{font-size:clamp(32px,7vw,42px)}.otp-digit{height:clamp(48px,10vw,64px);min-height:clamp(48px,10vw,64px);border-radius:15px;background:linear-gradient(145deg,rgba(9,30,71,.96),rgba(8,23,56,.96));border-color:rgba(65,139,255,.43)}.otp-verify-btn{min-height:59px;border-radius:18px;background:linear-gradient(105deg,#078bff 0%,#3264ff 42%,#9235ff 72%,#d72fe8 100%);box-shadow:0 12px 32px rgba(36,93,255,.28)}.otp-resend{color:#44d6ff}
 @media(max-width:480px){.auth-screen{padding:15px}.auth-screen:before{inset:8px}.login-reference-card{padding:clamp(24px,4vh,34px) 19px 24px;border-radius:26px}.login-logo-lockup{margin-bottom:17px}.auth-tabs{margin:22px 0 15px}.auth-mode{min-height:62px;font-size:14px}.login-reference-card input,.login-reference-card select{min-height:53px}.login-main-btn{min-height:56px}.otp-reference-card{padding:26px 18px 22px}}
+
+
+/* TNS auth refresh: immersive full-screen login/OTP; remove nested outer and inner cards. */
+#authScreen.auth-screen, #otpScreen.screen {
+  min-height: 100svh; min-height: 100dvh; width:100%; margin:0; padding:clamp(22px,5vh,52px) clamp(18px,5vw,34px);
+  display:grid; place-items:center; overflow:hidden; isolation:isolate; position:relative;
+  background: radial-gradient(ellipse at 8% 32%,rgba(0,105,255,.26),transparent 34%),
+              radial-gradient(ellipse at 92% 64%,rgba(180,25,255,.22),transparent 34%),
+              radial-gradient(ellipse at 50% 0%,rgba(23,71,190,.18),transparent 48%), #030817;
+}
+#authScreen.auth-screen:before, #authScreen.auth-screen:after { content:none !important; display:none !important; }
+#authScreen .login-reference-card, #otpScreen .otp-reference-card {
+  width:min(560px,100%); max-width:560px; min-height:0; padding:clamp(20px,4vh,36px) clamp(4px,2vw,12px);
+  margin:0; border:0 !important; border-radius:0 !important; background:transparent !important;
+  box-shadow:none !important; backdrop-filter:none !important; -webkit-backdrop-filter:none !important;
+}
+#authScreen .logo-lockup, #otpScreen .logo-lockup { margin-bottom:clamp(18px,3vh,28px); }
+#authScreen .logo-mark, #otpScreen .logo-mark { width:clamp(76px,18vw,112px); height:clamp(76px,18vw,112px); border-radius:25%; }
+#authScreen h1, #otpScreen h1 { font-size:clamp(30px,7vw,42px); letter-spacing:-.035em; }
+#authScreen .login-subtitle { font-size:clamp(14px,3.5vw,18px); }
+#authScreen .auth-tabs { gap:12px; margin:clamp(24px,4vh,36px) 0 20px; }
+#authScreen .auth-mode { min-height:64px; border:1px solid rgba(100,153,255,.15); border-radius:20px; background:rgba(18,35,78,.72); }
+#authScreen .auth-mode.active { background:linear-gradient(115deg,#087dff 0%,#4a48ff 55%,#8b35ff 100%); border-color:rgba(91,172,255,.85); box-shadow:0 8px 28px rgba(30,100,255,.24); }
+#authScreen label { font-size:14px; margin:14px 0 9px; }
+#authScreen input, #authScreen select { min-height:58px; border-radius:18px; padding:15px 17px; background:rgba(8,24,57,.88); border-color:rgba(78,139,255,.48); font-size:16px; }
+#authScreen .login-main-btn, #otpScreen .otp-verify-btn { min-height:62px; border-radius:19px; font-size:17px; font-weight:850; background:linear-gradient(105deg,#087fff 0%,#315dff 48%,#d321ed 100%); box-shadow:0 12px 32px rgba(54,71,255,.22); }
+#authScreen .status, #otpScreen .status { min-height:20px; }
+#otpScreen .otp-reference-card { text-align:center; }
+#otpScreen .otp-hint { font-size:clamp(14px,3.5vw,17px); max-width:440px; }
+#otpScreen .otp-boxes { gap:clamp(6px,1.8vw,12px); margin:26px 0 16px; }
+#otpScreen .otp-digit { min-width:0; border-radius:15px; background:rgba(8,24,57,.9); border:1px solid rgba(78,139,255,.48); }
+#otpScreen .otp-resend { color:#53d5ff; font-size:15px; margin:6px 0 18px; }
+#otpScreen .text-btn { font-size:15px; margin-top:24px; }
+@media(max-width:480px) {
+  #authScreen.auth-screen, #otpScreen.screen { padding:24px 22px; }
+  #authScreen .login-reference-card, #otpScreen .otp-reference-card { padding:22px 0; }
+  #authScreen .auth-tabs { gap:10px; }
+  #authScreen .auth-mode { min-height:62px; padding:10px 8px; }
+}

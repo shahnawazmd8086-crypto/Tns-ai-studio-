@@ -466,7 +466,12 @@ const server = http.createServer(async (req, res) => {
       if (!authRateLimit(req, input.identifier, 5)) return sendJson(res, 429, { error: 'Too many OTP requests. Please try again later.' }, { 'Retry-After': '60' });
       const otp = Otp.createOtp(input.identifier, 10 * 60 * 1000, 5);
       const response = { success: true, message: 'OTP created. Configure an email/SMS provider for delivery.', expiresAt: otp.expiresAt };
-      if (process.env.OTP_EXPOSE_CODE === 'true') response.otp = otp.code;
+      // Development-only helper: never return an OTP from a production server,
+      // even if OTP_EXPOSE_CODE is accidentally left enabled in deployment settings.
+      if (process.env.NODE_ENV !== 'production' && process.env.OTP_EXPOSE_CODE === 'true') {
+        response.otp = otp.code;
+        response.message = 'Development test OTP generated. No email/SMS was sent.';
+      }
       return sendJson(res, 200, response);
     }
 
@@ -523,7 +528,12 @@ const server = http.createServer(async (req, res) => {
       if (!exists) return sendJson(res, 200, { success: true, message: 'If an account exists, reset instructions will be sent through the configured channel.' });
       const otp = Otp.createOtp(input.identifier, 10 * 60 * 1000, 5);
       const response = { success: true, message: 'If an account exists, reset instructions will be sent through the configured channel.', expiresAt: otp.expiresAt };
-      if (process.env.OTP_EXPOSE_CODE === 'true') response.otp = otp.code;
+      // Development-only helper: never return an OTP from a production server,
+      // even if OTP_EXPOSE_CODE is accidentally left enabled in deployment settings.
+      if (process.env.NODE_ENV !== 'production' && process.env.OTP_EXPOSE_CODE === 'true') {
+        response.otp = otp.code;
+        response.message = 'Development test OTP generated. No email/SMS was sent.';
+      }
       return sendJson(res, 200, response);
     }
 

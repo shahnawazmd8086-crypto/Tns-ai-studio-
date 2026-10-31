@@ -16,7 +16,15 @@
 <form id="loginForm">
 <div id="emailField"><label for="loginEmail">Email Address</label><input autocomplete="email" id="loginEmail" inputmode="email" placeholder="you@example.com" type="email" required/></div>
 <div class="hidden" id="mobileField"><label for="loginMobile">Mobile Number</label><div class="mobile-entry"><select aria-label="Country calling code" id="loginCountry"></select><input autocomplete="tel-national" id="loginMobile" inputmode="numeric" placeholder="Mobile number"/></div></div>
-<button class="primary wide login-main-btn" id="otpRequestBtn" type="submit">Continue with Email</button><p class="status" id="loginMessage" aria-live="polite"></p>
+<button class="primary wide login-main-btn" id="otpRequestBtn" type="submit">Continue with Email</button>
+<div class="divider"><span>OR</span></div>
+<div id="temporaryPasswordLogin">
+<label for="temporaryLoginPassword">Password login (temporary until OTP service is connected)</label>
+<input autocomplete="current-password" id="temporaryLoginPassword" placeholder="Enter your account password" type="password"/>
+<button class="secondary wide" id="passwordLoginBtn" type="button">Continue with Password</button>
+<p class="status" id="passwordLoginMessage" aria-live="polite"></p>
+</div>
+<p class="status" id="loginMessage" aria-live="polite"></p>
 </form>
 </div>
 </section>

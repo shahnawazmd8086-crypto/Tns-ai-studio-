@@ -19,6 +19,18 @@
 <div class="password-login-field" id="passwordLoginField"><label for="loginPassword">Password</label><input autocomplete="current-password" id="loginPassword" placeholder="Enter your password" type="password" minlength="8"/></div>
 <button class="primary wide login-main-btn" id="otpRequestBtn" type="submit">Continue with Password</button><p class="status" id="loginMessage" aria-live="polite"></p>
 </form>
+<div class="signup-switch-row"><span>New to TNS Studio?</span> <button class="text-btn" id="showSignupBtn" type="button">Create New Account</button></div>
+<form id="signupForm" class="hidden" novalidate>
+  <h2>Create New Account</h2>
+  <p class="muted">Choose your own password. You will use it whenever you log in.</p>
+  <label for="signupEmail">Email Address (optional if using mobile)</label><input id="signupEmail" type="email" autocomplete="email" placeholder="you@example.com"/>
+  <label for="signupMobile">Mobile Number (optional if using email)</label><input id="signupMobile" type="tel" autocomplete="tel" placeholder="+919876543210"/>
+  <label for="signupPassword">Create Password</label><input id="signupPassword" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required/>
+  <label for="signupConfirmPassword">Confirm Password</label><input id="signupConfirmPassword" type="password" autocomplete="new-password" minlength="8" placeholder="Enter the same password" required/>
+  <button class="primary wide login-main-btn" type="submit">Create Account</button>
+  <p class="status" id="signupMessage" aria-live="polite"></p>
+  <div class="signup-switch-row"><span>Already have an account?</span> <button class="text-btn" id="showLoginBtn" type="button">Login</button></div>
+</form>
 </div>
 </section>
 <section class="screen hidden" data-screen-number="4" id="otpScreen"><div class="auth-card glass otp-reference-card">

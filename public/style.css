@@ -1655,3 +1655,5 @@ body.tns-chat-typing #dashboard .home-chat-messages { padding-bottom:76px; }
   #authScreen .auth-tabs { gap:10px; }
   #authScreen .auth-mode { min-height:62px; padding:10px 8px; }
 }
+/* Password-based first-time account creation, matching the existing login card. */
+.signup-switch-row{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0 4px;color:#aebbd0;font-size:12px}.signup-switch-row .text-btn{color:#18c9ff;font-weight:800;padding:4px 2px}.login-reference-card #signupForm{margin-top:14px;text-align:left}.login-reference-card #signupForm h2{text-align:center;margin:8px 0;font-size:21px}.login-reference-card #signupForm>p.muted{text-align:center;font-size:12px;margin:0 0 12px}.login-reference-card #signupForm input{width:100%;box-sizing:border-box;margin-bottom:5px}.login-reference-card #signupForm .status{min-height:18px;text-align:center}

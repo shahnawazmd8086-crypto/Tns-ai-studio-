@@ -34,8 +34,6 @@ const TNSLanguageHI = {
 
     navigation: {
       home: "होम",
-      editor: "वीडियो एडिटर",
-      video: "AI वीडियो",
       voice: "AI वॉइस",
       projects: "प्रोजेक्ट्स",
       settings: "सेटिंग्स",
@@ -64,27 +62,8 @@ const TNSLanguageHI = {
     dashboard: {
       title: "TNS",
       subtitle:
-        "रियलिस्टिक AI वीडियो, और वॉइस कंटेंट बनाएं।",
-      createVideo: "AI वीडियो बनाएं",
-      createVoice: "AI वॉइस बनाएं",
-      openEditor: "वीडियो एडिटर खोलें"
-    },
-
-    video: {
-      title: "AI वीडियो जनरेटर",
-      prompt: "वीडियो प्रॉम्प्ट",
-      duration: "अवधि",
-      style: "स्टाइल",
-      aspectRatio: "आस्पेक्ट रेशियो",
-      quality: "क्वालिटी",
-      provider: "AI प्रोवाइडर",
-      generate: "वीडियो बनाएं",
-      realistic: "रियलिस्टिक",
-      cinematic: "सिनेमैटिक",
-      scriptToVideo: "स्क्रिप्ट से वीडियो",
-      sceneGeneration: "सीन जनरेशन",
-      characterConsistency: "कैरेक्टर कंसिस्टेंसी",
-      generated: "वीडियो सफलतापूर्वक बन गया।"
+        "TNS के साथ चैट और जुड़ें।",
+      createVoice: "AI वॉइस बनाएं"
     },
 
     voice: {
@@ -97,36 +76,6 @@ const TNSLanguageHI = {
       volume: "वॉल्यूम",
       generate: "वॉइस बनाएं",
       generated: "वॉइस सफलतापूर्वक बन गई।"
-    },
-
-    editor: {
-      title: "वीडियो एडिटर",
-      play: "चलाएं",
-      pause: "रोकें",
-      stop: "बंद करें",
-      split: "स्प्लिट",
-      trim: "ट्रिम",
-      crop: "क्रॉप",
-      resize: "रिसाइज",
-      rotate: "रोटेट",
-      flip: "फ्लिप",
-      speed: "स्पीड",
-      volume: "वॉल्यूम",
-      mute: "म्यूट",
-      text: "टेक्स्ट",
-      subtitles: "सबटाइटल",
-      filters: "फिल्टर",
-      effects: "इफेक्ट्स",
-      transitions: "ट्रांजिशन",
-      images: "इमेज",
-      overlays: "ओवरले",
-      voiceOver: "वॉइस ओवर",
-      music: "म्यूजिक",
-      merge: "मर्ज",
-      export: "एक्सपोर्ट",
-      exportHD: "HD एक्सपोर्ट",
-      exportFullHD: "Full HD एक्सपोर्ट",
-      export4K: "4K एक्सपोर्ट"
     },
 
     projects: {

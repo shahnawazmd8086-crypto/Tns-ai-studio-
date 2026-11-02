@@ -34,8 +34,6 @@ const TNSLanguageEN = {
 
     navigation: {
       home: "Home",
-      editor: "Video Editor",
-      video: "AI Video",
       voice: "AI Voice",
       projects: "Projects",
       settings: "Settings",
@@ -64,29 +62,11 @@ const TNSLanguageEN = {
     dashboard: {
       title: "TNS",
       subtitle:
-        "Create realistic AI videos, and voice content.",
-      createVideo: "Create AI Video",
-      createVoice: "Create AI Voice",
-      openEditor: "Open Video Editor"
+        "Chat and connect with TNS.",
+      createVoice: "Create AI Voice"
     },
 
-    video: {
-      title: "AI Video Generator",
-      prompt: "Video Prompt",
-      duration: "Duration",
-      style: "Style",
-      aspectRatio: "Aspect Ratio",
-      quality: "Quality",
-      provider: "AI Provider",
-      generate: "Generate Video",
-      realistic: "Realistic",
-      cinematic: "Cinematic",
-      scriptToVideo: "Script to Video",
-      sceneGeneration: "Scene Generation",
-      characterConsistency:
-        "Character Consistency",
-      generated: "Video generated successfully."
-    },
+
 
     voice: {
       title: "AI Voice Generator",
@@ -98,36 +78,6 @@ const TNSLanguageEN = {
       volume: "Volume",
       generate: "Generate Voice",
       generated: "Voice generated successfully."
-    },
-
-    editor: {
-      title: "Video Editor",
-      play: "Play",
-      pause: "Pause",
-      stop: "Stop",
-      split: "Split",
-      trim: "Trim",
-      crop: "Crop",
-      resize: "Resize",
-      rotate: "Rotate",
-      flip: "Flip",
-      speed: "Speed",
-      volume: "Volume",
-      mute: "Mute",
-      text: "Text",
-      subtitles: "Subtitles",
-      filters: "Filters",
-      effects: "Effects",
-      transitions: "Transitions",
-      images: "Images",
-      overlays: "Overlays",
-      voiceOver: "Voice Over",
-      music: "Music",
-      merge: "Merge",
-      export: "Export",
-      exportHD: "Export HD",
-      exportFullHD: "Export Full HD",
-      export4K: "Export 4K"
     },
 
     projects: {

@@ -132,8 +132,8 @@ async function waitForHealth() {
 
     const goodLoginOld = await request('/api/auth/login', { method: 'POST', ...jsonOptions({ identifier: '+919876543210', password: 'Tns@2026x' }) });
     assert.strictEqual(goodLoginOld.status, 400);
-    const unauthUpload = await request('/api/uploads/video', { method: 'POST' });
-    assert.strictEqual(unauthUpload.status, 401);
+    const removedVideoUpload = await request('/api/uploads/video', { method: 'POST' });
+    assert.strictEqual(removedVideoUpload.status, 404, 'Removed Edit Video upload endpoint must not be registered.');
 
     const logout = await request('/api/auth/logout', { method: 'POST', ...jsonOptions({}, cookie) });
     assert.strictEqual(logout.status, 200);

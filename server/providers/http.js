@@ -39,14 +39,12 @@ function buildStatusUrl(type, providerJob) {
 class HttpProvider {
   constructor(options = {}) {
     this.name = options.name || 'http';
-    this.videoUrl = options.videoUrl || process.env.TNS_VIDEO_PROVIDER_URL;
     this.imageUrl = options.imageUrl || process.env.TNS_IMAGE_PROVIDER_URL;
     this.voiceUrl = options.voiceUrl || process.env.TNS_VOICE_PROVIDER_URL;
     this.aiUrl = options.aiUrl || process.env.TNS_AI_PROVIDER_URL;
     this.apiKey = options.apiKey || process.env.TNS_AI_PROVIDER_API_KEY || '';
     this.timeoutMs = Number(options.timeoutMs || process.env.TNS_AI_PROVIDER_TIMEOUT_MS || 120000);
   }
-  async create(input = {}) { return callJson(this.videoUrl, this.apiKey, { type: 'video', ...input }, this.timeoutMs); }
   async createImage(input = {}) { return callJson(this.imageUrl, this.apiKey, { type: 'image', ...input }, this.timeoutMs); }
   async createVoice(input = {}) { return callJson(this.voiceUrl, this.apiKey, { type: 'voice', ...input }, this.timeoutMs); }
   async chat(input = {}) {

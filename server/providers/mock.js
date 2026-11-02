@@ -4,17 +4,6 @@ class MockProvider {
   }
 
 
-  async create(input = {}) {
-    return {
-      provider: this.name,
-      type: "video",
-      status: "queued",
-      message: "Mock video job created.",
-      input
-    };
-  }
-
-
   async createImage(input = {}) {
     return {
       provider: this.name,

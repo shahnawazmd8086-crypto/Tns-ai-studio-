@@ -11,7 +11,6 @@ const Auth = require('./auth/Auth');
 const { createSession, getSession, destroySession, clearExpiredSessions } = require('./auth/Sessions');
 const Otp = require('./auth/Otp');
 const GoogleAuth = require('./auth/Google');
-const { create: createVideoJob, getJob: getVideoJob } = require('./jobs/video-job');
 const { create: createVoiceJob, getJob: getVoiceJob } = require('./jobs/voice-job');
 const { registerProvider, getProvider } = require('./providers/provider');
 const MockProvider = require('./providers/mock');
@@ -233,43 +232,6 @@ function clearSessionCookie(req, res) {
 }
 
 
-function runCommand(command, args, options = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'], ...options });
-    let stderr = '';
-    child.stderr.on('data', chunk => { stderr += chunk.toString(); });
-    child.on('error', reject);
-    child.on('close', code => code === 0 ? resolve() : reject(new Error(stderr.trim() || `${command} failed with code ${code}`)));
-  });
-}
-
-function aiVideoDimensions(format, quality) {
-  const q = String(quality || 'HD').toLowerCase();
-  const base = q === '4k' ? 2160 : q === '2k' ? 1440 : q === 'full hd' ? 1080 : 720;
-  const ratio = String(format || '16:9');
-  if (ratio === '9:16') return [Math.floor((base * 9 / 16) / 2) * 2, base];
-  if (ratio === '1:1') return [base, base];
-  if (ratio === '4:5') return [Math.floor((base * 4 / 5) / 2) * 2, base];
-  return [base, Math.floor((base * 9 / 16) / 2) * 2];
-}
-
-async function generateLocalAIVideo(input = {}, userId) {
-  const duration = Math.max(1, Math.min(120, Number(input.duration) || 10));
-  const [width, height] = aiVideoDimensions(input.format, input.quality);
-  const outputName = `${crypto.randomUUID()}-tns-ai-video.mp4`;
-  const outputPath = path.join(UPLOAD_DIR, outputName);
-  const prompt = String(input.prompt || 'TNS AI Video').replace(/\s+/g, ' ').trim().slice(0, 180);
-  const safeText = prompt.replace(/[:'\\]/g, ' ').replace(/%/g, '\%').replace(/,/g, '\,');
-  const style = String(input.style || 'Photorealistic');
-  const camera = String(input.camera || 'Auto');
-  const workflow = String(input.workflow || 'Script → Video');
-  const draw = `drawtext=text='TNS':fontcolor=white:fontsize=${Math.max(28, Math.round(width/32))}:x=(w-text_w)/2:y=40:box=1:boxcolor=black@0.45:boxborderw=12,drawtext=text='${safeText}':fontcolor=white:fontsize=${Math.max(24, Math.round(width/48))}:x=(w-text_w)/2:y=h-text_h-70:box=1:boxcolor=black@0.5:boxborderw=10`;
-  const args = ['-y','-f','lavfi','-i',`color=c=0x172033:s=${width}x${height}:r=30`,'-f','lavfi','-i',`sine=frequency=440:sample_rate=48000:duration=${duration}`, '-t', String(duration), '-vf', draw, '-map','0:v:0','-map','1:a:0','-c:v','libx264','-preset','veryfast','-pix_fmt','yuv420p','-b:v', width >= 3840 ? '20M' : width >= 2560 ? '12M' : width >= 1920 ? '8M' : '5M','-c:a','aac','-b:a','192k','-movflags','+faststart','-metadata',`comment=Local TNS fallback | ${style} | ${camera} | ${workflow}` ,outputPath];
-  await runCommand('ffmpeg', args);
-  MediaAccess.register(outputName, userId, { originalName: 'TNS AI Video', createdAt: new Date().toISOString() });
-  return { url: publicUrl(outputName), fileName: outputName, duration, width, height, provider: 'mock', mode: 'local-fallback', prompt, style, camera, workflow };
-}
-
 
 function safePublicFile(requestPath) {
   let decoded;
@@ -282,20 +244,6 @@ function safePublicFile(requestPath) {
 
 function publicUrl(fileName) { return `/uploads/${encodeURIComponent(fileName)}`; }
 
-function safeUploadPathFromUrl(value) {
-  const raw = String(value || '').trim();
-  if (!raw) throw new Error('Input video is required.');
-  let pathname;
-  try { pathname = new URL(raw, 'http://localhost').pathname; } catch { throw new Error('Invalid media URL.'); }
-  const prefix = '/uploads/';
-  if (!pathname.startsWith(prefix)) throw new Error('Only uploaded media can be edited.');
-  const fileName = decodeURIComponent(pathname.slice(prefix.length));
-  if (!fileName || fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) throw new Error('Invalid media file.');
-  const full = path.resolve(UPLOAD_DIR, fileName);
-  const root = path.resolve(UPLOAD_DIR) + path.sep;
-  if (!full.startsWith(root) || !fs.existsSync(full) || !fs.statSync(full).isFile()) throw new Error('Uploaded media file was not found.');
-  return full;
-}
 
 function readMultipart(req, maxBytes = 500 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
@@ -593,18 +541,6 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, { success: true });
     }
 
-    if (req.method === 'POST' && url.pathname === '/api/uploads/video') {
-      const user = requireAuth(req, res); if (!user) return;
-      const parts = await readMultipart(req, 500 * 1024 * 1024);
-      const part = parts.find((p) => p.name === 'video' && p.filename);
-      if (!part) throw new Error('Video file is required.');
-      Uploads.validateUpload(part.filename, part.data.length, { maxFileSize: 500 * 1024 * 1024 });
-      if (!part.contentType.startsWith('video/') && !Uploads.isAllowedExtension(part.filename)) throw new Error('Unsupported video format.');
-      const saved = Uploads.saveUpload(part.data, UPLOAD_DIR, part.filename, { maxFileSize: 500 * 1024 * 1024 });
-      MediaAccess.register(saved.fileName, user.id, { originalName: saved.originalName, createdAt: saved.createdAt });
-      return sendJson(res, 201, { success: true, media: { id: saved.id, ownerId: user.id, originalName: saved.originalName, fileName: saved.fileName, size: saved.size, url: publicUrl(saved.fileName) } });
-    }
-
     if (req.method === 'POST' && url.pathname === '/api/uploads/file') {
       const user = requireAuth(req, res); if (!user) return;
       const parts = await readMultipart(req, 100 * 1024 * 1024);
@@ -614,262 +550,6 @@ const server = http.createServer(async (req, res) => {
       const saved = Uploads.saveUpload(part.data, UPLOAD_DIR, part.filename, { maxFileSize: 100 * 1024 * 1024 });
       MediaAccess.register(saved.fileName, user.id, { originalName: saved.originalName, createdAt: saved.createdAt });
       return sendJson(res, 201, { success: true, media: { id: saved.id, ownerId: user.id, originalName: saved.originalName, fileName: saved.fileName, size: saved.size, contentType: part.contentType, url: publicUrl(saved.fileName) } });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/editor/export') {
-      const user = requireAuth(req, res); if (!user) return;
-      const input = await readBody(req, 2 * 1024 * 1024);
-      if (input.timeline && Array.isArray(input.timeline.clips)) {
-        const timeline = JSON.parse(JSON.stringify(input.timeline));
-        const allMedia = [];
-        for (const clip of timeline.clips) { if (clip && clip.source) { const pth=safeUploadPathFromUrl(clip.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline media access denied.'); clip.source=pth; allMedia.push(pth); } }
-        for (const audio of (timeline.audio||[])) { if (audio && audio.source) { const pth=safeUploadPathFromUrl(audio.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline audio access denied.'); audio.source=pth; } }
-        for (const overlay of (timeline.overlays||[])) { if (overlay && overlay.source) { const pth=safeUploadPathFromUrl(overlay.source); if (!MediaAccess.canAccess(path.basename(pth), user.id)) throw new Error('Timeline overlay access denied.'); overlay.source=pth; } }
-        const quality = [720,1080,1440,2160].includes(Number(input.quality)) ? Number(input.quality) : 1080;
-        const outputName = `${crypto.randomUUID()}-timeline-export.mp4`;
-        const outputPath = path.join(UPLOAD_DIR, outputName);
-        const { exportTimeline } = require('./editor/export');
-        const ratio = String(input.ratio || '9:16'); const ratioMap = {'9:16':[9,16],'16:9':[16,9],'1:1':[1,1],'4:5':[4,5]}; const dims=ratioMap[ratio]||ratioMap['9:16']; const width=ratio==='16:9'?Math.round(quality*dims[0]/dims[1]):quality; const height=ratio==='16:9'?quality:Math.round(quality*dims[1]/dims[0]); await exportTimeline(timeline, outputPath, { width, height, fps: Number(input.fps)||30, videoBitrate: input.videoBitrate, audioBitrate: input.audioBitrate });
-        MediaAccess.register(outputName, user.id, { originalName: 'TNS timeline export' });
-        return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id, mode: 'timeline' } });
-      }
-      const inputPath = safeUploadPathFromUrl(input.inputPath);
-      const inputFileName = path.basename(inputPath);
-      if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
-      const quality = [720, 1080, 1440, 2160].includes(Number(input.quality)) ? Number(input.quality) : 1080;
-      const outputName = `${crypto.randomUUID()}-export.mp4`;
-      const outputPath = path.join(UPLOAD_DIR, outputName);
-      const { exportMP4 } = require('./editor/export');
-      await exportMP4(inputPath, outputPath, {
-        width: String(input.ratio||'9:16')==='16:9'?Math.round(quality*16/9):quality,
-        height: String(input.ratio||'9:16')==='16:9'?quality:(String(input.ratio||'9:16')==='1:1'?quality:(String(input.ratio||'9:16')==='4:5'?Math.round(quality*5/4):Math.round(quality*16/9))),
-        fps: 30,
-        trimStart: Math.max(0, Number(input.trimStart) || 0),
-        trimDuration: Number(input.trimDuration) > 0 ? Number(input.trimDuration) : null,
-        brightness: Number(input.brightness) || 0,
-        contrast: Number(input.contrast) || 1,
-        filter: String(input.filter || 'none'),
-        rotate: Number(input.rotate) || 0,
-        speed: Number(input.speed) > 0 ? Number(input.speed) : 1,
-        volume: Number.isFinite(Number(input.volume)) ? Math.max(0, Math.min(1, Number(input.volume))) : 1,
-        saturation: Number.isFinite(Number(input.saturation)) ? Math.max(0, Math.min(2, Number(input.saturation))) : 1,
-        sharpness: Number.isFinite(Number(input.sharpness)) ? Math.max(0, Math.min(2, Number(input.sharpness))) : 0,
-        fadeIn: Number.isFinite(Number(input.fadeIn)) ? Math.max(0, Math.min(30, Number(input.fadeIn))) : 0,
-        fadeOut: Number.isFinite(Number(input.fadeOut)) ? Math.max(0, Math.min(30, Number(input.fadeOut))) : 0
-      });
-      MediaAccess.register(outputName, user.id, { originalName: 'TNS export' });
-      return sendJson(res, 200, { success: true, result: { fileName: outputName, url: publicUrl(outputName), ownerId: user.id } });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/editor/tool') {
-      const user = requireAuth(req, res); if (!user) return;
-      const input = await readBody(req, 2 * 1024 * 1024);
-      const inputPath = safeUploadPathFromUrl(input.inputPath);
-      const inputFileName = path.basename(inputPath);
-      if (!MediaAccess.canAccess(inputFileName, user.id)) throw new Error('Media access denied.');
-
-      const tool = String(input.tool || '').trim().toLowerCase();
-      const { split, crop, flip, reverse, freeze, blur, stabilize, cleanNoise, chromaKey, addText, reframe, trim, resize, normalizeSound, extractSound, mute, exportVideo, mergeVideos, mixAudio, transition, drawText, shape, vignette, color, balance, panZoomTool, keyframes, silenceRemoval, enhanceVoice, enhance, blurFace, removeObject, rotate, fadeAudio, syncBeats, detectScenes, smartCutTool, extendScene, tts, replaceBackground, applyFilter } = require('./editor/video-tools');
-      const outputName = () => `${crypto.randomUUID()}-edit.mp4`;
-      const outputPath = () => path.join(UPLOAD_DIR, outputName());
-      const register = (name, originalName = 'TNS edit') => {
-        MediaAccess.register(name, user.id, { originalName, createdAt: new Date().toISOString() });
-        return { fileName: name, url: publicUrl(name), ownerId: user.id };
-      };
-
-      if (tool === 'merge') {
-        const paths = Array.isArray(input.inputPaths) ? input.inputPaths : [];
-        if (paths.length < 2 || paths.length > 20) throw new Error('Merge requires 2 to 20 video clips.');
-        const resolved = paths.map((value) => safeUploadPathFromUrl(value));
-        for (const filePath of resolved) {
-          const fileName = path.basename(filePath);
-          if (!MediaAccess.canAccess(fileName, user.id)) throw new Error('Media access denied.');
-        }
-        const listName = `${crypto.randomUUID()}-concat.txt`;
-        const listPath = path.join(UPLOAD_DIR, listName);
-        const lines = resolved.map((filePath) => `file '${filePath.replace(/'/g, "'\''")}'`).join('\n') + '\n';
-        await fs.promises.writeFile(listPath, lines, 'utf8');
-        const mergedName = outputName();
-        try {
-          await mergeVideos(listPath, path.join(UPLOAD_DIR, mergedName));
-        } finally {
-          await fs.promises.rm(listPath, { force: true });
-        }
-        return sendJson(res, 200, { success: true, tool, result: register(mergedName, 'TNS merged video') });
-      }
-
-      if (tool === 'music' || tool === 'sfx' || tool === 'voice over' || tool === 'voice recorder' || tool === 'audio overlay') {
-        const audioPath = safeUploadPathFromUrl(input.audioPath || input.inputAudioPath);
-        const audioFileName = path.basename(audioPath);
-        if (!MediaAccess.canAccess(audioFileName, user.id)) throw new Error('Audio media access denied.');
-        const name = outputName();
-        await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume, start: input.start, audioBitrate: input.audioBitrate });
-        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS ${tool}`) });
-      }
-
-
-
-      if (tool === 'tts' || tool === 'text to speech') {
-        const text = String(input.text || input.caption || '').trim();
-        if (!text) throw new Error('TTS text is required.');
-        const audioName = `${crypto.randomUUID()}-tts.wav`;
-        const audioPath = path.join(UPLOAD_DIR, audioName);
-        await tts(text, audioPath, { voice: input.voice || 'en', speed: input.speed || 165 });
-        const name = outputName();
-        await mixAudio(inputPath, audioPath, path.join(UPLOAD_DIR, name), { volume: input.volume || 1, start: input.start || 0 });
-        await fs.promises.rm(audioPath, { force: true });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS TTS') });
-      }
-
-      if (tool === 'transition') {
-        const secondPath = safeUploadPathFromUrl(input.secondInputPath || input.inputPaths?.[1] || '');
-        if (!secondPath || !MediaAccess.canAccess(path.basename(secondPath), user.id)) throw new Error('Second video access denied.');
-        const name = outputName();
-        await transition(inputPath, secondPath, path.join(UPLOAD_DIR, name), { transition: input.transition, duration: input.duration, offset: input.offset });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS transition') });
-      }
-
-
-      if (tool === 'background replace') {
-        const bgPath = safeUploadPathFromUrl(input.backgroundPath || input.backgroundImage || '');
-        if (!bgPath || !MediaAccess.canAccess(path.basename(bgPath), user.id)) throw new Error('Background media access denied.');
-        const name = outputName();
-        await replaceBackground(inputPath, bgPath, path.join(UPLOAD_DIR, name), { color: input.color, similarity: input.similarity, blend: input.blend });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS background replace') });
-      }
-
-
-      if (tool === 'ripple delete' || tool === 'speed curves' || tool === 'time remap') {
-        const name = outputName();
-        if (tool === 'ripple delete') await trim(inputPath, path.join(UPLOAD_DIR,name), Math.max(0,Number(input.start)||0), Number(input.duration)>0?Number(input.duration):null);
-        else await exportVideo(inputPath, path.join(UPLOAD_DIR,name), { speed: Number(input.speed)>0?Number(input.speed):1.25, width: input.width||1080, height: input.height||1920 });
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
-      }
-      if (tool === 'mirror' || tool === 'motion tracking') {
-        const name=outputName();
-        if(tool==='mirror') await flip(inputPath,path.join(UPLOAD_DIR,name),'horizontal');
-        else await blurFace(inputPath,path.join(UPLOAD_DIR,name),{x:input.x,y:input.y,width:input.width||240,height:input.height||240});
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
-      }
-      if (tool === 'templates' || tool === 'auto highlight') {
-        const name=outputName();
-        if(tool==='templates') await drawText(inputPath,path.join(UPLOAD_DIR,name),input.text||'TNS',{fontSize:input.fontSize||48});
-        else await smartCutTool(inputPath,path.join(UPLOAD_DIR,name),{minSilence:input.minSilence||0.35});
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
-      }
-      if (tool === 'audio fade') { const name=outputName(); await fadeAudio(inputPath,path.join(UPLOAD_DIR,name),{fadeIn:input.fadeIn||1,fadeOut:input.fadeOut||1,totalDuration:input.totalDuration||10}); return sendJson(res,200,{success:true,tool,result:register(name,'TNS audio fade')}); }
-      if (tool === 'project versions' || tool === 'duplicate clip') {
-        const name=outputName();
-        await fs.promises.copyFile(inputPath,path.join(UPLOAD_DIR,name));
-        return sendJson(res,200,{success:true,tool,result:register(name,`TNS ${tool}`)});
-      }
-      if (tool === 'export presets') return sendJson(res,200,{success:true,tool,presets:require('./editor/export').getExportPresets()});
-
-      const advanced = async (fn, originalName, args = []) => {
-        const name = outputName();
-        await fn(inputPath, path.join(UPLOAD_DIR, name), ...args);
-        return sendJson(res, 200, { success: true, tool, result: register(name, originalName) });
-      };
-
-      if (tool === 'rotate') return advanced(rotate, 'TNS rotate', [Number(input.degrees ?? input.rotate ?? 90)]);
-      if (tool === 'pan & zoom') return advanced(panZoomTool, 'TNS pan zoom', [{ scale: input.scale }]);
-      if (tool === 'keyframes') return advanced(keyframes, 'TNS keyframes', [{ zoom: input.zoom, width: input.width, height: input.height, fps: input.fps }]);
-      if (tool === 'vignette') return advanced(vignette, 'TNS vignette', [input.strength]);
-      if (tool === 'hsl' || tool === 'curves' || tool === 'colour match' || tool === 'lut') return advanced(color, 'TNS colour adjustment', [{ saturation: input.saturation, brightness: input.brightness, contrast: input.contrast, gamma: input.gamma, hue: input.hue }]);
-      if (tool === 'temperature' || tool === 'tint') return advanced(balance, 'TNS colour balance', [{ rs: input.red, gs: input.green, bs: input.blue }]);
-      if (tool === 'exposure' || tool === 'highlights' || tool === 'shadows') return advanced(color, 'TNS tonal adjustment', [{ brightness: input.amount ?? input.brightness, contrast: input.contrast, saturation: input.saturation }]);
-      if (tool === 'captions' || tool === 'ai captions' || tool === 'subtitles' || tool === 'karaoke captions') return advanced(drawText, 'TNS captions', [input.text || input.caption || 'TNS', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration, color: input.color }]);
-      if (tool === 'text animation') return advanced(drawText, 'TNS text animation', [input.text || 'TNS', { fontSize: input.fontSize, x: input.x, y: input.y, start: input.start, duration: input.duration }]);
-      if (tool === 'stickers' || tool === 'shapes' || tool === 'mask' || tool === 'masks') return advanced(shape, 'TNS shape/mask', [{ x: input.x, y: input.y, width: input.width, height: input.height, color: input.color, fill: input.fill, thickness: input.thickness }]);
-      if (tool === 'opacity') return advanced(color, 'TNS opacity', [{ saturation: 1, brightness: 0, contrast: 1 }]);
-      if (tool === 'shadow') return advanced(drawText, 'TNS shadow', [input.text || 'TNS', { fontSize: input.fontSize, x: input.x, y: input.y, shadow: input.shadow || 6 }]);
-      if (tool === 'blur face' || tool === 'face blur') return advanced(blurFace, 'TNS face blur', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
-      if (tool === 'object removal') return advanced(removeObject, 'TNS object removal', [{ x: input.x, y: input.y, width: input.width, height: input.height }]);
-      if (tool === 'background removal' || tool === 'background replace') return advanced(chromaKey, 'TNS background removal', [{ color: input.color || '0x00ff00', similarity: input.similarity || 0.1, blend: input.blend || 0.05 }]);
-      if (tool === 'ai enhance' || tool === 'ai upscale') return advanced(enhance, 'TNS enhance', [{ width: input.width || 1920, height: input.height || 1080 }]);
-      if (tool === 'voice enhance' || tool === 'ai voice') return advanced(enhanceVoice, 'TNS voice enhancement');
-      if (tool === 'silence removal') return advanced(silenceRemoval, 'TNS silence removal', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
-      if (tool === 'smart cut') return advanced(smartCutTool, 'TNS smart cut', [{ minSilence: input.minSilence, stopThreshold: input.stopThreshold }]);
-      if (tool === 'scene extend') return advanced(extendScene, 'TNS scene extend', [input.duration || 2]);
-      if (tool === 'beat sync' || tool === 'auto beat') return advanced(syncBeats, 'TNS beat sync', [{ bpm: input.bpm, speed: input.speed }]);
-      if (tool === 'scene detection') return advanced(detectScenes, 'TNS scene detection', [{ threshold: input.threshold }]);
-      if (tool === 'transitions') {
-        const secondPath = safeUploadPathFromUrl(input.secondInputPath || input.inputPaths?.[1] || '');
-        if (!secondPath || !MediaAccess.canAccess(path.basename(secondPath), user.id)) throw new Error('Second video access denied.');
-        const name = outputName();
-        await transition(inputPath, secondPath, path.join(UPLOAD_DIR, name), { transition: input.transition || 'fade', duration: input.duration || 1, offset: input.offset || 0 });
-        return sendJson(res, 200, { success: true, tool, result: register(name, 'TNS transition') });
-      }
-
-
-      if (['effects','filters','lens','light leak','glow','film grain','glitch','blend modes','perspective','safe zones','proxy preview','ai voice'].includes(tool)) {
-        const name = outputName();
-        let filter = 'null';
-        if (tool === 'filters') filter = String(input.filter || 'hue=s=0');
-        else if (tool === 'film grain') filter = 'noise=alls=12:allf=t+u';
-        else if (tool === 'glow') filter = 'gblur=sigma=2';
-        else if (tool === 'lens') filter = 'lenscorrection=k1=0.03:k2=0.01';
-        else if (tool === 'light leak') filter = 'eq=brightness=0.08:saturation=1.15';
-        else if (tool === 'glitch') filter = 'hue=h=10';
-        else if (tool === 'perspective') filter = 'scale=iw*1.02:ih*1.02,crop=iw/1.02:ih/1.02';
-        else if (tool === 'safe zones') filter = 'drawbox=x=iw*0.05:y=ih*0.05:w=iw*0.9:h=ih*0.9:color=white@0.35:t=3';
-        else if (tool === 'proxy preview') filter = 'scale=640:-2';
-        else if (tool === 'ai voice') filter = 'eq=contrast=1.05:saturation=1.05';
-        await applyFilter(inputPath, path.join(UPLOAD_DIR, name), filter);
-        return sendJson(res, 200, { success: true, tool, result: register(name, `TNS ${tool}`) });
-      }
-
-      if (tool === 'split') {
-        const point = Math.max(0.05, Number(input.splitAt) || 0);
-        if (!point) throw new Error('Enter a split time greater than 0 seconds.');
-        const a = outputName();
-        const b = outputName();
-        await split(inputPath, path.join(UPLOAD_DIR, a), path.join(UPLOAD_DIR, b), point);
-        return sendJson(res, 200, { success: true, tool, results: [register(a, 'TNS split part 1'), register(b, 'TNS split part 2')] });
-      }
-
-      const name = outputName();
-      const out = path.join(UPLOAD_DIR, name);
-      if (tool === 'trim' || tool === 'cut') {
-        await trim(inputPath, out, Math.max(0, Number(input.start) || 0), Number(input.duration) > 0 ? Number(input.duration) : null);
-      } else if (tool === 'crop') {
-        await crop(inputPath, out, { width: input.width, height: input.height, x: input.x, y: input.y });
-      } else if (tool === 'resize') {
-        await resize(inputPath, out, Number(input.width), Number(input.height));
-      } else if (tool === 'flip') {
-        await flip(inputPath, out, input.direction || 'horizontal');
-      } else if (tool === 'reverse') {
-        await reverse(inputPath, out);
-      } else if (tool === 'freeze frame') {
-        await freeze(inputPath, out, input.duration || 2);
-      } else if (tool === 'blur') {
-        await blur(inputPath, out, input.strength || 8);
-      } else if (tool === 'stabilization') {
-        await stabilize(inputPath, out);
-      } else if (tool === 'noise cleanup') {
-        await cleanNoise(inputPath, out, input.amount || 12);
-      } else if (tool === 'chroma key' || tool === 'green screen') {
-        await chromaKey(inputPath, out, { color: input.color || '0x00ff00', similarity: input.similarity, blend: input.blend });
-      } else if (tool === 'text') {
-        await addText(inputPath, out, input.text, { fontSize: input.fontSize, x: input.x, y: input.y });
-      } else if (tool === 'auto reframe') {
-        await reframe(inputPath, out, Number(input.width) || 1080, Number(input.height) || 1920);
-      } else if (tool === 'normalize audio' || tool === 'audio normalize') {
-        await normalizeSound(inputPath, out);
-      } else if (tool === 'mute') {
-        await mute(inputPath, out);
-      } else if (tool === 'extract audio') {
-        const audioName = `${crypto.randomUUID()}-audio.m4a`;
-        const audioPath = path.join(UPLOAD_DIR, audioName);
-        await extractSound(inputPath, audioPath);
-        return sendJson(res, 200, { success: true, tool, result: register(audioName, 'TNS extracted audio') });
-      } else if (tool === 'export') {
-        await exportVideo(inputPath, out, input.options || {});
-      } else {
-        return sendJson(res, 400, { error: `Editor tool '${input.tool}' is not implemented as a local media operation yet.` });
-      }
-
-      return sendJson(res, 200, { success: true, tool, result: register(name) });
     }
 
     if (req.method === 'POST' && url.pathname === '/api/tns-ai/browser/task/start') {
@@ -1053,41 +733,6 @@ const server = http.createServer(async (req, res) => {
       if (typeof provider.understand === 'function') { const result = await provider.understand({ ...input, ...languageContext, userId: user.id }); return sendJson(res, 200, { success: true, ...result, replyLanguage: result?.replyLanguage || replyLanguage, provider: providerName, demo: providerName === 'mock' }); }
       if (typeof provider.chat === 'function') { const result = await provider.chat({ message, file: input.file || null, ...languageContext, userId: user.id }); return sendJson(res, 200, { success: true, reply: result?.reply || result?.text || '', replyLanguage: result?.replyLanguage || replyLanguage }); }
       return sendJson(res, 503, { error: 'Configured TNS AI provider does not support file understanding.' });
-    }
-
-    if (req.method === 'POST' && url.pathname === '/api/video/jobs') {
-      const user = requireAuth(req, res); if (!user) return;
-      const input = await readBody(req);
-      const providerName = String(process.env.VIDEO_PROVIDER || (process.env.NODE_ENV === 'production' ? '' : 'mock')).toLowerCase();
-      if (!providerName || (process.env.NODE_ENV === 'production' && providerName === 'mock')) return sendJson(res, 503, { error: 'A real video provider is not configured for production.' });
-      const provider = getProvider(providerName);
-      if (!provider) return sendJson(res, 503, { error: 'Configured video provider is unavailable.' });
-      const job = await createVideoJob(providerName, { ...input, ownerId: user.id });
-      if (providerName === 'mock') {
-        job.status = 'processing';
-        job.progress = 5;
-        generateLocalAIVideo(input, user.id).then(async result => {
-          await require('./jobs/video-job').complete(job.id, result);
-        }).catch(async error => {
-          await require('./jobs/video-job').fail(job.id, error);
-        });
-      } else if (provider && typeof provider.create === 'function') {
-        try {
-          job.providerJob = await provider.create(input);
-          if (job.providerJob?.status === 'completed') { job.status = 'completed'; job.result = job.providerJob.result; }
-        } catch (error) { job.status = 'failed'; job.error = error.message; }
-      }
-      return sendJson(res, 202, job);
-    }
-
-    match = url.pathname.match(/^\/api\/video\/jobs\/([^/]+)$/);
-    if (req.method === 'GET' && match) {
-      const user = requireAuth(req, res); if (!user) return;
-      const job = await getVideoJob(decodeURIComponent(match[1]));
-      if (!job || job.ownerId !== user.id) return sendJson(res, 404, { error: 'Video job not found.' });
-      const provider = getProvider(job.provider);
-      const refreshed = await refreshProviderJob(provider, job, 'video', require('./jobs/video-job').update);
-      return sendJson(res, 200, refreshed || job);
     }
 
     if (req.method === 'POST' && url.pathname === '/api/voice/jobs') {

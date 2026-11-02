@@ -3,15 +3,6 @@ const TNSAIConfig = {
 
   defaultProvider: "mock",
 
-  video: {
-    enabled: true,
-    endpoint: "/api/video/jobs",
-    defaultStyle: "realistic",
-    defaultQuality: "HD",
-    defaultAspectRatio: "16:9",
-    defaultDuration: 10
-  },
-
   voice: {
     enabled: true,
     endpoint: "/api/voice/jobs",
@@ -28,41 +19,15 @@ const TNSAIConfig = {
       type: "development"
     },
 
-    video: {
-      enabled: true,
-      providers: []
-    },
-
     voice: {
       enabled: true,
       providers: []
     }
   },
 
-  features: {
-    videoGeneration: true,
-    voiceGeneration: true,
-    realisticGeneration: true,
-    scriptToVideo: true,
-    longVideo: true,
-    sceneGeneration: true,
-    characterConsistency: true,
-    hdExport: true,
-    fullHdExport: true,
-    fourKExport: true
-  },
+  features: { voiceGeneration: true },
 
-  limits: {
-    maxVideoPromptLength: 20000,
-    maxVoiceTextLength: 50000,
-    maxVideoDuration: 3600
-  },
-
-  getVideoConfig() {
-    return {
-      ...this.video
-    };
-  },
+  limits: { maxVoiceTextLength: 50000 },
 
   getVoiceConfig() {
     return {

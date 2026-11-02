@@ -42,9 +42,7 @@ const TNSAppConfig = {
 
   features: {
     authentication: true,
-    videoGeneration: true,
     voiceGeneration: true,
-    videoEditor: true,
     projects: true,
     languageSelection: false,
     mobileSupport: true,

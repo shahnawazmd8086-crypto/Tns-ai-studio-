@@ -25,25 +25,12 @@ const TNSAPIConfig = {
         "/api/auth/forgot-password"
     },
 
-    video: {
-      create:
-        "/api/video/jobs",
-
-      status:
-        "/api/video/jobs"
-    },
-
     voice: {
       create:
         "/api/voice/jobs",
 
       status:
         "/api/voice/jobs"
-    },
-
-    editor: {
-      export:
-        "/api/editor/export"
     },
 
     projects: {

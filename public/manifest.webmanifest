@@ -1,7 +1,7 @@
 {
   "name": "TNS",
   "short_name": "TNS",
-  "description": "TNS — AI creation, video editing and creator communication",
+  "description": "TNS — AI voice and creator communication",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

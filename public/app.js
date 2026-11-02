@@ -51,10 +51,8 @@ document.addEventListener('DOMContentLoaded',()=>{ $('#savedTaskRefresh')?.addEv
       e.preventDefault();e.stopPropagation();const target=item.dataset.menuOpen;close();
       if(target==='projects')showPanel('projects');
       else if(target==='savedTasks'){showPanel('savedTasks');loadSavedTasks();}
-      else if(target==='editorTools')showPanel('editor');
       else if(target==='settings')openSettings();
       else if(target==='premium')showPanel('premium');
-      else if(target==='help')showPanel('help');
     });
     document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!toggle.contains(e.target))close()});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
@@ -135,34 +133,24 @@ function saveSettingsPatch(patch){
 }
 function applyTheme(v){document.body.classList.toggle('light',v==='light');if(v==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme:light)').matches)}
 const MODULE_SETTINGS={
-  'ai-video':{title:'AI Video Settings',items:['Default duration','Default style','Quality','AI provider','Character consistency']},
-  'edit-video':{title:'Edit Video Settings',items:['Auto-save','Preview quality','Export quality','Audio defaults','AI editing tools']},
   projects:{title:'Projects Settings',items:['Auto-save','Cloud storage','Project privacy','Default project format']},
-  help:{title:'Help & Support Settings',items:['Support notifications','Tutorial tips','Diagnostics','Privacy controls']},
   premium:{title:'Premium Settings',items:['Plan','Renewal','AI credits','Storage','Billing region']}
 };
 function openModuleSettings(key){const item=MODULE_SETTINGS[key];if(!item)return;showPanel('settings');$('#settingsTitle').textContent=item.title;const box=$('#moduleSettingsBox');if(box){box.classList.remove('hidden');box.innerHTML='<div class="module-settings-list">'+item.items.map((x)=>`<div class="module-setting-row"><div><b>${escapeHtml(x)}</b><small>Configure ${escapeHtml(x.toLowerCase())} for this feature.</small></div><button class="secondary" type="button">Configure</button></div>`).join('')+'</div>'}}
 $$('.module-settings-btn').forEach(b=>b.addEventListener('click',()=>openModuleSettings(b.dataset.moduleSettings)));
 
 const SETTINGS_CATEGORIES=[
- {id:'app',icon:'⚙️',title:'App',desc:'Language, appearance, data usage'},
- {id:'help',icon:'❔',title:'Help & About',desc:'Support, policy, about'}
+ {id:'app',icon:'⚙️',title:'App',desc:'Language, appearance, data usage'}
 ];
 
 const SETTINGS_ROWS={
  app:[['Language','Choose your app language','language'],['Dark Mode','Use the dark appearance','toggle:darkMode'],['Data Saver','Reduce media data usage','toggle:dataSaver'],['Default Video Quality','HD / Full HD / 4K','quality'],['Default Aspect Ratio','9:16 / 16:9 / 1:1','ratio']],
- help:[['Help & Support','Get help and answers','support'],['Report a Problem','Report bugs or issues','report'],['Privacy Policy','Read the privacy policy','privacyPolicy'],['Terms & Conditions','Read the terms and conditions','terms'],['About TNS','Version and app information','about']]
 };
 
 const SETTINGS_SUBPAGES={
  language:{title:'Language',eyebrow:'APP',description:'Choose the language for TNS.',rows:[['English','Use English throughout the app.','choice:language'],['हिन्दी','Use Hindi throughout the app.','choice:languageHindi'],['Español','Use Spanish throughout the app.','choice:languageSpanish'],['Français','Use French throughout the app.','choice:languageFrench']]},
  quality:{title:'Default Video Quality',eyebrow:'APP',description:'Choose the default export quality.',rows:[['HD (720p)','Smaller files and faster export.','choice:qualityHD'],['Full HD (1080p)','Recommended quality for most videos.','choice:qualityFHD'],['4K (2160p)','Highest available quality.','choice:quality4K']]},
  ratio:{title:'Default Aspect Ratio',eyebrow:'APP',description:'Choose the default video shape.',rows:[['9:16 (Portrait)','Best for vertical mobile video.','choice:ratio916'],['16:9 (Landscape)','Standard wide video.','choice:ratio169'],['1:1 (Square)','Square social format.','choice:ratio11']]},
- support:{title:'Help & Support',eyebrow:'HELP & ABOUT',description:'Find answers and contact TNS support.',rows:[['Help Center','Find answers to common questions.','info'],['Contact Support','Send a support request.','info']]},
- report:{title:'Report a Problem',eyebrow:'HELP & ABOUT',description:'Tell us about a bug or issue.',rows:[['Problem','Describe the problem you experienced.','reportForm']]},
- privacyPolicy:{title:'Privacy Policy',eyebrow:'HELP & ABOUT',description:'TNS privacy information.',rows:[['Privacy','Your privacy information will be shown here.','info']]},
- terms:{title:'Terms & Conditions',eyebrow:'HELP & ABOUT',description:'TNS terms of service.',rows:[['Terms','Your terms and conditions will be shown here.','info']]},
- about:{title:'About TNS',eyebrow:'HELP & ABOUT',description:'App version and product information.',rows:[['TNS','Your creator app for editing, AI creation and social sharing.','info']]}
 };
 
 const SETTINGS_TOGGLE_DEFAULTS={darkMode:true,dataSaver:false,soundEffects:true};
@@ -206,7 +194,6 @@ function renderSettingsSubpage(id,push=true){
 function settingsSubRowHtml(title,desc,action){
   if(action.startsWith('toggle:')){const key=action.slice(7),on=getSettingToggle(key);return `<div class="settings-detail-row"><div class="row-copy"><b>${escapeHtml(title)}</b><small>${escapeHtml(desc)}</small></div><button class="settings-switch ${on?'on':''}" data-setting-toggle="${escapeHtml(key)}" type="button" aria-pressed="${on}"><i></i></button></div>`}
   if(action.startsWith('choice:')){const key=action.slice(7);return `<button class="settings-detail-row settings-action-row" data-choice="${escapeHtml(key)}" type="button"><div class="row-copy"><b>${escapeHtml(title)}</b><small>${escapeHtml(desc)}</small></div><span class="settings-choice-value">${escapeHtml(choiceLabel(key))}</span><span class="settings-category-arrow">›</span></button>`}
-  if(action==='reportForm')return `<div class="settings-detail-card"><label>Describe the problem<textarea id="settingsReportText" rows="5" placeholder="Tell us what happened…"></textarea></label><button class="primary wide" data-settings-action="sendReport" type="button">Send Report</button></div>`;
   if(action==='empty')return `<div class="settings-detail-card"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(desc)}</p></div>`;
   return `<div class="settings-detail-card"><h4>${escapeHtml(title)}</h4><p>${escapeHtml(desc)}</p></div>`;
 }
@@ -242,7 +229,7 @@ $('#settingsSearchResults')?.addEventListener('click',e=>{
   if(action==='personal') return renderPersonalInformation();
   if(SETTINGS_SUBPAGES[action]) return renderSettingsSubpage(action);
   if(action==='security'||action==='sessions'||action==='accountActivity'||action==='danger') return renderSettingsSubpage(action);
-  if(action==='language'||action==='quality'||action==='ratio'||action==='music'||action==='content'||action==='messages'||action==='followers'||action==='sharing'||action==='mentions'||action==='blocked'||action==='restricted'||action==='hidden'||action==='saved'||action==='archive'||action==='history'||action==='support'||action==='report'||action==='privacyPolicy'||action==='terms'||action==='about') return renderSettingsSubpage(action);
+  if(action==='language'||action==='quality'||action==='ratio'||action==='music'||action==='content'||action==='messages'||action==='followers'||action==='sharing'||action==='mentions'||action==='blocked'||action==='restricted'||action==='hidden'||action==='saved'||action==='archive'||action==='history') return renderSettingsSubpage(action);
 });
 $('#settingsDetailList')?.addEventListener('change',()=>{});
 $('#settingsDetailList')?.addEventListener('click',e=>{
@@ -256,62 +243,11 @@ $('#settingsDetailList')?.addEventListener('click',e=>{
   if(a==='quality'){renderSettingsSubpage('quality');return}
   if(a==='ratio'){renderSettingsSubpage('ratio');return}
   if(a==='deviceCurrent'||a==='deviceOthers'||a==='loginHistory'){renderSettingsSubpage(a);return}
-  if(a==='sendReport'){toast('Problem report prepared.');return}
 });
 function choicePageKey(stackKey){const map={language:'language',languageHindi:'language',languageSpanish:'language',languageFrench:'language',qualityHD:'quality',qualityFHD:'quality',quality4K:'quality',ratio916:'ratio',ratio169:'ratio',ratio11:'ratio'};return map[stackKey]||stackKey}
 $('#settingsHomeNav')?.addEventListener('click',()=>showPanel('dashboard'));
 $('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}authenticatedUser=null;window.TNSAuth?.logout?.();localStorage.removeItem('tnsStudioLanguage');location.reload()});
 
-async function waitForVideoJob(jobId, options = {}) {
-  const id = String(jobId || '').trim();
-  if (!id) throw new Error('Video job ID was not returned.');
-  const interval = Math.max(500, Number(options.interval) || 1500);
-  const timeout = Math.max(interval, Number(options.timeout) || (type === 'video' ? 180000 : 120000));
-  const startedAt = Date.now();
-  while (Date.now() - startedAt < timeout) {
-    const job = await json(`/api/${type}/jobs/${encodeURIComponent(id)}`);
-    const status = String(job?.status || job?.job?.status || '').toLowerCase();
-    if (['completed','complete','succeeded'].includes(status)) return job;
-    if (['failed','error','cancelled','canceled'].includes(status)) {
-      throw new Error(job?.error || job?.message || 'Video generation failed.');
-    }
-    await new Promise(resolve => setTimeout(resolve, interval));
-  }
-  throw new Error('Video generation timed out.');
-}
-$('#generateBtn')?.addEventListener('click',async()=>{const idea=$('#idea').value.trim();if(!idea)return msg('#jobBox','Describe your video first.','error');if(document.getElementById('videoStep2')?.classList.contains('hidden'))return msg('#jobBox','Press Continue first, then choose your video settings.','error');const ref=$('#videoReference')?.files?.[0];msg('#jobBox',ref?'Uploading reference media…':'Preparing your AI video…');try{let referenceUrl=null;if(ref){const fd=new FormData();fd.append('file',ref,ref.name);const uploaded=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const ud=await uploaded.json();if(!uploaded.ok)throw new Error(ud.error||'Reference upload failed.');referenceUrl=ud.media?.url||null;}msg('#jobBox','Generating video…');const d=await json('/api/video/jobs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt:idea,duration:Number($('#duration').value),format:$('#format').value,style:$('#style').value,quality:$('#videoQuality').value,camera:$('#videoCamera')?.value,characterConsistency:$('#characterConsistency')?.value,workflow:$('#videoWorkflow')?.value,negativePrompt:$('#videoNegativePrompt')?.value,referenceUrl,referenceName:ref?.name||null})});const job=d.status==='completed'?d:await waitForVideoJob(d.id||d.job?.id);const url=job.result?.url;if(!url)throw new Error('Video generation completed without a video result.');$('#videoResult').innerHTML=`<video controls playsinline src="${url}"></video><div class="video-result-meta"><span>${job.result?.width||''}×${job.result?.height||''}</span><span>${job.result?.duration||Number($('#duration').value)}s</span><span>${job.result?.mode==='local-fallback'?'Preview mode':'AI provider'}</span></div><a class="download-btn" href="${url}" download="tns-ai-video.mp4">⬇ Download Video</a>`;msg('#jobBox','Video ready.','success');saveProject('AI Video',idea)}catch(err){msg('#jobBox',err.message,'error')}});
-let editorVoiceRecorder=null; let editorVoiceChunks=[]; let editorVoiceStream=null;
-$('#recordEditorVoice')?.addEventListener('click',async()=>{
-  const btn=$('#recordEditorVoice');
-  try{
-    if(editorVoiceRecorder && editorVoiceRecorder.state==='recording'){editorVoiceRecorder.stop();btn.textContent='🎙️ Record Voice Over';return;}
-    if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw Error('Voice recording is not supported in this browser.');
-    editorVoiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    editorVoiceChunks=[]; editorVoiceRecorder=new MediaRecorder(editorVoiceStream);
-    editorVoiceRecorder.ondataavailable=e=>{if(e.data.size) editorVoiceChunks.push(e.data);};
-    editorVoiceRecorder.onstop=async()=>{
-      editorVoiceStream?.getTracks().forEach(t=>t.stop());
-      const blob=new Blob(editorVoiceChunks,{type:editorVoiceRecorder.mimeType||'audio/webm'});
-      const ext=(blob.type.includes('mp4')||blob.type.includes('m4a'))?'m4a':(blob.type.includes('ogg')?'ogg':'webm');
-      const fd=new FormData();fd.append('file',blob,`tns-voice-over.${ext}`);
-      try{msg('#editStatus','Uploading recorded voice-over…');const r=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const d=await r.json();if(!r.ok)throw Error(d.error||'Voice upload failed.');window.editorAudio=d.media;msg('#editStatus','Voice-over recorded and ready. Tap Voice Over.','success');}catch(err){msg('#editStatus',err.message,'error');}
-    };
-    editorVoiceRecorder.start();btn.textContent='⏹ Stop Recording';msg('#editStatus','Recording voice-over… speak now.','success');
-  }catch(err){msg('#editStatus',err.message,'error');}
-});
-
-$('#preview')?.addEventListener('timeupdate',()=>{const v=$('#preview');const s=Math.floor(v.currentTime||0);$('#timelineTime').textContent=`${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`});$('#volume')?.addEventListener('input',e=>$('#preview').volume=Number(e.target.value));
-$('#exportBtn')?.addEventListener('click',async()=>{
-  const c=editorApi();
-  if(!currentMedia && !c?.state.timeline.length)return msg('#editStatus','Import a video first.','error');
-  msg('#editStatus','Exporting your TNS project…');
-  try{
-    const q=Number($('#exportQuality').value||1080); const ratio=$('#exportRatio')?.value||'9:16';
-    const d=c?.state.timeline.length?await c.exportProject({quality:q,ratio,fps:30,videoBitrate:q>=2160?'20M':q>=1440?'12M':'8M',audioBitrate:'192k'}):await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputPath:currentMedia.url,trimStart:Number($('#trimStart').value||0),trimDuration:Number($('#trimDuration').value||0),brightness:Number($('#brightness').value||0),contrast:Number($('#contrast').value||1),filter:$('#filter').value,rotate:$('#rotate').value,speed:Number($('#speed').value||1),volume:Number($('#volume').value||1),saturation:Number($('#saturation')?.value||1),sharpness:Number($('#sharpness')?.value||0),fadeIn:Number($('#fadeIn')?.value||0),fadeOut:Number($('#fadeOut')?.value||0),quality:q,ratio})});
-    const a=document.createElement('a');a.href=d.result.url;a.download=d.result.fileName||'tns-export.mp4';a.className='download-btn';a.textContent='⬇ Download exported MP4';$('#editStatus').replaceChildren(document.createTextNode('Export complete — '),a);saveProject('Edited Video',currentMedia?.originalName||'TNS Edit');
-  }catch(err){msg('#editStatus',err.message,'error')}
-});
-$('#resetVideo')?.addEventListener('click',()=>{if($('#preview').src?.startsWith('blob:'))URL.revokeObjectURL($('#preview').src);$('#preview').removeAttribute('src');$('#preview').load();$('#videoFile').value='';currentMedia=null;window.currentMedia=null;editorApi()?.reset();renderEditorTimeline();msg('#editStatus','Editor reset.')});
 function saveProject(type,title){const key=projectKey();const list=JSON.parse(localStorage.getItem(key)||'[]');list.unshift({id:crypto.randomUUID?.()||String(Date.now()),type,title,date:new Date().toISOString()});localStorage.setItem(key,JSON.stringify(list.slice(0,30)));renderProjects()}
 function renderProjects(){const list=JSON.parse(localStorage.getItem(projectKey())||'[]');$('#projectList').innerHTML=list.length?list.map(p=>`<div class="project-row"><div><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.type)} • ${new Date(p.date).toLocaleString()}</small></div><span class="muted">Saved</span></div>`).join(''):'<p class="muted">No projects yet. Start creating.</p>';$('#recentProjects').innerHTML=list.slice(0,4).map(p=>`<div class="recent-card"><span>🎬</span><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.type)}</small></div>`).join('')||'<div class="recent-card"><span>✨</span><b>Your creations appear here</b><small>Start with any creator tool.</small></div>'}
 $('#clearBtn')?.addEventListener('click',()=>{localStorage.removeItem(projectKey());renderProjects();toast('Local projects cleared')});
@@ -328,10 +264,7 @@ function ensureModuleSettingsModal(){
   $('#closeModuleSettings').addEventListener('click',()=>$('#moduleSettingsModal').classList.add('hidden'));
 }
 const moduleSettingDefaults={
-  'ai-video':{duration:'10',quality:'HD',style:'Photorealistic',aspect:'9:16',autoSave:true},
-  'edit-video':{autoSave:true,preview:'HD',export:'1080',audio:'AAC 192k',aiTools:true},
   projects:{autoSave:true,cloudSync:true,privacy:'Private',format:'9:16'},
-  help:{tips:true,notifications:true,diagnostics:false},
   premium:{plan:'Current',credits:'Auto',storage:'Standard',renewal:'On'}
 };
 let activeModuleSettings='';
@@ -362,29 +295,19 @@ function renderLanguageInside(filter=''){const grid=$('#languageInsideGrid');if(
 $('#languageInsideSearch')?.addEventListener('input',e=>renderLanguageInside(e.target.value));
 const oldShowPanel=showPanel; showPanel=function(id){oldShowPanel(id);if(id==='languageInside')renderLanguageInside();if(id==='settings')showSettingsHome();};
 
-$('#improveVideoBtn')?.addEventListener('click',()=>{const x=$('#idea');if(x.value.trim())x.value=`Create a polished ${$('#style').value} video: ${x.value.trim()}. Include a clear hook, natural motion, realistic lighting, coherent camera movement, consistent subject identity and a satisfying ending.`;msg('#jobBox','Prompt improved. Review it before generating.','success')});
-$('#variationVideoBtn')?.addEventListener('click',()=>{const x=$('#idea');if(!x.value.trim())return msg('#jobBox','Enter an idea first.','error');x.value += ' Create a fresh visual variation with different camera movement and composition while preserving the same subject and story.';msg('#jobBox','Variation prompt prepared.','success')});
-
-
-
 $$('[data-open="premium"]').forEach(b=>b.addEventListener('dblclick',()=>showPanel('premiumDetails')));
 $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'));
-$('#openExportFromEditor')?.addEventListener('click',()=>{$('#exportQuality').value=$('#finalExportQuality').value;showPanel('editor');setTimeout(()=>$('#exportBtn')?.click(),50)});
 
 // Add explicit navigation cards for the extra locked reference screens without changing the dashboard's 8-card layout.
-const extraScreenMap={premiumDetails:'Premium Details',settingsApp:'App Settings',languageInside:'Language Selection',editorTools:'Edit Video Tools',exportVideo:'Export Video',appIcon:'Mobile App Icon',finalEditView:'Final Editing View'};
-function addExtraNavigation(){
-  const help=$('#help .card');if(help&&!help.querySelector('.reference-screen-links')){help.insertAdjacentHTML('beforeend','<div class="reference-screen-links"><p class="eyebrow">TNS SCREEN SYSTEM</p><h3>All module screens</h3><div class="screen-link-grid">'+Object.entries(extraScreenMap).map(([id,label])=>`<button data-open-screen="${id}">${escapeHtml(label)}</button>`).join('')+'</div></div>');help.querySelectorAll('[data-open-screen]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.openScreen)));}}
-addExtraNavigation();
 
 /* ===== MASTER 24-SCREEN + FINAL FEATURE COMPLETION ===== */
 (function(){
   const screenRegistry = [
     ["1","splashScreen","Splash Screen"],["2","authScreen","Login Screen"],["3","signupModal","Signup Screen"],
     ["4","otpScreen","OTP Verification"],["5","languageScreen","Language Selection"],["6","dashboard","Main Dashboard"],
-    ["7","settings","TNS Settings"],["8","editor","Edit Video"],["9","generate","AI Video"],["12","projects","Projects"],["16","help","Help & Support"],["17","premium","Premium"],
+    ["7","settings","TNS Settings"],["12","projects","Projects"],["17","premium","Premium"],
     ["18","settingsApp","App Settings"],["19","languageInside","Language Selection (Inside)"],
-    ["21","editorTools","Edit Video (Tools)"],["22","exportVideo","Export Video"],["23","appIcon","Mobile App Icon"],["24","finalEditView","Video Editing Final View"]
+    ["23","appIcon","Mobile App Icon"]
   ];
   window.TNSStudioScreenRegistry = screenRegistry;
   try {
@@ -425,31 +348,9 @@ addExtraNavigation();
   [
     ["premiumDetails","premium-details","Premium Details Settings"],["settingsApp","app-settings","App Settings"],
     ["languageInside","language-inside","Language Settings"],
-    ["editorTools","editor-tools","Editor Tools Settings"],["exportVideo","export-video","Export Settings"],
     ["appIcon","app-icon","Brand Settings"],["finalEditView","final-edit","Final View Settings"],
     
   ].forEach(x=>addScreenSettingsButton(...x));
-
-  // AI creation uses an explicit Step 1 -> Step 2 workflow. Continue never generates by itself.
-  function enterCreationStep(kind){
-    const video=kind==='video';
-    const first=document.getElementById('videoStep1');
-    const second=document.getElementById('videoStep2');
-    const input=document.getElementById('idea');
-    const accepted=document.getElementById('acceptedVideoIdea');
-    const continueBtn=document.getElementById('videoContinueBtn');
-    if(!input?.value.trim()) return msg('#jobBox','Paste your script or enter a video idea first.','error');
-    accepted.textContent=input.value.trim(); first.classList.add('hidden'); second.classList.remove('hidden');
-    continueBtn.textContent='Step 2 ✓'; continueBtn.disabled=true; document.getElementById('videoWorkflow')?.focus();
-    msg('#jobBox','Step 1 complete. Choose your video settings below.','success');
-  }
-  document.getElementById('videoContinueBtn')?.addEventListener('click',()=>enterCreationStep('video'));
-  document.getElementById('editVideoIdeaBtn')?.addEventListener('click',()=>{
-    document.getElementById('videoStep2')?.classList.add('hidden');
-    document.getElementById('videoStep1')?.classList.remove('hidden');
-    const b=document.getElementById('videoContinueBtn'); if(b){b.disabled=false;b.textContent='Continue →';}
-    document.getElementById('idea')?.focus();
-  });
 
   // TNS AI voice conversation: browser speech recognition + speech synthesis, with TNS AI provider as the brain.
   let recognition=null;
@@ -571,111 +472,6 @@ addExtraNavigation();
     }
   }
 
-  // Real editor operations. UI buttons now execute authenticated server-side FFmpeg operations where supported.
-  function editorApi(){return window.TNSEditorComponent}
-  function fmtTime(v){v=Math.max(0,Math.round(Number(v)||0));return `${String(Math.floor(v/60)).padStart(2,'0')}:${String(v%60).padStart(2,'0')}`}
-  function renderEditorTimeline(){
-    const c=editorApi(), box=$('#timeline'); if(!c||!box)return;
-    const state=c.getState(); const tracks={video:[],text:[],audio:[]};
-    state.timeline.forEach(x=>(tracks[x.type==='audio'?'audio':x.type==='text'?'text':'video']).push(x));
-    const pxPerSec=Math.max(25,Number(state.timelineZoom)||80);
-    if(!state.timeline.length){box.innerHTML='<span class="muted">Import media to start editing. Your clips will appear here as selectable timeline layers.</span>'}
-    else {
-      const total=Math.max(5,c.getTimelineDuration());
-      const marks=[]; for(let t=0;t<=Math.ceil(total);t+=1) marks.push(`<span style="width:${pxPerSec}px">${fmtTime(t)}</span>`);
-      box.innerHTML=`<div class="timeline-ruler" style="width:${Math.max(500,total*pxPerSec+86)}px">${marks.join('')}</div>`+
-        Object.entries(tracks).filter(([,items])=>items.length).map(([type,items])=>`<div class="timeline-track" style="min-width:${Math.max(500,total*pxPerSec+86)}px"><div class="timeline-track-label">${type.toUpperCase()}</div>${items.map(x=>{const w=Math.max(90,(Number(x.duration)||3)*pxPerSec);return `<div class="timeline-clip ${state.selectedItemId===x.id?'selected':''} ${x.locked?'locked':''} ${x.visible===false?'hidden-clip':''}" style="--clip-width:${w}px;margin-left:${Math.max(0,(Number(x.start)||0))*pxPerSec}px" draggable="${!x.locked}" data-editor-item="${x.id}" title="Drag to move · click to select"><span class="clip-handle left" data-trim="left"></span><b>${escapeHtml(x.name)}</b><small>Start ${fmtTime(x.start)} · ${fmtTime(x.duration)} · ${x.muted?'Muted':'Audio '+Math.round((x.volume||1)*100)+'%'}</small><span class="clip-handle right" data-trim="right"></span></div>`}).join('')}</div>`).join('');
-    }
-    const dur=c.getTimelineDuration(); $('#editorDuration')&&($('#editorDuration').textContent=fmtTime(dur)); $('#editorScrub')&&($('#editorScrub').max=Math.max(1,dur)); $('#timelineZoom')&&($('#timelineZoom').value=state.timelineZoom); $('#timelineSnap')&&($('#timelineSnap').textContent=`🧲 Snap: ${state.snap?'On':'Off'}`);
-    const selected=c.getSelectedItem(); const ins=$('#editorInspector');
-    if(!selected){ins?.classList.add('hidden');if(ins)ins.innerHTML='';return}
-    ins?.classList.remove('hidden');
-    if(ins)ins.innerHTML=`<div class="section-head"><div><b>Selected: ${escapeHtml(selected.name)}</b><small class="muted">${escapeHtml(selected.type)} layer</small></div><span class="muted">${selected.locked?'🔒 Locked':'✋ Editable'}</span></div><div class="editor-inspector-grid"><div><label>Start (sec)</label><input id="insStart" type="number" min="0" step="0.1" value="${Number(selected.start)||0}"></div><div><label>Duration (sec)</label><input id="insDuration" type="number" min="0.1" step="0.1" value="${Number(selected.duration)||0}"></div><div><label>Trim Start</label><input id="insTrimStart" type="number" min="0" step="0.1" value="${Number(selected.trimStart)||0}"></div><div><label>Trim End</label><input id="insTrimEnd" type="number" min="0" step="0.1" value="${Number(selected.trimEnd)||0}"></div><div><label>Volume</label><input id="insVolume" type="range" min="0" max="1" step="0.01" value="${Number(selected.volume??1)}"></div><div><label>Speed</label><input id="insSpeed" type="number" min="0.1" max="10" step="0.05" value="${Number(selected.speed??1)}"></div><div><label>Rotation</label><select id="insRotate"><option value="0" ${Number(selected.rotate||0)===0?'selected':''}>0°</option><option value="90" ${Number(selected.rotate||0)===90?'selected':''}>90°</option><option value="180" ${Number(selected.rotate||0)===180?'selected':''}>180°</option><option value="270" ${Number(selected.rotate||0)===270?'selected':''}>270°</option></select></div><div><label>Brightness</label><input id="insBrightness" type="number" min="-1" max="1" step="0.01" value="${Number(selected.brightness||0)}"></div><div><label>Contrast</label><input id="insContrast" type="number" min="0.1" max="3" step="0.01" value="${Number(selected.contrast??1)}"></div><div><label>Saturation</label><input id="insSaturation" type="number" min="0" max="3" step="0.01" value="${Number(selected.saturation??1)}"></div></div><div class="editor-inspector-actions"><button id="insApply" class="primary" type="button">Apply Changes</button><button id="insDuplicate" class="secondary" type="button">Duplicate</button><button id="insSplit" class="secondary" type="button">Split at Playhead</button><button id="insMute" class="secondary" type="button">${selected.muted?'Unmute':'Mute'}</button><button id="insLock" class="secondary" type="button">${selected.locked?'Unlock':'Lock'}</button><button id="insVisible" class="secondary" type="button">${selected.visible===false?'Show':'Hide'}</button><button id="insDelete" class="secondary" type="button">Delete Clip</button></div>`;
-    $('#insApply')?.addEventListener('click',()=>{if(selected.locked)return toast('Unlock this clip before editing it.');c.updateItem(selected.id,{start:Number($('#insStart').value)||0,duration:Number($('#insDuration').value)||0,trimStart:Number($('#insTrimStart').value)||0,trimEnd:Number($('#insTrimEnd').value)||0,volume:Number($('#insVolume').value),speed:Number($('#insSpeed').value)||1,rotate:Number($('#insRotate').value)||0,brightness:Number($('#insBrightness').value)||0,contrast:Number($('#insContrast').value)||1,saturation:Number($('#insSaturation').value)||1});renderEditorTimeline()});
-    $('#insDuplicate')?.addEventListener('click',()=>{if(selected.locked)return toast('Unlock this clip before duplicating it.');c.duplicateItem(selected.id);renderEditorTimeline()});
-    $('#insMute')?.addEventListener('click',()=>{c.muteItem(selected.id,!selected.muted);renderEditorTimeline()});
-    $('#insLock')?.addEventListener('click',()=>{c.updateItem(selected.id,{locked:!selected.locked});renderEditorTimeline()});
-    $('#insVisible')?.addEventListener('click',()=>{c.updateItem(selected.id,{visible:selected.visible===false});renderEditorTimeline()});
-    $('#insDelete')?.addEventListener('click',()=>{if(selected.locked)return toast('Unlock this clip before deleting it.');c.removeItem(selected.id);renderEditorTimeline()});
-    $('#insSplit')?.addEventListener('click',()=>splitSelectedAtPlayhead(selected));
-  }
-  function splitSelectedAtPlayhead(item){const c=editorApi();const t=Number(c.state.currentTime)||0;const local=t-(Number(item.start)||0);if(local<=0||local>=Number(item.duration||0))return toast('Place the playhead inside the selected clip first.');const first={...item,id:null,name:item.name+' Part 1',duration:local};const second={...item,id:null,name:item.name+' Part 2',start:(Number(item.start)||0)+local,duration:Number(item.duration)-local,trimStart:(Number(item.trimStart)||0)+local};c.removeItem(item.id);c.addItem(first);c.addItem(second);renderEditorTimeline()}
-  function toolField(label,id,type='number',value='',attrs=''){return `<div><label>${label}</label><input id="tool_${id}" type="${type}" value="${value}" ${attrs}></div>`}
-  function openEditorToolWorkspace(tool){
-    if(!currentMedia)return msg('#editStatus','Import a video first.','error');
-    let fields=''; const t=tool.toLowerCase();
-    if(['text','captions','subtitles','karaoke captions','text animation','fonts','templates','shadow','tts'].includes(t)) fields+=`<div style="grid-column:1/-1"><label>Text / Caption</label><textarea id="tool_text">TNS</textarea></div><div><label>Start (sec)</label><input id="tool_textStart" type="number" min="0" step="0.1" value="0"></div><div><label>Duration (sec)</label><input id="tool_textDuration" type="number" min="0.1" step="0.1" value="3"></div><div><label>X</label><input id="tool_textX" type="number" min="0" step="1" value="40"></div><div><label>Y</label><input id="tool_textY" type="number" min="0" step="1" value="40"></div><div><label>Font Size</label><input id="tool_textFontSize" type="number" min="8" max="240" value="56"></div><div><label>Colour</label><input id="tool_textColor" type="text" value="white"></div>`;
-    if(['crop'].includes(t)) fields+=toolField('Width','width','number',720,'min="2"')+toolField('Height','height','number',1280,'min="2"')+toolField('X','x','number',0)+toolField('Y','y','number',0);
-    if(['resize','ai enhance','ai upscale','auto reframe'].includes(t)) fields+=toolField('Width','width','number',1080,'min="2"')+toolField('Height','height','number',1920,'min="2"');
-    if(['split'].includes(t)) fields+=toolField('Split at seconds','splitAt','number',1,'min="0.1" step="0.1"');
-    if(['trim','cut'].includes(t)) fields+=toolField('Start','start','number',0,'min="0" step="0.1"')+toolField('Duration','duration','number',3,'min="0.1" step="0.1"');
-    if(['blur','noise cleanup','vignette'].includes(t)) fields+=toolField('Strength','strength','number',t==='blur'?8:.5,'min="0" step="0.1"');
-    if(['rotate'].includes(t)) fields+=toolField('Degrees','degrees','number',90,'step="90"');
-    if(['speed curves','time remap'].includes(t)) fields+=toolField('Speed factor','speed','number',1.25,'min="0.1" step="0.05"');
-    if(['keyframes','pan & zoom'].includes(t)) fields+=toolField('Zoom','zoom','number',1.2,'min="1" step="0.05"');
-    if(['hsl','curves','colour match','exposure','highlights','shadows','temperature','tint'].includes(t)) fields+=toolField('Amount','amount','number',.1,'step="0.01"');
-    if(['object removal','face blur','motion tracking'].includes(t)) fields+=toolField('X','x','number',40)+toolField('Y','y','number',40)+toolField('Width','width','number',240)+toolField('Height','height','number',240);
-    if(['silence removal','smart cut'].includes(t)) fields+=toolField('Minimum silence','minSilence','number',.35,'min="0.05" step="0.05"');
-    if(['beat sync','auto beat'].includes(t)) fields+=toolField('BPM','bpm','number',120,'min="40" max="240"')+toolField('Speed','speed','number',1,'min="0.1" step="0.05"');
-    if(['chroma key','green screen','background removal','background replace'].includes(t)) fields+=toolField('Key color','color','text','0x00ff00')+toolField('Similarity','similarity','number',.1,'min="0.01" max="0.9" step="0.01"')+toolField('Blend','blend','number',.05,'min="0" max="1" step="0.01"');
-    if(['music','sfx','voice over','voice recorder','audio overlay'].includes(t)) fields+=`<div style="grid-column:1/-1"><label>Audio source</label><span class="muted">Use the Add Music / SFX / Voice button above.</span></div>`;
-    if(['effects','filters','lens','light leak','glow','film grain','glitch','blend modes','perspective','safe zones','proxy preview'].includes(t)) fields+=`<div><label>Preset</label><select id="tool_preset"><option>Default</option><option>Strong</option><option>Soft</option><option>Cinematic</option></select></div>`;
-    if(!fields) fields='<div class="muted">This tool uses the selected clip with its default professional processing. Adjust the selected clip in the inspector if needed.</div>';
-    let box=document.getElementById('editorToolWorkspace');if(!box){box=document.createElement('div');box.id='editorToolWorkspace';box.className='editor-tool-workspace';document.querySelector('#editor .card')?.appendChild(box)}
-    box.innerHTML=`<div class="section-head"><div><p class="eyebrow">TOOL WORKSPACE</p><h3>${escapeHtml(tool)}</h3><small class="muted">Configure this tool here, then apply it to the selected/current media.</small></div></div><div class="tool-fields">${fields}</div><div class="tool-actions"><button id="applyEditorTool" class="primary" type="button">Apply ${escapeHtml(tool)}</button><button id="cancelEditorTool" class="secondary" type="button">Cancel</button></div><div id="toolWorkspaceStatus" class="status"></div>`;
-    $('#applyEditorTool').onclick=()=>executeEditorTool(tool);$('#cancelEditorTool').onclick=()=>box.remove();box.scrollIntoView({behavior:'smooth',block:'nearest'});
-  }
-  async function executeEditorTool(tool){
-    if(!currentMedia)return msg('#editStatus','Import a video first.','error');
-    const lowerTool=tool.toLowerCase();
-    if(['text','captions','subtitles','karaoke captions','text animation'].includes(lowerTool)){
-      const c=editorApi();
-      const text=document.getElementById('tool_text')?.value?.trim();
-      if(!text)return msg('#editStatus','Enter text first.','error');
-      const item=c.addItem({type:'text',name:`${tool} Layer`,text,start:Number(document.getElementById('tool_textStart')?.value)||0,duration:Math.max(.1,Number(document.getElementById('tool_textDuration')?.value)||3),x:Math.max(0,Number(document.getElementById('tool_textX')?.value)||0),y:Math.max(0,Number(document.getElementById('tool_textY')?.value)||0),fontSize:Math.max(8,Math.min(240,Number(document.getElementById('tool_textFontSize')?.value)||56)),color:document.getElementById('tool_textColor')?.value||'white'});
-      renderEditorTimeline();
-      document.getElementById('editorToolWorkspace')?.remove();
-      msg('#editStatus',`${tool} layer added to the timeline.`,'success');
-      return item;
-    }
-    const value=id=>document.getElementById('tool_'+id)?.value;
-    const n=(id,d=0)=>Number(value(id)??d); const lower=tool.toLowerCase(); let body={inputPath:currentMedia.url,tool};
-    ['width','height','x','y','splitAt','start','duration','strength','degrees','speed','zoom','amount','minSilence','bpm','similarity','blend'].forEach(k=>{if(value(k)!==undefined)body[k]=n(k)});
-    if(value('text')!==undefined)body.text=value('text'); if(value('color')!==undefined)body.color=value('color');
-    if(['speed curves','time remap'].includes(lower))body.tool='speed';
-    if(lower==='rotate')body.degrees=n('degrees',90);
-    if(['voice enhance','ai voice'].includes(lower))body.tool='voice enhance';
-    if(['extract audio','normalize audio','mute'].includes(lower))body.tool=lower;
-    if(lower==='background replace'){if(window.editorBackground?.url)body.backgroundPath=window.editorBackground.url;}
-    if(['music','sfx','voice over','voice recorder','audio overlay'].includes(lower)){if(!window.editorAudio)return msg('#editStatus','Add an audio file first.','error');body.audioPath=window.editorAudio.url}
-    if(['merge','transitions'].includes(lower)){const clips=window.editorClips||[];if(clips.length<2)return msg('#editStatus','Add at least 2 video clips first.','error');body.inputPaths=clips.map(x=>x.url);body.secondInputPath=clips[1].url;if(lower==='transitions'){body.tool='transitions';body.transition='fade';body.duration=n('duration',1)}}
-    if(lower==='split' && !body.splitAt)body.splitAt=(Number(editorApi().state.currentTime)||1);
-    const status=$('#toolWorkspaceStatus');if(status)status.textContent=`${tool}: processing…`;
-    try{let data;if(['speed','brightness','contrast','saturation','sharpness','volume','fade in','fade out'].includes(lower)){const map={speed:n('speed',1),brightness:n('amount',0),contrast:n('amount',1),saturation:n('amount',1),sharpness:n('amount',0)};if(lower==='volume')map.volume=n('amount',1);if(lower==='fade in')map.fadeIn=n('duration',1);if(lower==='fade out')map.fadeOut=n('duration',1);data=await json('/api/editor/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({inputPath:currentMedia.url,...map,quality:Number($('#exportQuality')?.value||1080)})})}else data=await json('/api/editor/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-      if(data.result){currentMedia={...currentMedia,...data.result,originalName:data.result.fileName};window.currentMedia=currentMedia;$('#preview').src=currentMedia.url;$('#preview').load();const sel=editorApi().getSelectedItem();if(sel)editorApi().updateItem(sel.id,{src:currentMedia.url,name:data.result.fileName});msg('#editStatus',`${tool} completed successfully.`,'success');renderEditorTimeline();}
-      if(data.results?.length){currentMedia={...currentMedia,...data.results[0],originalName:data.results[0].fileName};window.currentMedia=currentMedia;$('#preview').src=currentMedia.url;$('#preview').load();msg('#editStatus',`${tool} completed successfully.`,'success');renderEditorTimeline();}
-      document.getElementById('editorToolWorkspace')?.remove();
-    }catch(err){if(status)status.textContent=`${tool} failed: ${err.message}`;msg('#editStatus',err.message,'error')}
-  }
-  function syncEditorControls(){const c=editorApi();if(!c)return;$('#editorUndo')?.toggleAttribute('disabled',!c.canUndo());$('#editorRedo')?.toggleAttribute('disabled',!c.canRedo());$('#editorPlay')?.setAttribute('aria-pressed',String(c.state.isPlaying));renderEditorTimeline()}
-  window.addEventListener('tns:editor-change',syncEditorControls);
-  $('#editorUndo')?.addEventListener('click',()=>{editorApi().undo();renderEditorTimeline()});$('#editorRedo')?.addEventListener('click',()=>{editorApi().redo();renderEditorTimeline()});
-  $('#editorSaveProject')?.addEventListener('click',()=>{editorApi().saveLocal();toast('Edit Video project saved on this device.')});$('#editorLoadProject')?.addEventListener('click',()=>{if(editorApi().loadLocal())toast('Edit Video project loaded.');else toast('No saved Edit Video project found.');renderEditorTimeline()});
-  $('#editorPlay')?.addEventListener('click',()=>{const v=$('#preview');if(!v?.src)return;v.paused?v.play():v.pause()});$('#editorScrub')?.addEventListener('input',e=>{const v=$('#preview');if(v){v.currentTime=Number(e.target.value)||0;editorApi().seek(v.currentTime)}});
-  $('#preview')?.addEventListener('loadedmetadata',()=>{const d=$('#preview').duration||0;$('#editorScrub')&&($('#editorScrub').max=Math.max(1,d));$('#editorDuration')&&($('#editorDuration').textContent=fmtTime(d))});
-  $('#preview')?.addEventListener('timeupdate',()=>{const v=$('#preview');$('#editorScrub')&&($('#editorScrub').value=v.currentTime||0);editorApi().seek(v.currentTime||0)});
-  $('#timeline')?.addEventListener('click',e=>{const el=e.target.closest('[data-editor-item]');if(!el)return;editorApi().selectItem(el.dataset.editorItem);renderEditorTimeline()});
-  $('#timeline')?.addEventListener('dragstart',e=>{const el=e.target.closest('[data-editor-item]');if(el)e.dataTransfer.setData('text/editor-item',el.dataset.editorItem)});
-  $('#timeline')?.addEventListener('dragover',e=>e.preventDefault());
-  $('#timeline')?.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/editor-item');if(!id)return;const c=editorApi();const item=c.state.timeline.find(x=>x.id===id);if(!item||item.locked)return;const rect=$('#timeline').getBoundingClientRect();const x=Math.max(0,e.clientX-rect.left-90);c.moveItem(id,Math.round(x/10)/10);renderEditorTimeline()});
-  $('#timelineZoom')?.addEventListener('input',e=>editorApi().setTimelineZoom(e.target.value)); $('#timelineZoomOut')?.addEventListener('click',()=>editorApi().setTimelineZoom(editorApi().state.timelineZoom-10)); $('#timelineZoomIn')?.addEventListener('click',()=>editorApi().setTimelineZoom(editorApi().state.timelineZoom+10)); $('#timelineSnap')?.addEventListener('click',()=>editorApi().toggleSnap());
-  $('#timelineRipple')?.addEventListener('click',()=>{const c=editorApi(),x=c.getSelectedItem();if(!x)return toast('Select a clip first.');if(x.locked)return toast('Unlock this clip before ripple deleting.');const end=(Number(x.start)||0)+(Number(x.duration)||0);c.removeItem(x.id);c.state.timeline.forEach(i=>{if((Number(i.start)||0)>=end)c.moveItem(i.id,(Number(i.start)||0)-(Number(x.duration)||0))});renderEditorTimeline()});
-  document.addEventListener('keydown',e=>{if(!document.getElementById('editor')?.classList.contains('active'))return;const c=editorApi(),x=c.getSelectedItem();if(!x)return;if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;if(e.key==='Delete'||e.key==='Backspace'){e.preventDefault();if(!x.locked)c.removeItem(x.id);renderEditorTimeline()}else if(e.key==='ArrowLeft'){e.preventDefault();if(!x.locked)c.nudgeItem(x.id,e.shiftKey?-1:-0.1);renderEditorTimeline()}else if(e.key==='ArrowRight'){e.preventDefault();if(!x.locked)c.nudgeItem(x.id,e.shiftKey?1:0.1);renderEditorTimeline()}else if(e.key.toLowerCase()==='s'){e.preventDefault();if(!x.locked)splitSelectedAtPlayhead(x)}});
-  function addMediaToEditor(media,type='video'){const c=editorApi();c.addItem({type,name:media.originalName||media.fileName||'Media',src:media.url,duration:3,start:c.getTimelineDuration()});renderEditorTimeline()}
-  $('#videoFile')?.addEventListener('change',async e=>{const file=e.target.files[0];if(!file)return;msg('#editStatus','Uploading video…');const fd=new FormData();fd.append('video',file);try{const d=await fetch('/api/uploads/video',{method:'POST',body:fd,credentials:'include'});const r=await d.json();if(!d.ok)throw Error(r.error||'Upload failed.');currentMedia=r.media;window.currentMedia=currentMedia;$('#preview').src=r.media.url;$('#preview').load();addMediaToEditor(r.media,'video');msg('#editStatus','Video imported into the timeline.','success')}catch(err){msg('#editStatus',err.message,'error')}});
-      document.addEventListener('click',e=>{const btn=e.target.closest('[data-tool]');if(!btn)return;openEditorToolWorkspace(btn.dataset.tool||'Tool')});
-  document.addEventListener('DOMContentLoaded',()=>syncEditorControls());
-
   // Ensure every numbered reference screen can reach its own settings without changing the dashboard grid.
   window.addEventListener('load',()=>{
     const seen=new Set();
@@ -687,159 +483,6 @@ addExtraNavigation();
     });
   });
 })();
-
-/* ===== TNS EDITOR v12 — contextual tool system ===== */
-(function initProfessionalEditor(){
-  const categories = [
-    {id:'edit',name:'Edit',icon:'✂️',tools:[['Trim','✂️'],['Cut','🔪'],['Split','➗'],['Merge','🧩'],['Ripple Delete','↔️'],['Duplicate Clip','⧉'],['Freeze Frame','❄️'],['Reverse','↩️'],['Speed','⏱️'],['Speed Curves','〰️'],['Time Remap','⌛'],['Scene Detection','🎬']]},
-    {id:'canvas',name:'Canvas & Motion',icon:'🖼️',tools:[['Crop','▣'],['Resize','↔️'],['Rotate','⟳'],['Flip','⇋'],['Mirror','◐'],['Auto Reframe','🎯'],['Pan & Zoom','🔎'],['Keyframes','◆'],['Motion Tracking','🧭'],['Stabilization','🛡️'],['Perspective','◈']]},
-    {id:'text',name:'Text & Captions',icon:'T',tools:[['Text','T'],['Fonts','Aa'],['Templates','▦'],['Captions','CC'],['AI Captions','✨'],['Subtitles','▤'],['Karaoke Captions','🎤'],['Text Animation','A↗'],['Stickers','😊'],['Shapes','⬡']]},
-    {id:'visual',name:'Effects & Transitions',icon:'✨',tools:[['Effects','✦'],['Transitions','↝'],['Blur','◌'],['Vignette','◉'],['Glitch','⚡'],['Glow','☀️'],['Film Grain','▦'],['Lens','◍'],['Light Leak','☼'],['Blend Modes','◒']]},
-    {id:'color',name:'Colour',icon:'🎨',tools:[['Brightness','☀️'],['Contrast','◐'],['Saturation','🌈'],['HSL','HSL'],['Curves','⌁'],['Sharpness','⌁'],['Temperature','🌡️'],['Tint','🟣'],['Exposure','EV'],['Highlights','↑'],['Shadows','↓'],['Colour Match','🎯'],['LUT','LUT']]},
-    {id:'audio',name:'Audio',icon:'🎵',tools:[['Music','🎵'],['SFX','🔊'],['Extract Audio','↗'],['Voice Over','🎙️'],['Voice Recorder','⏺️'],['TTS','🗣️'],['Volume','🔈'],['Normalize Audio','N'],['Noise Cleanup','🧹'],['Silence Removal','🔇'],['Audio Fade','↗'],['Voice Enhance','✨']]},
-    {id:'ai',name:'AI Tools',icon:'🤖',tools:[['Background Removal','✂️'],['Background Replace','🖼️'],['AI Enhance','✨'],['AI Upscale','⬆️'],['AI Voice','🗣️'],['Object Removal','🪄'],['Smart Cut','⚡'],['Beat Sync','🥁'],['Scene Extend','➕'],['Face Blur','🙂'],['Auto Highlight','⭐'],['Auto Reframe','🎯']]},
-    {id:'advanced',name:'Advanced',icon:'⚙️',tools:[['Masks','◩'],['Chroma Key','🟢'],['Opacity','◒'],['Shadow','◐'],['Motion Tracking','🧭'],['Proxy Preview','⚡'],['Project Versions','🕘'],['Safe Zones','▣'],['Export Presets','📤'],['Project Backup','💾'],['Media Relink','🔗'],['Batch Apply','⚙️']]}
-  ];
-  const toolDescriptions={
-    Trim:'Drag clip edges or set exact in/out points.',Cut:'Remove an unwanted section without leaving the editor.',Split:'Cut the selected clip exactly at the playhead.',Merge:'Combine multiple clips into one sequence.',Crop:'Crop the visible frame with preset or free ratios.',Resize:'Set exact canvas dimensions while preserving fit/fill.',Rotate:'Rotate the selected clip and preview the result.',Speed:'Change playback speed with Normal controls.',Keyframes:'Animate position, scale, rotation and opacity over time.',Text:'Create a real text layer with styling and timing.',Captions:'Create timed caption layers and edit their timing.',Effects:'Choose an effect, set intensity and duration, then apply.',Transitions:'Choose a transition between adjacent clips and set duration.',Music:'Add music/audio to a separate timeline track.',Voice:'Record a voice-over and place it on the audio track.',HSL:'Adjust individual colour channels with Hue/Saturation/Lightness.',Curves:'Use a curve editor for precision colour correction.',Masks:'Mask part of a layer and feather its edges.',Chroma:'Remove a selected colour using chroma-key controls.',Stabilization:'Process shaky footage with selectable stabilization strength.','AI Captions':'Speech-to-text workflow; provider/model can be connected for production.','AI Enhance':'Enhancement workflow; production AI requires a configured provider.','Project Versions':'Save named restore points without destroying the current edit.','Media Relink':'Reconnect a missing source while preserving the timeline item.'};
-  let activeCategory='edit';
-  function editor(){return window.TNSEditorComponent}
-  function selected(){return editor()?.getSelectedItem()||null}
-  function setStatus(text,type='info'){const el=document.getElementById('editStatus');if(el){el.textContent=text;el.className='status '+type}}
-  function toolIcon(name){for(const c of categories){const t=c.tools.find(x=>x[0]===name);if(t)return t[1]}return '•'}
-  function renderTabs(){const box=document.getElementById('editorCategoryTabs');if(!box)return;box.innerHTML=categories.map(c=>`<button type="button" class="${c.id===activeCategory?'active':''}" data-editor-category="${c.id}">${c.icon} ${c.name}</button>`).join('')}
-  function renderTools(){const box=document.getElementById('editorToolStrip');if(!box)return;const c=categories.find(x=>x.id===activeCategory)||categories[0];box.innerHTML=c.tools.map(([name,icon])=>`<button type="button" class="editor-tool-card" data-tool="${escapeHtml(name)}" title="${escapeHtml(toolDescriptions[name]||'Open '+name+' workspace')}"><span class="tool-icon">${icon}</span><b>${escapeHtml(name)}</b><small>Open workspace</small></button>`).join('')}
-  function field(label,id,type='number',value='',attrs=''){return `<label>${label}<input id="pw_${id}" type="${type}" value="${escapeHtml(String(value))}" ${attrs}></label>`}
-  function selectField(label,id,options,value){return `<label>${label}<select id="pw_${id}">${options.map(x=>`<option ${String(x)===String(value)?'selected':''}>${escapeHtml(x)}</option>`).join('')}</select></label>`}
-  function stageHTML(tool){const src=window.currentMedia?.url||document.getElementById('preview')?.src||'';return `<div class="workspace-stage">${src?`<video src="${escapeHtml(src)}" muted playsinline controls></video>`:`<div class="muted">Preview appears after importing media.</div>`}</div>`}
-  function workspaceMarkup(tool){
-    const t=tool.toLowerCase(); let controls=''; let library=''; let note=toolDescriptions[tool]||`Configure ${tool}, preview the change, then apply it to the selected timeline item.`;
-    if(['crop'].includes(t)) controls=field('Width','width', 'number',1080,'min="2"')+field('Height','height','number',1920,'min="2"')+field('X','x','number',0)+field('Y','y','number',0)+selectField('Ratio','ratio',['Free','9:16','16:9','1:1','4:5'],'9:16')+field('Zoom','zoom','range',1,'min="1" max="3" step="0.01"');
-    else if(t==='resize') controls=selectField('Preset','preset',['1080x1920','1920x1080','1080x1080','1080x1350','Custom'],'1080x1920')+field('Width','width','number',1080,'min="2"')+field('Height','height','number',1920,'min="2"')+selectField('Fit','fit',['Contain','Cover','Stretch'],'Contain');
-    else if(t==='rotate') controls=selectField('Rotation','degrees',['0','90','180','270'],'90')+selectField('Flip','flip',['None','Horizontal','Vertical'],'None');
-    else if(t==='trim'||t==='cut') controls=field('Start','start','number',0,'min="0" step="0.1"')+field('Duration','duration','number',selected()?.duration||3,'min="0.1" step="0.1"')+field('End','end','number',(Number(selected()?.start||0)+Number(selected()?.duration||3)).toFixed(1),'min="0" step="0.1"');
-    else if(t==='split') controls=`<div class="full"><b>Playhead: ${fmtTime(editor()?.state.currentTime||0)}</b><p class="muted">Move the playhead above, then split the selected clip at that exact position.</p></div>`;
-    else if(t==='speed'||t==='speed curves'||t==='time remap') controls=selectField('Mode','mode',['Normal','Curve','Time Remap'],'Normal')+field('Speed','speed','number',1,'min="0.1" max="10" step="0.05"')+field('Curve strength','curve','range',50,'min="0" max="100"');
-    else if(t==='text'||t==='captions'||t==='subtitles'||t==='karaoke captions'||t==='text animation'||t==='fonts'||t==='templates') controls=`<label class="full">Text<textarea id="pw_text" rows="3">TNS</textarea></label>`+field('Start','textStart','number',0,'min="0" step="0.1"')+field('Duration','textDuration','number',3,'min="0.1" step="0.1"')+field('Size','fontSize','number',56,'min="8" max="240"')+field('X','textX','number',40,'min="0"')+field('Y','textY','number',40,'min="0"')+field('Opacity','textOpacity','range',100,'min="0" max="100"')+selectField('Font','font',['Inter','Sans','Serif','Mono','Display'],'Inter')+selectField('Alignment','align',['Left','Center','Right'],'Center')+`<label>Color<input id="pw_color" type="color" value="#ffffff"></label>`;
-    else if(t==='effects'||t==='filters'||t==='transitions'||t==='stickers'||t==='shapes'||t==='lens'||t==='glow'||t==='glitch'||t==='film grain'||t==='light leak'||t==='vignette') {library=`<div class="full workspace-library">${['Original','Cinematic','Soft','Vivid','Mono','Fade','Zoom','Blur'].map(x=>`<button type="button" data-workspace-preset="${x}">${x}</button>`).join('')}</div>`+field('Intensity','intensity','range',70,'min="0" max="100"')+field('Duration','effectDuration','number',1,'min="0.1" step="0.1"');controls=library}
-    else if(['brightness','contrast','saturation','sharpness','temperature','tint','exposure','highlights','shadows','hsl','curves','colour match','lut'].includes(t)) controls=field('Amount','amount','range',50,'min="0" max="100"')+field('Red / Hue','red','range',50,'min="0" max="100"')+field('Green / Saturation','green','range',50,'min="0" max="100"')+field('Blue / Lightness','blue','range',50,'min="0" max="100"')+(t==='curves'?'<div class="full curve-editor"><div class="curve-line"></div></div>':'')+(t==='lut'?selectField('LUT','lutPreset',['None','Cinematic','Warm','Cool','Film'],'None'):'');
-    else if(t==='keyframes'||t==='pan & zoom'||t==='motion tracking') controls=selectField('Property','property',['Position','Scale','Rotation','Opacity'],'Position')+field('Value','keyValue','number',100,'min="0" step="1"')+`<div class="full"><b>Keyframe lane</b><div class="keyframe-lane"><span class="keyframe-point" style="left:12%"></span><span class="keyframe-point" style="left:52%"></span><span class="keyframe-point" style="left:82%"></span></div></div>`;
-    else if(t==='music'||t==='sfx'||t==='extract audio'||t==='voice over'||t==='voice recorder') controls=`<div class="full"><button type="button" id="pwChooseAudio" class="secondary">Choose Audio File</button><input id="pwAudioFile" type="file" accept="audio/*" hidden></div>`+field('Start','audioStart','number',0,'min="0" step="0.1"')+field('Volume','audioVolume','range',100,'min="0" max="100"')+field('Fade In','fadeIn','number',0,'min="0" step="0.1"')+field('Fade Out','fadeOut','number',0,'min="0" step="0.1"');
-    else if(t==='tts'||t==='ai voice') controls=`<label class="full">Script<textarea id="pw_ttsText" rows="4">Hello from TNS.</textarea></label>`+selectField('Voice','voice',['Default','Male','Female','Narrator'],'Default')+selectField('Speed','voiceSpeed',['0.75x','1x','1.25x','1.5x'],'1x');
-    else if(t==='chroma key'||t==='background removal'||t==='background replace') controls=`<label>Key color<input id="pw_keyColor" type="color" value="#00ff00"></label>`+field('Similarity','similarity','range',20,'min="1" max="90"')+field('Blend','blend','range',5,'min="0" max="100"')+field('Edge softness','edge','range',20,'min="0" max="100"');
-    else if(t==='masks') controls=selectField('Mask','mask',['Rectangle','Circle','Linear','Mirror'],'Rectangle')+field('Feather','feather','range',20,'min="0" max="100"')+field('Size','maskSize','range',70,'min="1" max="100"')+selectField('Invert','invert',['Off','On'],'Off');
-    else if(t==='stabilization') controls=selectField('Strength','strength',['Recommended','Minimum cut','Most stable'],'Recommended');
-    else if(t==='noise cleanup'||t==='voice enhance'||t==='silence removal') controls=field('Strength','strength','range',50,'min="0" max="100"')+field('Threshold','threshold','number',0.35,'min="0.05" step="0.05"');
-    else if(t==='beat sync') controls=field('BPM','bpm','number',120,'min="40" max="240"')+selectField('Trigger','beatTrigger',['Music Beat','Voice/Speech','Manual'],'Music Beat');
-    else if(t==='scene detection'||t==='smart cut'||t==='auto highlight') controls=field('Sensitivity','sensitivity','range',50,'min="0" max="100"')+`<div class="full"><p class="muted">Analyze first, review the detected cuts/highlights, then apply.</p></div>`;
-    else if(t==='ai captions') controls=selectField('Language','captionLang',['Auto','English','Hindi','Kannada','Tamil','Telugu','Bengali','Marathi'],'Auto')+selectField('Style','captionStyle',['Clean','Bold','Karaoke','Minimal'],'Clean')+field('Size','captionSize','range',55,'min="20" max="100"');
-    else if(t==='ai enhance'||t==='ai upscale') controls=selectField('Quality','aiQuality',['HD','Full HD','2K','4K'],'Full HD')+field('Enhancement','enhanceAmount','range',50,'min="0" max="100"');
-    else if(t==='object removal'||t==='face blur') controls=field('X','x','number',40,'min="0"')+field('Y','y','number',40,'min="0"')+field('Width','width','number',240,'min="1"')+field('Height','height','number',240,'min="1"');
-    else if(t==='opacity'||t==='shadow'||t==='blend modes'||t==='safe zones') controls=field('Amount','amount','range',70,'min="0" max="100"')+selectField('Mode','mode',['Normal','Screen','Multiply','Overlay'],'Normal');
-    else if(t==='project versions') controls=`<label class="full">Version name<input id="pw_versionName" value="Before ${new Date().toLocaleTimeString()}" /></label><div class="full"><p class="muted">Save a local restore point without replacing the current project.</p></div>`;
-    else if(t==='project backup') controls=`<div class="full"><p>Export the current timeline, settings and metadata as a TNS project backup.</p><button id="pwBackup" class="secondary" type="button">Create Backup</button></div>`;
-    else if(t==='media relink') controls=`<div class="full"><p class="muted">Choose a replacement file for the selected media while keeping its timeline position.</p><button id="pwRelink" class="secondary" type="button">Choose Replacement</button><input id="pwRelinkFile" type="file" accept="video/*,audio/*,image/*" hidden></div>`;
-    else if(t==='batch apply') controls=`<div class="full"><p>Select multiple timeline clips using Ctrl/Shift on desktop or long-press selection on mobile, then choose a property to apply.</p></div>`+selectField('Property','batchProperty',['Brightness','Contrast','Saturation','Volume','Speed'],'Brightness')+field('Value','batchValue','number',1,'step="0.05"');
-    else if(t==='export presets') controls=selectField('Preset','exportPreset',['YouTube 16:9 1080p','Vertical 9:16 1080p','Instagram 4:5 1080p','Square 1:1 1080p','4K Master'],'Vertical 9:16 1080p');
-    else controls=field('Value','amount','range',50,'min="0" max="100"');
-    return `<div class="section-head"><div><p class="eyebrow">TOOL WORKSPACE</p><h3>${toolIcon(tool)} ${escapeHtml(tool)}</h3><small class="muted">${escapeHtml(note)}</small></div><button id="pwClose" class="secondary" type="button">× Close</button></div><div class="workspace-preview">${stageHTML(tool)}<div class="workspace-controls">${controls}</div></div><div class="workspace-actions"><button id="pwPreview" class="secondary" type="button">▶ Preview</button><button id="pwApply" class="primary" type="button">Apply ${escapeHtml(tool)}</button><button id="pwReset" class="secondary" type="button">Reset</button></div><div id="pwStatus" class="status"></div>`;
-  }
-  function openWorkspace(tool){
-    const box=document.getElementById('editorToolWorkspace');if(!box)return;
-    box.classList.remove('hidden');box.innerHTML=workspaceMarkup(tool);box.dataset.tool=tool;box.scrollIntoView({behavior:'smooth',block:'nearest'});
-    box.querySelectorAll('[data-workspace-preset]').forEach(b=>b.addEventListener('click',()=>{box.querySelectorAll('[data-workspace-preset]').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
-    box.querySelector('#pwClose')?.addEventListener('click',()=>box.classList.add('hidden'));
-    box.querySelector('#pwPreview')?.addEventListener('click',()=>{const v=document.getElementById('preview');if(v?.src){v.currentTime=Number(editor()?.state.currentTime)||0;v.play().catch(()=>{});setTimeout(()=>v.pause(),1600)}setStatus(`${tool}: previewing changes before apply.`,'info')});
-    box.querySelector('#pwApply')?.addEventListener('click',()=>applyWorkspace(tool,box));
-    box.querySelector('#pwReset')?.addEventListener('click',()=>openWorkspace(tool));
-    box.querySelector('#pwChooseAudio')?.addEventListener('click',()=>box.querySelector('#pwAudioFile')?.click());
-    box.querySelector('#pwBackup')?.addEventListener('click',()=>downloadProjectBackup());
-    box.querySelector('#pwRelink')?.addEventListener('click',()=>box.querySelector('#pwRelinkFile')?.click());
-    box.querySelector('#pwRelinkFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f){const url=URL.createObjectURL(f);const s=selected();if(s)editor().updateItem(s.id,{src:url,name:f.name});renderEditorTimeline();setStatus('Replacement media linked to the selected clip.','success')}});
-  }
-  function val(box,id,def=0){const x=box.querySelector('#pw_'+id);return x?.type==='range'?Number(x.value):x?.value??def}
-  function applyWorkspace(tool,box){
-    const c=editor(),s=selected(),t=tool.toLowerCase();
-    if(!c)return;
-    if(['text','captions','subtitles','karaoke captions','text animation','fonts','templates'].includes(t)){
-      const text=String(val(box,'text','TNS')).trim();if(!text)return setStatus('Enter text first.','error');
-      c.addItem({type:'text',name:`${tool} Layer`,text,start:Number(val(box,'textStart',0)),duration:Math.max(.1,Number(val(box,'textDuration',3))),x:Number(val(box,'textX',40)),y:Number(val(box,'textY',40)),fontSize:Number(val(box,'fontSize',56)),color:val(box,'color','#ffffff'),opacity:Number(val(box,'textOpacity',100))/100,font:val(box,'font','Inter'),align:val(box,'align','Center')});renderEditorTimeline();setStatus(`${tool} layer added to the timeline.`,'success');return;
-    }
-    if(!s && !['project versions','project backup','export presets'].includes(t))return setStatus('Select a clip on the timeline first.','error');
-    if(t==='split'){splitSelectedAtPlayhead(s);setStatus('Clip split at playhead.','success');return}
-    if(t==='trim'||t==='cut'){c.updateItem(s.id,{trimStart:Number(val(box,'start',0)),duration:Number(val(box,'duration',s.duration||3))});renderEditorTimeline();setStatus(`${tool} applied to selected clip.`,'success');return}
-    if(t==='crop'||t==='resize'||t==='rotate'||t==='speed'||t==='speed curves'||t==='time remap'||t==='brightness'||t==='contrast'||t==='saturation'||t==='sharpness'||t==='volume'){
-      const patch={};if(t==='crop'){patch.crop={width:Number(val(box,'width',1080)),height:Number(val(box,'height',1920)),x:Number(val(box,'x',0)),y:Number(val(box,'y',0)),ratio:val(box,'ratio','9:16'),zoom:Number(val(box,'zoom',1))}};
-      if(t==='resize'){const preset=val(box,'preset','1080x1920');const [w,h]=preset==='Custom'?[Number(val(box,'width',1080)),Number(val(box,'height',1920))]:preset.split('x').map(Number);patch.width=w;patch.height=h}
-      if(t==='rotate'){patch.rotate=Number(val(box,'degrees',90));patch.flip=val(box,'flip','None')}
-      if(['speed','speed curves','time remap'].includes(t))patch.speed=Number(val(box,'speed',1));
-      if(t==='brightness')patch.brightness=(Number(val(box,'amount',50))-50)/50;
-      if(t==='contrast')patch.contrast=Number(val(box,'amount',50))/50;
-      if(t==='saturation')patch.saturation=Number(val(box,'amount',50))/50;
-      if(t==='sharpness')patch.sharpness=Number(val(box,'amount',50))/50;
-      if(t==='volume')patch.volume=Number(val(box,'amount',100))/100;
-      c.updateItem(s.id,patch);renderEditorTimeline();setStatus(`${tool} settings applied to the timeline clip.`,'success');return;
-    }
-    if(t==='project versions'){const name=String(val(box,'versionName','Version'));const versions=JSON.parse(localStorage.getItem('tnsStudioProjectVersions')||'[]');versions.push({name,createdAt:new Date().toISOString(),state:c.getState()});localStorage.setItem('tnsStudioProjectVersions',JSON.stringify(versions.slice(-20)));setStatus(`Version “${name}” saved.`,'success');return}
-    if(t==='project backup'){downloadProjectBackup();return}
-    if(t==='export presets'){openExportModal(val(box,'exportPreset','Vertical 9:16 1080p'));return}
-    if(t==='batch apply'){const patch={};const prop=val(box,'batchProperty','Brightness');const v=Number(val(box,'batchValue',1));if(prop==='Brightness')patch.brightness=v;if(prop==='Contrast')patch.contrast=v;if(prop==='Saturation')patch.saturation=v;if(prop==='Volume')patch.volume=v;if(prop==='Speed')patch.speed=v;c.updateItem(s.id,patch);renderEditorTimeline();setStatus('Batch-ready property applied to the selected clip. Select additional clips and repeat as needed.','success');return}
-    const body={inputPath:window.currentMedia?.url||s?.src,tool};
-    ['strength','similarity','blend','bpm','x','y','width','height','speed','amount','red','green','blue','minSilence','threshold'].forEach(k=>{if(box.querySelector('#pw_'+k))body[k]=Number(val(box,k,0))});
-    if(t==='chroma key'||t==='background removal'||t==='background replace')body.color=val(box,'keyColor','#00ff00');
-    if(t==='tts'||t==='ai voice'){body.text=val(box,'ttsText','Hello from TNS.');body.voice=val(box,'voice','Default')}
-    if(['effects','filters','transitions','vignette','glitch','glow','film grain','lens','light leak'].includes(t)){body.filter=val(box,'preset','Original');body.transition=val(box,'preset','Fade');body.duration=Number(val(box,'effectDuration',1))}
-    if(t==='ai captions')body.language=val(box,'captionLang','Auto');
-    if(!body.inputPath)return setStatus('Import media first.','error');
-    const status=box.querySelector('#pwStatus');if(status)status.textContent=`${tool}: processing…`;
-    fetch('/api/editor/tool',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||d.message||`${tool} failed`);return d}).then(d=>{
-      const result=d.result||d.results?.[0];if(result){window.currentMedia={...(window.currentMedia||{}),...result};const v=document.getElementById('preview');if(v){v.src=result.url;v.load()}if(s)c.updateItem(s.id,{src:result.url,name:result.fileName});renderEditorTimeline();setStatus(`${tool} completed and the result is now in the editor.`,'success')}else setStatus(`${tool} completed.`,'success');
-    }).catch(e=>{if(status)status.textContent=e.message;setStatus(e.message,'error')});
-  }
-  function downloadProjectBackup(){const data={format:'tnsproject',version:1,createdAt:new Date().toISOString(),editor:editor()?.getState(),settings:JSON.parse(localStorage.getItem('tnsStudioModuleSettings_edit-video')||'{}')};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`tns-project-${Date.now()}.tnsproject.json`;a.click();URL.revokeObjectURL(a.href);setStatus('Project backup created.','success')}
-  function openExportModal(preset){
-    if(document.getElementById('tnsExportModal'))document.getElementById('tnsExportModal').remove();
-    const c=editor(),dur=c?.getTimelineDuration()||0;document.body.insertAdjacentHTML('beforeend',`<div id="tnsExportModal" class="modal"><div class="modal-card glass"><button class="modal-close" id="closeTnsExport">×</button><p class="eyebrow">EXPORT VIDEO</p><h2>Export your TNS project</h2><div class="export-summary"><b>Timeline</b><span>${c?.state.timeline.length||0} layers • ${fmtTime(dur)}</span></div><div class="export-modal-grid">${selectField('Resolution','exQuality',['720','1080','1440','2160'],preset?.includes('4K')?'2160':'1080')}${selectField('Aspect Ratio','exRatio',['9:16','16:9','1:1','4:5'],preset?.includes('16:9')?'16:9':'9:16')}${selectField('Frame Rate','exFps',['24','30','60'],'30')}${selectField('Format','exFormat',['MP4','MOV'],'MP4')}<label>Bitrate<input id="exBitrate" value="8M"></label><label>Audio<input id="exAudio" value="AAC 192k"></label></div><div class="setting-actions"><button id="runTnsExport" class="primary">Export / Download</button><button id="cancelTnsExport" class="secondary">Cancel</button></div><p id="tnsExportStatus" class="status"></p></div></div>`);
-    const close=()=>document.getElementById('tnsExportModal')?.remove();document.getElementById('closeTnsExport').onclick=close;document.getElementById('cancelTnsExport').onclick=close;
-    document.getElementById('runTnsExport').onclick=async()=>{const st=document.getElementById('tnsExportStatus');st.textContent='Rendering…';try{const d=await editor().exportProject({quality:Number(document.getElementById('exQuality').value),ratio:document.getElementById('exRatio').value,fps:Number(document.getElementById('exFps').value),videoBitrate:document.getElementById('exBitrate').value,audioBitrate:'192k'});if(d.result?.url){const a=document.createElement('a');a.href=d.result.url;a.download=d.result.fileName||'tns-export.mp4';a.target='_blank';a.click();st.textContent='Export complete.';setStatus('Export completed successfully.','success')}else throw Error('Export did not return a file.')}catch(e){st.textContent=e.message;setStatus(e.message,'error')}};
-  }
-  function init(){
-    if(!document.getElementById('editorCategoryTabs'))return;
-    renderTabs();renderTools();
-    document.getElementById('editorCategoryTabs').addEventListener('click',e=>{const b=e.target.closest('[data-editor-category]');if(!b)return;activeCategory=b.dataset.editorCategory;renderTabs();renderTools()});
-    document.getElementById('editorToolStrip').addEventListener('click',e=>{const b=e.target.closest('[data-tool]');if(b)openWorkspace(b.dataset.tool)});
-    document.getElementById('exportTopBtn')?.addEventListener('click',()=>openExportModal());
-    document.getElementById('editorSearchTool')?.addEventListener('click',()=>{const q=prompt('Find an editor tool');if(!q)return;const matches=categories.flatMap(c=>c.tools.map(x=>x[0])).filter(x=>x.toLowerCase().includes(q.toLowerCase()));if(matches.length){activeCategory=categories.find(c=>c.tools.some(x=>x[0]===matches[0]))?.id||activeCategory;renderTabs();renderTools();setTimeout(()=>document.querySelector(`[data-tool="${CSS.escape(matches[0])}"]`)?.scrollIntoView({inline:'center',behavior:'smooth'}),50);setStatus(`Found: ${matches.join(', ')}`,'success')}else setStatus('No matching tool found.','error')});
-    document.getElementById('editorProjectInfo')?.addEventListener('click',()=>{const c=editor();toast(`${c?.state.timeline.length||0} layers • ${fmtTime(c?.getTimelineDuration()||0)} • ${c?.state.timeline.filter(x=>x.type==='video').length||0} video clips`)});
-    document.getElementById('editorVersions')?.addEventListener('click',()=>openWorkspace('Project Versions'));
-    document.getElementById('editorFindMedia')?.addEventListener('click',()=>openWorkspace('Media Relink'));
-    document.getElementById('editorMediaLibrary')?.addEventListener('click',()=>toast('Media library uses the imported project media and timeline layers.'));
-    document.getElementById('exportBtn')?.addEventListener('click',()=>openExportModal());
-    window.addEventListener('tns:editor-change',()=>{const empty=document.getElementById('editorCanvasEmpty');if(empty)empty.classList.toggle('hidden',!!editor()?.state.timeline.length)});
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-})();
-
-/* Editor media ingestion + direct timeline manipulation */
-(function wireEditorMediaAndTimeline(){
-  async function uploadEditorFile(file,kind){
-    const fd=new FormData();fd.append('file',file,file.name);
-    const r=await fetch('/api/uploads/file',{method:'POST',body:fd,credentials:'include'});const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||'Upload failed.');return d.media;
-  }
-  document.getElementById('mergeFiles')?.addEventListener('change',async e=>{
-    const files=[...(e.target.files||[])];if(!files.length)return;setEditorMsg('Adding clips to timeline…','info');
-    try{const c=window.TNSEditorComponent;for(const f of files){const media=await uploadEditorFile(f,'media');c.addItem({type:f.type.startsWith('image/')?'image':'video',name:f.name,src:media.url,duration:f.type.startsWith('image/')?3:3,start:c.getTimelineDuration()});}renderEditorTimeline();setEditorMsg(`${files.length} media item${files.length>1?'s':''} added.`,'success');}catch(err){setEditorMsg(err.message,'error')}finally{e.target.value=''}});
-  document.getElementById('audioFile')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;setEditorMsg('Uploading audio…','info');try{const media=await uploadEditorFile(f,'audio');window.editorAudio=media;const c=window.TNSEditorComponent;c.addItem({type:'audio',name:f.name,src:media.url,duration:3,start:c.getTimelineDuration(),volume:1});renderEditorTimeline();setEditorMsg('Audio added to a separate timeline track.','success')}catch(err){setEditorMsg(err.message,'error')}finally{e.target.value=''}});
-  function setEditorMsg(t,type){const el=document.getElementById('editStatus');if(el){el.textContent=t;el.className='status '+type}}
-  const timeline=document.getElementById('timeline');if(!timeline)return;
-  let dragTrim=null;
-  timeline.addEventListener('mousedown',e=>{const h=e.target.closest('[data-trim]');const clip=e.target.closest('[data-editor-item]');if(!h||!clip)return;const c=window.TNSEditorComponent,s=c.state.timeline.find(x=>x.id===clip.dataset.editorItem);if(!s||s.locked)return;dragTrim={id:s.id,side:h.dataset.trim,startX:e.clientX,origStart:Number(s.start)||0,origDuration:Number(s.duration)||0};e.preventDefault()});
-  window.addEventListener('mousemove',e=>{if(!dragTrim)return;const zoom=Math.max(25,Number(window.TNSEditorComponent?.state.timelineZoom)||80);const delta=(e.clientX-dragTrim.startX)/zoom;const s=window.TNSEditorComponent.state.timeline.find(x=>x.id===dragTrim.id);if(!s)return;if(dragTrim.side==='left'){const newStart=Math.max(0,dragTrim.origStart+delta);const consumed=newStart-dragTrim.origStart;s.start=newStart;s.duration=Math.max(.1,dragTrim.origDuration-consumed);s.trimStart=Math.max(0,(Number(s.trimStart)||0)+consumed)}else{s.duration=Math.max(.1,dragTrim.origDuration+delta)}renderEditorTimeline()});
-  window.addEventListener('mouseup',()=>{if(dragTrim){window.TNSEditorComponent.commit();dragTrim=null}});
-  timeline.addEventListener('click',e=>{if(e.target.closest('[data-editor-item]')||e.target.closest('[data-trim]'))return;const rect=timeline.getBoundingClientRect();const zoom=Math.max(25,Number(window.TNSEditorComponent?.state.timelineZoom)||80);const x=Math.max(0,e.clientX-rect.left-86+timeline.scrollLeft);window.TNSEditorComponent.seek(x/zoom);const v=document.getElementById('preview');if(v?.src)v.currentTime=window.TNSEditorComponent.state.currentTime;renderEditorTimeline()});
-})();
-
-
 
 // TNS chat-first home dashboard: main entry point for universal assistance.
 (function initTnsHomeAssistant(){
@@ -1201,14 +844,6 @@ addExtraNavigation();
     event.currentTarget.setAttribute('aria-pressed',String(researchEnabled));
     event.currentTarget.textContent=researchEnabled?'🔎 Research On':'🔎 Research';
     setStatus(researchEnabled ? 'Live Web Research on: TNS website sources dhoondhega aur batayega kya kahan milega aur kaise aage badhna hai.' : 'Research mode band hai.');
-  });
-  $id('homeExploreToolsBtn')?.addEventListener('click',event=>{
-    const grid=$id('homeToolsGrid');
-    if(!grid)return;
-    const opening=grid.classList.contains('hidden');
-    grid.classList.toggle('hidden',!opening);
-    event.currentTarget.setAttribute('aria-expanded',String(opening));
-    event.currentTarget.textContent=opening?'☷ Tools band karein':'☷ Saare tools';
   });
   document.querySelectorAll('[data-home-prompt]').forEach(button=>button.addEventListener('click',()=>{
     input.value=(button.getAttribute('data-home-prompt')||'')+input.value;

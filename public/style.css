@@ -1762,3 +1762,133 @@ body:has(#dashboard.active) .topbar-new-chat-btn:focus-visible{outline:2px solid
 
 /* TASK 11: remove only the divider line beneath the three-line menu / TNS brand header. */
 .topbar { border-bottom: 0; }
+
+
+/* TNS chat composer + header finishing polish (visual-only; handlers unchanged). */
+body:has(#dashboard.active) .topbar .brand-area {
+  align-items: center;
+}
+body:has(#dashboard.active) .topbar-brand-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+body:has(#dashboard.active) .topbar-brand-copy strong {
+  line-height: 1.05;
+  letter-spacing: .3px;
+}
+body:has(#dashboard.active) .topbar-brand-tagline {
+  display: block;
+  color: rgba(178,195,255,.78);
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: .65px;
+  white-space: nowrap;
+}
+#dashboard .home-assistant-shell {
+  border: 0 !important;
+  outline: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#dashboard .home-chat-composer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid rgba(128,151,255,.34);
+  border-radius: 21px;
+  background: linear-gradient(145deg, rgba(16,23,48,.98), rgba(8,13,31,.98));
+  box-shadow: 0 7px 22px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.035);
+}
+#dashboard .home-input-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  gap: 7px;
+  padding: 2px 4px;
+  border: 0 !important;
+  border-radius: 14px;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#dashboard .home-plus-btn {
+  flex: 0 0 36px;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(91,111,220,.20);
+  color: #e5eaff;
+  font-size: 23px;
+  box-shadow: none;
+}
+#dashboard .home-input-box textarea {
+  min-height: 38px;
+  max-height: 104px;
+  padding: 8px 2px !important;
+  font-size: 15px;
+  line-height: 1.35;
+}
+#dashboard .home-input-box textarea::placeholder {
+  color: rgba(222,228,248,.66);
+}
+#dashboard .home-dictation-btn {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.075);
+  color: #e7edff;
+  font-size: 19px;
+}
+#dashboard .home-action-btn {
+  flex: 0 0 42px;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(145deg,#7185ff,#4c5fe0);
+  color: #fff;
+  box-shadow: 0 4px 13px rgba(76,95,224,.28);
+}
+@media (max-width: 560px) {
+  body:has(#dashboard.active) .topbar-brand-tagline {
+    font-size: 7px;
+    letter-spacing: .45px;
+  }
+  #dashboard .home-chat-composer {
+    gap: 5px;
+    padding: 6px;
+    border-radius: 19px;
+  }
+  #dashboard .home-input-box {
+    min-height: 42px;
+    padding: 1px 2px;
+  }
+  #dashboard .home-plus-btn {
+    flex-basis: 34px;
+    width: 34px;
+    min-width: 34px;
+    height: 34px;
+  }
+  #dashboard .home-dictation-btn {
+    flex-basis: 30px;
+    width: 30px;
+    height: 34px;
+    font-size: 18px;
+  }
+  #dashboard .home-action-btn {
+    flex-basis: 40px;
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+  }
+}

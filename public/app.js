@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded',()=>{ $('#savedTaskRefresh')?.addEv
       else if(target==='savedTasks'){showPanel('savedTasks');loadSavedTasks();}
       else if(target==='settings')openSettings();
       else if(target==='premium')showPanel('premium');
+      else if(target==='voiceConversation')showPanel('voiceConversation');
     });
     document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!toggle.contains(e.target))close()});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});

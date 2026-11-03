@@ -1641,3 +1641,27 @@ body.tns-chat-typing #dashboard .home-chat-messages { padding-bottom:76px; }
 }
 /* Password-based first-time account creation, matching the existing login card. */
 .signup-switch-row{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;margin:14px 0 4px;color:#aebbd0;font-size:12px}.signup-switch-row .text-btn{color:#18c9ff;font-weight:800;padding:4px 2px}.login-reference-card #signupForm{margin-top:14px;text-align:left}.login-reference-card #signupForm h2{text-align:center;margin:8px 0;font-size:21px}.login-reference-card #signupForm>p.muted{text-align:center;font-size:12px;margin:0 0 12px}.login-reference-card #signupForm input{width:100%;box-sizing:border-box;margin-bottom:5px}.login-reference-card #signupForm .status{min-height:18px;text-align:center}
+
+
+/* Clean, aligned TNS Studio dashboard layout */
+#dashboard.tns-dashboard{width:min(100%,920px);padding:28px 18px 56px;margin:0 auto;}
+.dashboard-welcome{padding:8px 2px 22px;margin:0 0 4px;}
+.dashboard-eyebrow{margin:0 0 7px;color:#9e9aff;font-size:10px;font-weight:900;letter-spacing:2.2px;}
+.dashboard-welcome h1{margin:0;font-size:clamp(26px,5vw,34px);line-height:1.15;font-weight:850;}
+.dashboard-subtitle{margin:8px 0 0;color:#aab2c9;font-size:14px;line-height:1.5;}
+.dashboard-card-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:stretch;}
+.dashboard-nav-card{min-width:0;min-height:116px;display:flex;align-items:center;gap:14px;padding:18px;text-align:left;border-radius:20px;border:1px solid rgba(132,151,255,.2);background:linear-gradient(135deg,rgba(22,31,69,.96),rgba(15,20,43,.96));box-shadow:0 12px 30px rgba(0,0,0,.16);transition:transform .16s ease,border-color .16s ease;}
+.dashboard-nav-card:active{transform:scale(.985);}
+.dashboard-nav-card:hover{border-color:rgba(104,169,255,.55);}
+.dashboard-card-icon{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:15px;background:rgba(105,115,255,.18);font-size:24px;}
+.dashboard-card-copy{display:flex;min-width:0;flex:1;flex-direction:column;gap:5px;}
+.dashboard-card-copy b{font-size:15px;line-height:1.25;overflow-wrap:anywhere;}
+.dashboard-card-copy small{font-size:11px;line-height:1.4;color:#aab2c9;}
+.dashboard-card-arrow{font-size:27px;line-height:1;color:#aebeff;flex:0 0 auto;}
+.dashboard-premium-card .dashboard-card-icon{background:rgba(255,190,65,.16);}
+.dashboard-voice-card .dashboard-card-icon{background:rgba(0,205,190,.16);}
+.dashboard-tasks-card .dashboard-card-icon{background:rgba(76,151,255,.17);}
+@media(max-width:560px){#dashboard.tns-dashboard{padding:22px 14px 44px}.dashboard-welcome{padding-bottom:17px}.dashboard-card-grid{grid-template-columns:minmax(0,1fr);gap:11px}.dashboard-nav-card{min-height:88px;padding:14px 15px;border-radius:17px}.dashboard-card-icon{width:44px;height:44px;flex-basis:44px;font-size:22px}.dashboard-card-copy b{font-size:14px}.dashboard-card-copy small{font-size:10px}}
+
+/* Dashboard navigation lives in the three-line menu; keep the home panel uncluttered. */
+.dashboard-menu-hint{margin:10px 2px 0;padding:18px 16px;border:1px solid rgba(132,151,255,.16);border-radius:18px;background:rgba(17,22,42,.48);color:#aab2c9;text-align:center;font-size:13px;line-height:1.5}

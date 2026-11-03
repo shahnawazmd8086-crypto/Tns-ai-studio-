@@ -1,0 +1,40 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const root = path.join(__dirname, '..');
+const app = fs.readFileSync(path.join(root, 'public', 'app.js'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'public', 'style.css'), 'utf8');
+const server = fs.readFileSync(path.join(root, 'server', 'server.js'), 'utf8');
+const store = require(path.join(root, 'server', 'storage', 'ReplyFeedback'));
+const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'tns-reply-feedback-'));
+try {
+  const file = path.join(temp, 'feedback.json');
+  const user = { id: 'test-user-1', email: 'user@example.test' };
+  const replyA = 'Only this TNS reply should be rated.';
+  const replyB = 'A different reply must remain separate.';
+  const positive = store.add(file, user, { sentiment: 'positive', replyText: replyA });
+  const negative = store.add(file, user, { sentiment: 'negative', replyText: replyB });
+  const rows = store.list(file);
+  assert.strictEqual(rows.length, 2, 'Both individual feedback records must persist.');
+  assert(rows.some(x => x.id === positive.id && x.sentiment === 'positive' && x.replyText === replyA), 'Positive feedback must retain only its selected reply.');
+  assert(rows.some(x => x.id === negative.id && x.sentiment === 'negative' && x.replyText === replyB), 'Negative feedback must retain only its selected reply.');
+  assert.throws(() => store.add(file, user, { sentiment: 'neutral', replyText: replyA }), /positive or negative/);
+  assert.throws(() => store.add(file, user, { sentiment: 'positive', replyText: '' }), /missing or too long/);
+  assert.throws(() => store.add(file, null, { sentiment: 'positive', replyText: replyA }), /Authentication required/);
+
+  assert(app.includes("feedbackButton.className = 'home-reply-feedback-button'"), 'Feedback icon must be created per TNS reply.');
+  assert(app.includes("submit('positive', positive)"), 'Positive choice must submit positive feedback.');
+  assert(app.includes("submit('negative', negative)"), 'Negative choice must submit negative feedback.');
+  assert(app.includes("body: JSON.stringify({ sentiment, replyText: thisReplyOnly })"), 'Feedback must submit only the reply attached to that feedback control.');
+  assert(app.includes('addReplyFeedbackButton(node, text)'), 'Previously loaded replies must receive feedback controls.');
+  assert(app.includes('addReplyFeedbackButton(pending, displayedReply)'), 'New replies must receive feedback controls.');
+  assert(css.includes('.home-reply-feedback-button') && css.includes('.home-reply-feedback-choice'), 'Feedback controls must be styled.');
+  assert(server.includes("url.pathname === '/api/tns-ai/reply-feedback'"), 'Feedback API route must exist.');
+  assert(server.includes("user.email || '').trim().toLowerCase() !== ownerEmail"), 'Feedback review endpoint must be restricted to configured owner email.');
+  assert(app.includes("copyButton.className = 'home-reply-copy-button'"), 'Existing Copy action must remain.');
+  assert(app.includes("shareButton.className = 'home-reply-share-button'"), 'Existing Share action must remain.');
+  assert(app.includes("playReplyButton.className='home-reply-voice-button'"), 'Existing Voice action must remain.');
+  console.log('CHAT_REPLY_FEEDBACK_AUDIT_OK');
+} finally { fs.rmSync(temp, { recursive: true, force: true }); }

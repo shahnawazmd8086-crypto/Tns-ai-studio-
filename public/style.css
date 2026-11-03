@@ -1759,3 +1759,6 @@ body:has(#dashboard.active) .topbar-new-chat-btn:focus-visible{outline:2px solid
 .home-reply-feedback-choices{display:inline-flex;align-items:center;gap:4px;margin-left:4px}
 .home-reply-feedback-choice{font-size:.78rem;margin-left:0;padding:7px 9px}
 .home-reply-feedback-choices.hidden{display:none!important}
+
+/* TASK 11: remove only the divider line beneath the three-line menu / TNS brand header. */
+.topbar { border-bottom: 0; }

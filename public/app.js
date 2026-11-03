@@ -1079,7 +1079,20 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     }catch(error){if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;voiceOnlyBusy=false;setVoiceOnlyState('error');setVoiceOnlyStatus(String(error?.message||'TNS se jawab nahi mil saka.'));setTimeout(startVoiceOnlyListening,900);}
   };
   const beginVoiceOnly=()=>{if(voiceOnlyActive)return;voiceOnlyActive=true;voiceOnlyBusy=false;voiceOnlyTurn++;if(voiceOnlyStart)voiceOnlyStart.disabled=true;if(voiceOnlyStop)voiceOnlyStop.disabled=false;setVoiceOnlyState('listening');setVoiceOnlyStatus('Microphone taiyar ho raha hai… boliye.');startVoiceOnlyListening();};
-  $id('homeChatVoice')?.addEventListener('click',()=>{showPanel('voiceConversation');setVoiceOnlyStatus('Voice-only mode shuru ho raha hai…');setVoiceOnlyState('idle');if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;beginVoiceOnly();});
+  $id('homeChatVoice')?.addEventListener('click',()=>{
+    // The same round control is a Send arrow while text is present and the
+    // voice-conversation microphone while the composer is empty.
+    if(input.value.trim() || attachedFile){
+      if(!isSending) form.requestSubmit();
+      return;
+    }
+    showPanel('voiceConversation');
+    setVoiceOnlyStatus('Voice-only mode shuru ho raha hai…');
+    setVoiceOnlyState('idle');
+    if(voiceOnlyStart)voiceOnlyStart.disabled=false;
+    if(voiceOnlyStop)voiceOnlyStop.disabled=true;
+    beginVoiceOnly();
+  });
   voiceOnlyStart?.addEventListener('click',beginVoiceOnly);
   voiceOnlyStop?.addEventListener('click',()=>endVoiceOnly());
   $id('voiceOnlyClose')?.addEventListener('click',()=>endVoiceOnly());

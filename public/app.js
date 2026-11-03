@@ -880,7 +880,11 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     button.setAttribute('aria-pressed', String(listening));
     button.dataset.listening = String(listening);
     showRecordingBar(listening);
-    if (listening) startDictationMeter(); else stopDictationMeter();
+    // SpeechRecognition must be the only owner of the microphone stream here.
+    // Opening a second getUserMedia stream for the decorative level meter can
+    // conflict with Android/mobile browser speech recognition and make dictation fail.
+    // Keep the existing recording waveform UI, but do not request microphone access twice.
+    stopDictationMeter();
   };
   const stopSpeechInput = () => {
     const active = voiceRecognition;

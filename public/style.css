@@ -170,7 +170,7 @@ body:has(#dashboard.active) .topbar .brand-area .logo-mini{
 body:has(#dashboard.active) .topbar .brand-area{
   width:150px;
   min-height:38px;
-  background:url("/assets/tns-studio-dashboard-logo.png") left center/38px 38px no-repeat;
+  background:url("/assets/tns-studio-topbar-premium.svg") left center/38px 38px no-repeat;
   padding-left:47px;
   display:flex;
   align-items:center;
@@ -1891,4 +1891,48 @@ body:has(#dashboard.active) .topbar-brand-tagline {
     min-width: 40px;
     height: 40px;
   }
+}
+
+/* TNS brand premium underline — visual-only; no feature or handler changes. */
+body:has(#dashboard.active) .topbar-brand-copy strong::after {
+  content: "";
+  display: block;
+  width: 46px;
+  height: 2px;
+  margin-top: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #55d8ff 0%, #7d79ff 55%, #d77bff 100%);
+  box-shadow: 0 0 8px rgba(105, 139, 255, .38);
+}
+
+/* Composer behavior polish: stay visible above the mobile keyboard and grow with the draft. */
+#dashboard .home-chat-composer {
+  align-items: flex-end !important;
+}
+#dashboard .home-input-box {
+  align-items: flex-end !important;
+  min-height: 44px;
+}
+#dashboard .home-input-box textarea {
+  min-height: 38px !important;
+  max-height: 140px !important;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+body.tns-chat-typing #dashboard .home-chat-composer {
+  position: fixed !important;
+  left: 12px !important;
+  right: 12px !important;
+  bottom: 8px;
+  z-index: 10020 !important;
+}
+
+
+/* Premium topbar brand mark only; other TNS logos remain unchanged. */
+body:has(#dashboard.active) .topbar .brand-area .logo-mini {
+  border: 1px solid rgba(132, 218, 255, .55);
+  border-radius: 12px;
+  background: linear-gradient(145deg, rgba(15, 37, 70, .96), rgba(35, 18, 65, .96));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.04), 0 4px 14px rgba(0,0,0,.32), 0 0 18px rgba(57,190,255,.22), 0 0 22px rgba(157,91,255,.16);
+  padding: 1px;
 }

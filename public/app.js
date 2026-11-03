@@ -411,7 +411,33 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     if(showStatus)msg('#voiceStatus','Voice playback stopped. Your text reply is still available.','info');
   }
   document.getElementById('stopTnsVoicePlayback')?.addEventListener('click',()=>stopTnsVoicePlayback(true));
-  function speakTns(text){
+  function normalizeTnsReplyLocale(value){
+    const raw=String(value||'').trim();
+    if(!raw)return '';
+    const aliases={Hindi:'hi-IN',English:'en-IN',Tamil:'ta-IN',Kannada:'kn-IN',Telugu:'te-IN',Bengali:'bn-IN',Gujarati:'gu-IN',Punjabi:'pa-IN',Malayalam:'ml-IN',Marathi:'mr-IN',Urdu:'ur-IN',Odia:'or-IN',Arabic:'ar-SA',Russian:'ru-RU',Chinese:'zh-CN',Japanese:'ja-JP',Korean:'ko-KR',Thai:'th-TH',Greek:'el-GR',Hebrew:'he-IL'};
+    if(aliases[raw])return aliases[raw];
+    const short={hi:'hi-IN',en:'en-IN',ta:'ta-IN',kn:'kn-IN',te:'te-IN',bn:'bn-IN',gu:'gu-IN',pa:'pa-IN',ml:'ml-IN',mr:'mr-IN',ur:'ur-IN',or:'or-IN',ar:'ar-SA',ru:'ru-RU',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',th:'th-TH',el:'el-GR',he:'he-IL'};
+    if(short[raw.toLowerCase()])return short[raw.toLowerCase()];
+    return /^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(raw)?raw:'';
+  }
+  function detectTnsReplyLocale(text){
+    const value=String(text||'');
+    if(/[\u0900-\u097F]/.test(value))return 'hi-IN';
+    if(/[\u0B80-\u0BFF]/.test(value))return 'ta-IN';
+    if(/[\u0C80-\u0CFF]/.test(value))return 'kn-IN';
+    if(/[\u0C00-\u0C7F]/.test(value))return 'te-IN';
+    if(/[\u0980-\u09FF]/.test(value))return 'bn-IN';
+    if(/[\u0A80-\u0AFF]/.test(value))return 'gu-IN';
+    if(/[\u0A00-\u0A7F]/.test(value))return 'pa-IN';
+    if(/[\u0D00-\u0D7F]/.test(value))return 'ml-IN';
+    if(/[\u0600-\u06FF]/.test(value))return 'ur-IN';
+    if(/[\u0400-\u04FF]/.test(value))return 'ru-RU';
+    if(/[\u3040-\u30FF]/.test(value))return 'ja-JP';
+    if(/[\uAC00-\uD7AF]/.test(value))return 'ko-KR';
+    if(/[\u4E00-\u9FFF]/.test(value))return 'zh-CN';
+    return 'en-IN';
+  }
+  function speakTns(text, replyLanguage){
     const speechText=String(text||'').trim();
     if(!speechText){msg('#voiceStatus','There is no reply text to read aloud.','error');return false;}
     if(!('speechSynthesis' in window)||typeof window.SpeechSynthesisUtterance!=='function'){
@@ -424,7 +450,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
       const playbackId=tnsPlaybackSequence;
       const u=new window.SpeechSynthesisUtterance(speechText);
       activeTnsUtterance=u;
-      const language=selectedVoiceLanguage();
+      const language=normalizeTnsReplyLocale(replyLanguage)||selectedVoiceLanguage();
       u.lang=language;
       u.rate=Math.min(2,Math.max(0.5,Number(voiceRateEl?.value||1)));
       u.pitch=1;
@@ -497,8 +523,6 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   const attachMenu = $id('homeChatAttachMenu');
   const preview = $id('homeChatFilePreview');
   const newChatButton = $id('homeChatNew');
-  const historySelect = $id('homeChatHistorySelect');
-  const deleteChatButton = $id('homeChatDelete');
   const starterContainer = $id('homeChatStarters');
   if (!form || !input || !messages) return;
   const updateStarterVisibility = (forceShow = false) => {
@@ -526,22 +550,25 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   let historySaveTimer = null;
   // Protect the visible chat from late network responses and stale history saves.
   let conversationViewGeneration = 0;
-  const conversationMessages = () => Array.from(messages.querySelectorAll('.home-chat-message'))
-    .filter(node => !node.classList.contains('error') && !node.classList.contains('pending'))
-    .map(node => { const clone=node.cloneNode(true); clone.querySelectorAll('button').forEach(button=>button.remove()); return {role:node.classList.contains('user')?'user':'assistant',content:String(clone.textContent||'').trim().slice(0,8000)}; })
-    .filter(turn=>turn.content && turn.content!=='Soch raha hoon…').slice(-100);
   const refreshConversationList = async (selectId='') => {
+    // The Saved chats dropdown is intentionally removed from the dashboard.
+    // Keep this guarded refresh hook so existing conversation storage stays compatible.
+    const historySelect = $id('homeChatHistorySelect');
     if(!historySelect)return true;
     try { const data=await json('/api/tns-ai/conversations'); const items=Array.isArray(data.conversations)?data.conversations:[];
       historySelect.replaceChildren(); const placeholder=document.createElement('option'); placeholder.value=''; placeholder.textContent='Saved chats'; historySelect.appendChild(placeholder);
       items.forEach(item=>{const option=document.createElement('option');option.value=item.id;option.textContent=(item.title||'Nayi chat').slice(0,80);historySelect.appendChild(option);});
-      historySelect.value=selectId||''; if(deleteChatButton)deleteChatButton.disabled=!historySelect.value;
+      historySelect.value=selectId||'';
       return true;
     } catch { return false; }
   };
+  const conversationMessages = () => Array.from(messages.querySelectorAll('.home-chat-message'))
+    .filter(node => !node.classList.contains('error') && !node.classList.contains('pending'))
+    .map(node => { const clone=node.cloneNode(true); clone.querySelectorAll('button').forEach(button=>button.remove()); return {role:node.classList.contains('user')?'user':'assistant',content:String(clone.textContent||'').trim().slice(0,8000)}; })
+    .filter(turn=>turn.content && turn.content!=='Soch raha hoon…').slice(-100);
   const saveConversation = async (expectedGeneration=conversationViewGeneration) => {
-    const turns=conversationMessages(); if(!turns.length || expectedGeneration!==conversationViewGeneration)return;
-    const targetId=currentConversationId;
+    const turns=conversationMessages(); if(expectedGeneration!==conversationViewGeneration)return;
+    const targetId=currentConversationId; if(!turns.length && !targetId)return;
     try { const data=await json('/api/tns-ai/conversations',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:targetId,messages:turns})});
       if(expectedGeneration!==conversationViewGeneration || currentConversationId!==targetId)return;
       currentConversationId=data.conversation.id;
@@ -550,11 +577,11 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     } catch { if(expectedGeneration===conversationViewGeneration)setStatus('Chat chal rahi hai, lekin history save nahi ho saki. Dobara login karke ya connection check karke koshish karein.'); }
   };
   const scheduleConversationSave = () => { clearTimeout(historySaveTimer); const generation=conversationViewGeneration; historySaveTimer=setTimeout(()=>saveConversation(generation),250); };
-  const startNewConversation = () => { conversationViewGeneration++; clearTimeout(historySaveTimer); currentConversationId=null; messages.replaceChildren(); const welcome=document.createElement('div'); welcome.className='home-welcome-card'; welcome.textContent='Namaste! Main TNS hoon. Aap kya karna chahenge?'; messages.appendChild(welcome); input.value='';fitInput();updateActionButton();updateStarterVisibility(true);if(historySelect)historySelect.value='';if(deleteChatButton)deleteChatButton.disabled=true;setStatus('Nayi chat shuru ho gayi.'); };
-  const openConversation = async id => { if(!id)return; const generation=++conversationViewGeneration; clearTimeout(historySaveTimer); try { const data=await json('/api/tns-ai/conversations/'+encodeURIComponent(id)); if(generation!==conversationViewGeneration)return; const c=data.conversation; if(!c)throw new Error('Conversation not found.'); currentConversationId=c.id; messages.replaceChildren(); (c.messages||[]).forEach(turn=>addBubble(turn.content,turn.role)); updateStarterVisibility(); const hasAttachmentMarker=(c.messages||[]).some(turn=>/📎/.test(turn.content||'')); const refreshed=await refreshConversationList(c.id); if(generation!==conversationViewGeneration)return; if(deleteChatButton)deleteChatButton.disabled=false; setStatus(hasAttachmentMarker?'Purani chat khul gayi. Note: attached file khud save nahi hoti; sirf uska naam/message history mein hai.':(refreshed?'Purani chat khul gayi.':'Purani chat khul gayi, lekin saved-chat list refresh nahi hui.')); if(hasAttachmentMarker&&!refreshed)setStatus('Purani chat khul gayi; attachment dobara chahiye to file phir se chunein. Saved-chat list refresh nahi hui.'); } catch(error) { if(generation===conversationViewGeneration)setStatus(error.message||'Chat history nahi khul saki.'); } };
+  const startNewConversation = () => { conversationViewGeneration++; clearTimeout(historySaveTimer); currentConversationId=null; messages.replaceChildren(); const welcome=document.createElement('div'); welcome.className='home-welcome-card'; welcome.textContent='Namaste! Main TNS hoon. Aap kya karna chahenge?'; messages.appendChild(welcome); input.value='';fitInput();updateActionButton();updateStarterVisibility(true);setStatus('Nayi chat shuru ho gayi.'); const chatShell=form.closest('.home-assistant-shell'); chatShell?.scrollIntoView({behavior:'smooth',block:'start'}); window.setTimeout(()=>{if(!input.disabled)input.focus({preventScroll:true});},220); };
+  const openConversation = async id => { if(!id)return; const generation=++conversationViewGeneration; clearTimeout(historySaveTimer); try { const data=await json('/api/tns-ai/conversations/'+encodeURIComponent(id)); if(generation!==conversationViewGeneration)return; const c=data.conversation; if(!c)throw new Error('Conversation not found.'); currentConversationId=c.id; messages.replaceChildren(); (c.messages||[]).forEach(turn=>addBubble(turn.content,turn.role)); updateStarterVisibility(); const hasAttachmentMarker=(c.messages||[]).some(turn=>/📎/.test(turn.content||'')); const refreshed=await refreshConversationList(c.id); if(generation!==conversationViewGeneration)return;  setStatus(hasAttachmentMarker?'Purani chat khul gayi. Note: attached file khud save nahi hoti; sirf uska naam/message history mein hai.':(refreshed?'Purani chat khul gayi.':'Purani chat khul gayi, lekin saved-chat list refresh nahi hui.')); if(hasAttachmentMarker&&!refreshed)setStatus('Purani chat khul gayi; attachment dobara chahiye to file phir se chunein. Saved-chat list refresh nahi hui.'); } catch(error) { if(generation===conversationViewGeneration)setStatus(error.message||'Chat history nahi khul saki.'); } };
   newChatButton?.addEventListener('click',startNewConversation);
-  historySelect?.addEventListener('change',()=>{if(historySelect.value)openConversation(historySelect.value);else if(deleteChatButton)deleteChatButton.disabled=true;});
-  deleteChatButton?.addEventListener('click',async()=>{const id=currentConversationId||historySelect?.value;if(!id)return;if(!window.confirm('Kya aap is chat ko delete karna chahte hain?'))return;try{await json('/api/tns-ai/conversations/'+encodeURIComponent(id),{method:'DELETE'});if(id===currentConversationId)startNewConversation();await refreshConversationList();setStatus('Chat delete ho gayi.');}catch(error){setStatus(error.message||'Chat delete nahi ho saki.');}});
+  const historySelect = $id('homeChatHistorySelect');
+  historySelect?.addEventListener('change',()=>{if(historySelect.value)openConversation(historySelect.value);});
   refreshConversationList().then(ok=>{if(!ok)setStatus('Saved chat list abhi load nahi hui. Connection check karke dobara koshish karein.');});
   let researchEnabled = false;
   let attachedFile = null;
@@ -597,13 +624,137 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     if(input) input.disabled=busy;
     [fileInput,photoInput,cameraInput].forEach(el=>{if(el)el.disabled=busy;});
     if(newChatButton)newChatButton.disabled=busy;
-    if(historySelect)historySelect.disabled=busy;
-    if(deleteChatButton)deleteChatButton.disabled=busy||!historySelect?.value;
     const attachButton=$id('homeChatAttach');
     if(attachButton)attachButton.disabled=busy;
     if(attachMenu)attachMenu.classList.add('hidden');
     form.classList.toggle('is-sending',busy);
   };
+  const addReplyCopyButton = (node, replyText) => {
+    if (!node || node.querySelector('.home-reply-copy-button')) return;
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'home-reply-copy-button';
+    copyButton.textContent = '📋';
+    copyButton.setAttribute('aria-label', 'TNS ka jawab copy karein');
+    copyButton.title = 'Copy answer';
+    copyButton.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const textToCopy = String(replyText || '');
+      try {
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(textToCopy);
+        } else {
+          const temporaryInput = document.createElement('textarea');
+          temporaryInput.value = textToCopy;
+          temporaryInput.setAttribute('readonly', '');
+          temporaryInput.style.position = 'fixed';
+          temporaryInput.style.opacity = '0';
+          document.body.appendChild(temporaryInput);
+          temporaryInput.select();
+          const copied = document.execCommand('copy');
+          temporaryInput.remove();
+          if (!copied) throw new Error('Copy not available');
+        }
+        setStatus('TNS ka jawab copy ho gaya.');
+      } catch {
+        setStatus('Copy nahi ho saka. Dobara try karein.');
+      }
+    });
+    node.appendChild(copyButton);
+  };
+  const addReplyShareButton = (node, replyText) => {
+    if (!node || node.querySelector('.home-reply-share-button')) return;
+    // Freeze the text belonging to this one TNS reply. Never read the whole
+    // chat container or collect text from neighboring messages when sharing.
+    const thisReplyOnly = String(replyText ?? '');
+    const shareButton = document.createElement('button');
+    shareButton.type = 'button';
+    shareButton.className = 'home-reply-share-button';
+    shareButton.textContent = '↗';
+    shareButton.setAttribute('aria-label', 'TNS ka jawab share karein');
+    shareButton.title = 'Share answer';
+    shareButton.addEventListener('click', async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const textToShare = thisReplyOnly;
+      if (!textToShare.trim()) return;
+      try {
+        if (typeof navigator.share === 'function') {
+          await navigator.share({ title: 'TNS Studio', text: textToShare });
+          setStatus('TNS ka jawab share kar diya gaya.');
+          return;
+        }
+        // Fallback for browsers without the native share sheet: copy the exact reply
+        // so the user can paste it into any app without losing any content.
+        if (navigator.clipboard && window.isSecureContext) {
+          await navigator.clipboard.writeText(textToShare);
+        } else {
+          const temporaryInput = document.createElement('textarea');
+          temporaryInput.value = textToShare;
+          temporaryInput.setAttribute('readonly', '');
+          temporaryInput.style.position = 'fixed';
+          temporaryInput.style.opacity = '0';
+          document.body.appendChild(temporaryInput);
+          temporaryInput.select();
+          const copied = document.execCommand('copy');
+          temporaryInput.remove();
+          if (!copied) throw new Error('Share and copy are unavailable');
+        }
+        setStatus('Is browser mein Share option nahi hai. Jawab copy ho gaya; kisi bhi app mein paste karein.');
+      } catch (error) {
+        if (error?.name === 'AbortError') return;
+        setStatus('Jawab share nahi ho saka. Dobara try karein.');
+      }
+    });
+    node.appendChild(shareButton);
+  };
+  const addReplyFeedbackButton = (node, replyText) => {
+    if (!node || node.querySelector('.home-reply-feedback-button')) return;
+    const thisReplyOnly = String(replyText ?? '');
+    const feedbackButton = document.createElement('button');
+    feedbackButton.type = 'button';
+    feedbackButton.className = 'home-reply-feedback-button';
+    feedbackButton.textContent = '☻';
+    feedbackButton.setAttribute('aria-label', 'TNS ke jawab par feedback dein');
+    feedbackButton.title = 'Feedback';
+    const choices = document.createElement('span');
+    choices.className = 'home-reply-feedback-choices hidden';
+    const positive = document.createElement('button');
+    positive.type = 'button'; positive.className = 'home-reply-feedback-choice'; positive.textContent = '👍 Positive';
+    positive.setAttribute('aria-label', 'Positive feedback');
+    const negative = document.createElement('button');
+    negative.type = 'button'; negative.className = 'home-reply-feedback-choice'; negative.textContent = '👎 Negative';
+    negative.setAttribute('aria-label', 'Negative feedback');
+    choices.append(positive, negative);
+    feedbackButton.addEventListener('click', event => {
+      event.preventDefault(); event.stopPropagation();
+      choices.classList.toggle('hidden');
+    });
+    const submit = async (sentiment, choice) => {
+      if (!thisReplyOnly.trim() || choice.disabled) return;
+      positive.disabled = true; negative.disabled = true;
+      try {
+        await json('/api/tns-ai/reply-feedback', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sentiment, replyText: thisReplyOnly })
+        });
+        choices.classList.add('hidden');
+        feedbackButton.disabled = true;
+        feedbackButton.textContent = '✓';
+        feedbackButton.title = sentiment === 'positive' ? 'Positive feedback sent' : 'Negative feedback sent';
+        feedbackButton.setAttribute('aria-label', feedbackButton.title);
+        setStatus('Aapka feedback TNS team ko bhej diya gaya. Shukriya!');
+      } catch (error) {
+        positive.disabled = false; negative.disabled = false;
+        setStatus(error.message || 'Feedback nahi bheja ja saka. Dobara try karein.');
+      }
+    };
+    positive.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); submit('positive', positive); });
+    negative.addEventListener('click', event => { event.preventDefault(); event.stopPropagation(); submit('negative', negative); });
+    node.append(feedbackButton, choices);
+  };
+
   const addBubble = (text, role='assistant', isError=false) => {
     const welcome = messages.querySelector('.home-welcome-card');
     if (welcome) welcome.remove();
@@ -611,6 +762,35 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     node.className = `home-chat-message ${role}${isError ? ' error' : ''}`;
     node.textContent = text;
     messages.appendChild(node);
+    if (role === 'assistant' && !isError && String(text) !== 'Soch raha hoon…') { addReplyCopyButton(node, text); addReplyShareButton(node, text); addReplyFeedbackButton(node, text); }
+    if (role === 'user' && !isError) {
+      let pressTimer = null;
+      let longPressed = false;
+      const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); pressTimer = null; };
+      const revealDelete = () => {
+        if (!node.isConnected || node.querySelector('.home-message-delete')) return;
+        longPressed = true;
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.className = 'home-message-delete';
+        removeButton.textContent = 'Delete message';
+        removeButton.setAttribute('aria-label', 'Is message aur TNS ka jawab delete karein');
+        removeButton.addEventListener('click', event => {
+          event.stopPropagation();
+          const next = node.nextElementSibling;
+          if (next && next.classList.contains('home-chat-message') && next.classList.contains('assistant')) next.remove();
+          node.remove();
+          scheduleConversationSave();
+          updateStarterVisibility();
+          setStatus('Aapka message aur uska TNS jawab delete ho gaya.');
+        });
+        node.appendChild(removeButton);
+      };
+      node.addEventListener('pointerdown', () => { longPressed = false; pressTimer = setTimeout(revealDelete, 600); });
+      ['pointerup','pointerleave','pointercancel'].forEach(type => node.addEventListener(type, cancelPress));
+      node.addEventListener('contextmenu', event => { event.preventDefault(); cancelPress(); revealDelete(); });
+      node.addEventListener('click', event => { if (longPressed) { event.preventDefault(); event.stopPropagation(); longPressed = false; } });
+    }
     updateStarterVisibility();
     messages.scrollTop = messages.scrollHeight;
     return node;
@@ -950,8 +1130,9 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     const shouldSpeakThisReply=speakNextReply;
     speakNextReply=false;
     retryingPreviousMessage=false;
-    // The original user bubble already exists when retrying; do not duplicate it.
+    // Keep the user turn reference so long-press deletion can remove its paired reply.
     if(!isRetrySubmission) addBubble(shownMessage+(attachedFile?`\n\n📎 ${attachedFile.name}`:''),'user');
+    const userBubble = Array.from(messages.querySelectorAll('.home-chat-message.user')).slice(-1)[0];
     input.value=''; fitInput(); updateActionButton();
     const fileToSend=attachedFile;
     attachedFile=null;
@@ -960,6 +1141,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     setSending(true);
     setStatus(researchEnabled?'Research request par kaam ho raha hai…':'TNS jawab taiyar kar raha hai…');
     const pending=addBubble('Soch raha hoon…','assistant');
+    if (userBubble) pending.dataset.replyTo = String(Array.from(messages.children).indexOf(userBubble));
     try{
       let result;
       if(fileToSend){
@@ -987,12 +1169,24 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
         });
       }
       if(requestViewGeneration!==conversationViewGeneration){ pending.remove(); return; }
+      if(userBubble && !userBubble.isConnected){ pending.remove(); return; }
       let displayedReply=result.reply||result.text||'TNS se response nahi mila.';
       if(result.research && Array.isArray(result.sources) && result.sources.length && !(result.provider==='mock')) {
         displayedReply += '\n\nSources:\n' + result.sources.map((source,index)=>`${index+1}. ${source.title} — ${source.url}`).join('\n');
       }
       pending.textContent=displayedReply;
       pending.classList.remove('error');
+      const replyLocale=normalizeTnsReplyLocale(result.replyLanguage)||detectTnsReplyLocale(displayedReply);
+      const playReplyButton=document.createElement('button');
+      playReplyButton.type='button';
+      playReplyButton.className='home-reply-voice-button';
+      playReplyButton.textContent='🔊 सुनें';
+      playReplyButton.setAttribute('aria-label','TNS ka jawab isi bhasha mein sunein');
+      playReplyButton.addEventListener('click',()=>speakTns(displayedReply,replyLocale));
+      pending.appendChild(playReplyButton);
+      addReplyCopyButton(pending, displayedReply);
+      addReplyShareButton(pending, displayedReply);
+      addReplyFeedbackButton(pending, displayedReply);
       if(result.demo || result.provider==='mock') {
         setStatus('Demo jawab: abhi real AI service connected nahi hai.');
         pending.classList.add('demo-response');
@@ -1001,7 +1195,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
       }
       const shouldSpeakReply=shouldSpeakThisReply && speechGenerationAtSubmit===homeSpeechGeneration;
       if(shouldSpeakReply){
-        const spokenReply=pending.textContent;
+        const spokenReply=displayedReply;
         if('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window){
           window.speechSynthesis.cancel();
           const utterance=new SpeechSynthesisUtterance(spokenReply);
@@ -1025,6 +1219,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
       speakNextReply=false;
     }catch(error){
       if(requestViewGeneration!==conversationViewGeneration){ pending.remove(); return; }
+      if(userBubble && !userBubble.isConnected){ pending.remove(); return; }
       const rawError=String(error?.message||'Request failed.').trim();
       let friendlyError=rawError;
       if(/failed to fetch|networkerror|load failed|fetch failed|network request failed/i.test(rawError)){

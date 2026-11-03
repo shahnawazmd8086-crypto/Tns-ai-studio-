@@ -18,6 +18,8 @@ const HttpProvider = require('./providers/http');
 const Uploads = require('./storage/Uploads');
 const ProjectStore = require('./storage/Projects');
 const ChatHistory = require('./storage/ChatHistory');
+const ReplyFeedback = require('./storage/ReplyFeedback');
+const REPLY_FEEDBACK_FILE = process.env.TNS_REPLY_FEEDBACK_FILE ? path.resolve(process.env.TNS_REPLY_FEEDBACK_FILE) : path.join(__dirname, 'Data', 'reply-feedback.json');
 const MediaAccess = require('./storage/MediaAccess');
 const GlobalConfig = require('./config/Global-config');
 const BrowserAutomation = require('./browser/BrowserAutomation');
@@ -318,6 +320,22 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
 
     if (req.method === 'GET' && url.pathname === '/health') return sendJson(res, 200, { ok: true, name: 'TNS API' });
+
+    // Per-reply feedback is stored privately for owner review; users can submit only while signed in.
+    if (req.method === 'POST' && url.pathname === '/api/tns-ai/reply-feedback') {
+      const user = requireAuth(req, res); if (!user) return;
+      const input = await readBody(req, 16 * 1024);
+      try {
+        const feedback = ReplyFeedback.add(REPLY_FEEDBACK_FILE, user, input);
+        return sendJson(res, 201, { success: true, feedback });
+      } catch (error) { return sendJson(res, 400, { error: error.message || 'Could not save feedback.' }); }
+    }
+    if (req.method === 'GET' && url.pathname === '/api/tns-ai/reply-feedback') {
+      const user = requireAuth(req, res); if (!user) return;
+      const ownerEmail = String(process.env.TNS_OWNER_EMAIL || '').trim().toLowerCase();
+      if (!ownerEmail || String(user.email || '').trim().toLowerCase() !== ownerEmail) return sendJson(res, 403, { error: 'Owner access is not configured for this account.' });
+      return sendJson(res, 200, { success: true, feedback: ReplyFeedback.list(REPLY_FEEDBACK_FILE) });
+    }
 
     // Per-account chat history: conversations are stored separately by authenticated user ID.
     if (url.pathname === '/api/tns-ai/conversations' && req.method === 'GET') {

@@ -53,7 +53,6 @@ document.addEventListener('DOMContentLoaded',()=>{ $('#savedTaskRefresh')?.addEv
       else if(target==='savedTasks'){showPanel('savedTasks');loadSavedTasks();}
       else if(target==='settings')openSettings();
       else if(target==='premium')showPanel('premium');
-      else if(target==='voiceConversation')showPanel('voiceConversation');
     });
     document.addEventListener('click',e=>{if(!menu.contains(e.target)&&!toggle.contains(e.target))close()});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')close()});
@@ -765,11 +764,11 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   const positionComposerAboveKeyboard = () => {
     if (!document.body.classList.contains('tns-chat-typing')) return;
     const viewport = window.visualViewport;
-    // The visual viewport's lower edge is the reliable boundary above the
-    // on-screen keyboard; clamp the value to avoid negative/huge offsets.
+    // Keep the fixed composer just above the visible viewport (the keyboard
+    // reduces this viewport on mobile); when the keyboard closes, blur resets
+    // the inline offset and CSS returns the composer to its normal bottom spot.
     if (viewport) {
-      const keyboardGap = Math.max(8, Math.min(window.innerHeight,
-        window.innerHeight - (viewport.offsetTop + viewport.height) + 8));
+      const keyboardGap = Math.max(8, window.innerHeight - (viewport.offsetTop + viewport.height) + 8);
       form.style.bottom = `${keyboardGap}px`;
     } else {
       form.style.bottom = '8px';

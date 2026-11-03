@@ -3,7 +3,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8"/><meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
-<meta content="#070b18" name="theme-color"/><meta content="TNS — create, edit, connect." name="description"/><meta content="yes" name="mobile-web-app-capable"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="TNS" name="apple-mobile-web-app-title"/><link href="/manifest.webmanifest" rel="manifest"/><link href="/assets/icons/tns-studio-apple.png" rel="apple-touch-icon"/><link href="/assets/icons/tns-studio-favicon.png" rel="icon" sizes="64x64" type="image/png"/><title>TNS</title><link href="/style.css?v=menu-only-dashboard-1" rel="stylesheet"/>
+<meta content="#070b18" name="theme-color"/><meta content="TNS — create, edit, connect." name="description"/><meta content="yes" name="mobile-web-app-capable"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="TNS" name="apple-mobile-web-app-title"/><link href="/manifest.webmanifest" rel="manifest"/><link href="/assets/icons/tns-studio-apple.png" rel="apple-touch-icon"/><link href="/assets/icons/tns-studio-favicon.png" rel="icon" sizes="64x64" type="image/png"/><title>TNS</title><link href="/style.css?v=auth-fullscreen-no-cards-1" rel="stylesheet"/>
 </head>
 <body>
 <div class="toast" id="toast"></div>
@@ -46,7 +46,7 @@
 <div aria-hidden="true" class="topbar-menu-popover hidden" id="topbarMenu">
 <button class="topbar-menu-item" data-menu-open="settings" type="button"><span>👤</span><div><b>Profile &amp; Account</b><small>Account preferences</small></div></button>
 <button class="topbar-menu-item" data-menu-open="premium" type="button"><span>👑</span><div><b>Premium</b><small>Unlock More</small></div></button>
-<button class="topbar-menu-item" data-menu-open="voiceConversation" type="button"><span>🎙️</span><div><b>TNS Voice</b><small>Start a voice session</small></div></button>
+
 <button class="topbar-menu-item" data-menu-open="projects" type="button"><span>📁</span><div><b>Projects</b><small>Saved work and drafts</small></div></button>
 <button class="topbar-menu-item" data-menu-open="savedTasks" type="button"><span>💾</span><div><b>Saved Tasks</b><small>Resume and track your website work</small></div></button>
 </div>
@@ -64,18 +64,63 @@
       <button id="voiceOnlyStart" class="voice-only-start" type="button"><span aria-hidden="true">🎙</span> Start talking</button>
       <button id="voiceOnlyStop" class="voice-only-stop" type="button" disabled><span aria-hidden="true">■</span> End session</button>
     </div>
-    <details class="home-voice-language-options"><summary>🌐 Voice language &amp; playback</summary><label>Choose spoken language <select aria-label="Voice language" id="voiceLanguage"><option selected="selected" value="auto">Auto (app language)</option><option value="en-IN">English (India)</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="kn-IN">Kannada</option><option value="te-IN">Telugu</option><option value="bn-IN">Bengali</option><option value="gu-IN">Gujarati</option><option value="pa-IN">Punjabi</option><option value="ml-IN">Malayalam</option><option value="mr-IN">Marathi</option><option value="ur-IN">Urdu</option><option value="or-IN">Odia</option><option value="ar-SA">Arabic</option><option value="ru-RU">Russian</option><option value="zh-CN">Chinese (Mandarin)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option><option value="th-TH">Thai</option><option value="el-GR">Greek</option><option value="he-IL">Hebrew</option></select></label><select aria-label="Device voice" id="voiceSystemVoice"><option value="">Default device voice</option></select><select aria-label="Speech speed" id="voiceSpeechRate"><option value="0.75">Slow</option><option value="0.9">Relaxed</option><option selected="selected" value="1">Normal</option><option value="1.15">Fast</option><option value="1.3">Faster</option></select><button class="home-tool-chip" id="stopTnsVoicePlayback" type="button">■ Stop voice</button></details>
     <div class="voice-only-footer"><span aria-hidden="true">✦</span> Voice-to-voice only <i></i> No chat or messages</div>
   </div>
 </section>
-<section class="panel active tns-dashboard" data-screen-number="6" id="dashboard" aria-label="TNS Studio dashboard">
-  <div class="dashboard-welcome">
-    <p class="dashboard-eyebrow">YOUR CREATOR SPACE</p>
-    <h1>TNS Studio</h1>
-    <p class="dashboard-subtitle">Choose where you want to continue.</p>
+<section class="panel active" data-screen-number="6" id="dashboard">
+<div class="dashboard-visual-hero">
+  <div class="dashboard-visual-copy"><h1>Hello, Creator</h1><p>Let’s create something amazing today!</p></div>
+  <img class="dashboard-visual-logo" src="/assets/tns-studio-dashboard-logo.png" alt="TNS Studio"/>
+</div>
+<nav class="dashboard-visual-grid" aria-label="Quick access">
+  
+  
+  <button class="dashboard-visual-tile tile-projects" data-open="projects" type="button"><span class="dashboard-tile-icon">▰</span><b>Projects</b><small>Your saved work</small></button>
+  
+</nav>
+<div class="dashboard-visual-chat-label"><span class="dashboard-chat-spark">✦</span><div><b>Chat with TNS</b><small>Ask in your own language</small></div></div>
+<div class="home-assistant-shell">
+<div class="home-chat-history-bar" aria-label="Chat history controls"><button id="homeChatNew" type="button">＋ New chat</button><select id="homeChatHistorySelect" aria-label="Saved conversations"><option value="">Saved chats</option></select><button id="homeChatDelete" type="button" disabled>Delete chat</button></div>
+<div aria-live="polite" class="home-chat-messages" id="homeChatMessages"></div>
+<div class="home-chat-starters" id="homeChatStarters" aria-label="Suggested ways to start">
+  <p class="home-chat-starters-title">Shuru karne ke liye ek option chunein</p>
+  <div class="home-chat-starters-grid">
+    <button class="home-starter-btn" type="button" data-starter-prompt="Mujhe is topic ko aasaan Hindi mein samjhao."><span aria-hidden="true">💡</span><span><b>Kisi topic ko samjhein</b><small>Aasaan Hindi mein jawab paayein</small></span></button>
+    <button class="home-starter-btn" type="button" data-starter-prompt="Meri upload ki hui file ka summary aur important points batao."><span aria-hidden="true">📄</span><span><b>File ka analysis</b><small>File attach karke sawal poochhein</small></span></button>
+    <button class="home-starter-btn" type="button" data-starter-prompt="Mere kaam ko chhote, step-by-step tasks mein baant do."><span aria-hidden="true">🧭</span><span><b>Kaam ka plan banayein</b><small>Agla step samajhne mein madad</small></span></button>
+    <button class="home-starter-btn" type="button" data-starter-prompt="Mujhe Hindi mein jawab do aur zaroorat ho to step-by-step samjhao."><span aria-hidden="true">🌐</span><span><b>Hindi mein madad</b><small>Apni bhasha mein baat karein</small></span></button>
   </div>
-  <p class="dashboard-menu-hint">Open the three-line menu to access your sections.</p>
-  <div hidden="" id="recentProjects"></div>
+</div>
+<div class="home-chat-status" id="homeChatStatus" role="status"></div>
+<div class="home-attachment-preview hidden" id="homeChatFilePreview"></div>
+<form class="home-chat-composer" id="homeChatForm">
+<input accept="image/*" class="hidden" id="homeChatPhoto" type="file"/>
+<input accept=".pdf,.txt,.doc,.docx,.csv,.xls,.xlsx,.ppt,.pptx,.rtf,.odt,.ods,.odp,.json,.xml,.zip" class="hidden" id="homeChatFile" type="file"/>
+<input accept="image/*" capture="environment" class="hidden" id="homeChatCamera" type="file"/>
+<div class="home-input-box">
+<div class="home-attach-wrap home-composer-inside">
+<button aria-label="Photo, file ya camera options" class="home-composer-icon home-plus-btn" id="homeChatAttach" title="Photo, file ya camera" type="button">＋</button>
+<div aria-label="Attachment options" class="home-attach-menu hidden" id="homeChatAttachMenu" role="menu">
+<button id="homeChatChoosePhoto" role="menuitem" type="button">🖼️ <span>Photo chunein</span></button>
+<button id="homeChatChooseFile" role="menuitem" type="button">📄 <span>File / document</span></button>
+<button id="homeChatOpenCamera" role="menuitem" type="button">📷 <span>Camera se photo</span></button>
+</div>
+</div>
+<textarea aria-label="Message TNS" id="homeChatInput" maxlength="8000" placeholder="Yahan apna sawal likhiye…" rows="1"></textarea>
+<button aria-label="Voice se message likhein" class="home-dictation-btn" id="homeChatDictation" title="Bolkar message likhein" type="button">🎙</button>
+</div>
+<button aria-label="TNS se voice mein baat karein" class="home-composer-icon home-action-btn" id="homeChatVoice" title="TNS se voice mein baat karein" type="button"><span aria-hidden="true" class="home-wave-mic"><i></i><i></i><i></i><i></i><i></i></span></button>
+<div class="home-dictation-recording hidden" id="homeChatRecordingBar" role="group" aria-label="Voice message recording controls">
+<button class="recording-cancel" id="homeChatRecordingCancel" type="button" aria-label="Recording cancel karein" title="Cancel">×</button>
+<div class="recording-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<button class="recording-stop" id="homeChatRecordingStop" type="button" aria-label="Recording rok dein" title="Stop"><span></span></button>
+<button class="recording-send" id="homeChatRecordingSend" type="button" aria-label="Bola hua message bhejein" title="Send">↑</button>
+</div>
+</form>
+<details class="home-voice-language-options"><summary>🌐 Voice language</summary><label>Choose spoken language <select aria_label="Voice language" id="voiceLanguage"><option selected="selected" value="auto">Auto (app language)</option><option value="en-IN">English (India)</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="kn-IN">Kannada</option><option value="te-IN">Telugu</option><option value="bn-IN">Bengali</option><option value="gu-IN">Gujarati</option><option value="pa-IN">Punjabi</option><option value="ml-IN">Malayalam</option><option value="mr-IN">Marathi</option><option value="ur-IN">Urdu</option><option value="or-IN">Odia</option><option value="ar-SA">Arabic</option><option value="ru-RU">Russian</option><option value="zh-CN">Chinese (Mandarin)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option><option value="th-TH">Thai</option><option value="el-GR">Greek</option><option value="he-IL">Hebrew</option></select></label><select aria_label="Device voice" id="voiceSystemVoice"><option value="">Default device voice</option></select><select aria_label="Speech speed" id="voiceSpeechRate"><option value="0.75">Slow</option><option value="0.9">Relaxed</option><option selected="selected" value="1">Normal</option><option value="1.15">Fast</option><option value="1.3">Faster</option></select><button class="home-tool-chip" id="stopTnsVoicePlayback" type="button">■ Stop voice</button></details>
+<p class="home-chat-disclaimer">TNS jawab aur available tools ke zariye madad karega. Live search, booking ya submission ki availability connected services par depend karegi.</p>
+</div>
+<div hidden="" id="recentProjects"></div>
 </section>
 
 
@@ -120,5 +165,5 @@
 <div class="autopilot-result hidden" id="autopilotResult"></div>
 </div></div>
 
-<script src="/config/Language-registry.js"></script><script src="/config/Country-config.js"></script><script src="/config/Module-settings-config.js"></script><script src="/app.js?v=menu-only-dashboard-1"></script>
+<script src="/config/Language-registry.js"></script><script src="/config/Country-config.js"></script><script src="/config/Module-settings-config.js"></script><script src="/app.js?v=menu-fix-2"></script>
 </body></html>

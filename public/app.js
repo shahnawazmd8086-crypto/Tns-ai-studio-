@@ -64,7 +64,7 @@ function showAuthScreens(which){['authScreen','otpScreen'].forEach(id=>$('#'+id)
 function enterTns(user){if(user)setUser(user);showAuthScreens(null);$('#app')?.classList.remove('hidden');bootDashboard()}
 function currentUser(){return authenticatedUser}
 function setUser(u){authenticatedUser=u||null;window.TNSAuth?.setLoggedIn?.(u||null)}
-function projectKey(){const u=currentUser();return 'tnsStudioProjects_'+(u?.id||'guest').replace(/[^a-z0-9_-]/gi,'_')}
+function projectKey(){const u=currentUser();return 'tnsProjects_'+(u?.id||'guest').replace(/[^a-z0-9_-]/gi,'_')}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderLanguages(filter=''){
   const q=String(filter||'').trim().toLowerCase();
@@ -81,14 +81,14 @@ function renderLanguages(filter=''){
   if(meta) meta.textContent=matches.length>visible.length?`Showing ${visible.length} of ${matches.length} languages — use search to find any language.`:`${matches.length} language${matches.length===1?'':'s'} available`;
   $$('.language-option').forEach(b=>b.addEventListener('click',()=>{
     selectedLang=b.dataset.lang;
-    localStorage.setItem('tnsStudioLanguage',selectedLang);
+    localStorage.setItem('tnsLanguage',selectedLang);
     applyLanguageMeta(selectedLang);
     renderLanguages($('#languageSearch').value);
     $('#continueLanguage').disabled=false;
   }));
 }
 function startLanguage(){enterTns(authenticatedUser)}
-function bootDashboard(){loadSettings();applyLanguageMeta(localStorage.getItem('tnsStudioLanguage')||'en');renderProjects()}
+function bootDashboard(){loadSettings();applyLanguageMeta(localStorage.getItem('tnsLanguage')||'en');renderProjects()}
 function initMasterScreenLinks(){
   document.querySelectorAll('[data-open-screen]').forEach(b=>b.addEventListener('click',()=>showPanel(b.dataset.openScreen)));
 }
@@ -109,7 +109,7 @@ function getLoginIdentifier(){if(getAuthMode()==='mobile'){const mobile=normaliz
 function setSignupMode(show){const login=$('#loginForm'),signup=$('#signupForm');login?.classList.toggle('hidden',show);signup?.classList.toggle('hidden',!show);$('#showSignupBtn')?.classList.toggle('hidden',show);if(!show){signup?.reset();msg('#signupMessage','')}else $('#signupEmail')?.focus()}
 $('#showSignupBtn')?.addEventListener('click',()=>setSignupMode(true));
 $('#showLoginBtn')?.addEventListener('click',()=>setSignupMode(false));
-$('#signupForm')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const button=form.querySelector('button[type="submit"]');try{const email=String($('#signupEmail')?.value||'').trim().toLowerCase();const mobile=String($('#signupMobile')?.value||'').replace(/[^0-9+]/g,'');const password=String($('#signupPassword')?.value||'');const confirm=String($('#signupConfirmPassword')?.value||'');if(!email&&!mobile)throw new Error('Enter an email address or mobile number.');if(password.length<8)throw new Error('Password must be at least 8 characters.');if(password!==confirm)throw new Error('Passwords do not match.');button.disabled=true;msg('#signupMessage','Creating your account…');const d=await json('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,mobile,password})});if(!d.success||!d.user)throw new Error(d.message||'Could not create account.');msg('#signupMessage','Account created. Opening TNS Studio…','success');toast('Account created successfully');enterTns(d.user)}catch(err){msg('#signupMessage',err.message||'Signup failed.','error')}finally{if(button)button.disabled=false}});
+$('#signupForm')?.addEventListener('submit',async e=>{e.preventDefault();const form=e.currentTarget;const button=form.querySelector('button[type="submit"]');try{const email=String($('#signupEmail')?.value||'').trim().toLowerCase();const mobile=String($('#signupMobile')?.value||'').replace(/[^0-9+]/g,'');const password=String($('#signupPassword')?.value||'');const confirm=String($('#signupConfirmPassword')?.value||'');if(!email&&!mobile)throw new Error('Enter an email address or mobile number.');if(password.length<8)throw new Error('Password must be at least 8 characters.');if(password!==confirm)throw new Error('Passwords do not match.');button.disabled=true;msg('#signupMessage','Creating your account…');const d=await json('/api/auth/signup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,mobile,password})});if(!d.success||!d.user)throw new Error(d.message||'Could not create account.');msg('#signupMessage','Account created. Opening TNS…','success');toast('Account created successfully');enterTns(d.user)}catch(err){msg('#signupMessage',err.message||'Signup failed.','error')}finally{if(button)button.disabled=false}});
 $('#loginForm')?.addEventListener('submit',async e=>{e.preventDefault();const button=$('#otpRequestBtn');try{otpIdentifier=getLoginIdentifier();button.disabled=true;if(!otpLoginEnabled){msg('#loginMessage','Signing in…');const d=await json('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:otpIdentifier,password:String($('#loginPassword')?.value||'')})});if(!d.success||!d.user)throw new Error(d.message||'Password login failed.');msg('#loginMessage','');toast('Login successful');enterTns(d.user);return}msg('#loginMessage','Requesting OTP…');const d=await json('/api/auth/otp/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:otpIdentifier})});showAuthScreens('otpScreen');$('#otpHint').textContent=d.otp?`Development OTP: ${d.otp}`:`Enter the 6-digit OTP sent to ${otpIdentifier}.`;msg('#otpMessage','');resetOtpBoxes();startOtpResendTimer()}catch(err){msg('#loginMessage',err.message,'error')}finally{if(button)button.disabled=false}});
 async function requestOtp(){try{if(!otpIdentifier)otpIdentifier=getLoginIdentifier();const d=await json('/api/auth/otp/request',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:otpIdentifier})});$('#otpHint').textContent=d.otp?`Development OTP: ${d.otp}`:`Enter the 6-digit OTP sent to ${otpIdentifier}.`;msg('#otpMessage','');resetOtpBoxes();startOtpResendTimer()}catch(err){msg('#otpMessage',err.message,'error')}}
 function resetOtpBoxes(){document.querySelectorAll('.otp-digit').forEach(i=>i.value='');syncOtpCode();const first=document.querySelector('.otp-digit');first?.focus()}
@@ -121,13 +121,13 @@ $('#verifyOtpBtn')?.addEventListener('click',async()=>{try{syncOtpCode();if(!/^\
 $('#backToLogin')?.addEventListener('click',()=>{clearInterval(otpResendInterval);showAuthScreens('authScreen')});
 
 function loadSettings(){
-  const s=JSON.parse(localStorage.getItem('tnsStudioSettings')||'{}');
+  const s=JSON.parse(localStorage.getItem('tnsSettings')||'{}');
   applyTheme(s.theme||'system');
 }
 function saveSettingsPatch(patch){
-  const old=JSON.parse(localStorage.getItem('tnsStudioSettings')||'{}');
+  const old=JSON.parse(localStorage.getItem('tnsSettings')||'{}');
   const next={...old,...patch};
-  localStorage.setItem('tnsStudioSettings',JSON.stringify(next));
+  localStorage.setItem('tnsSettings',JSON.stringify(next));
   applyTheme(next.theme||'system');
   return next;
 }
@@ -159,10 +159,10 @@ let settingsCurrentId='__home__';
 let settingsChoiceKey='';
 function readSettingsMap(key){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch{return {}}}
 function writeSettingsMap(key,value){localStorage.setItem(key,JSON.stringify(value))}
-function getSettingToggle(key){const s=readSettingsMap('tnsStudioSettingToggles');return Object.prototype.hasOwnProperty.call(s,key)?!!s[key]:!!SETTINGS_TOGGLE_DEFAULTS[key]}
-function setSettingToggle(key,value){const s=readSettingsMap('tnsStudioSettingToggles');s[key]=!!value;writeSettingsMap('tnsStudioSettingToggles',s);if(key==='darkMode')applyTheme(value?'dark':'light')}
-function selectedValue(key,fallback){return readSettingsMap('tnsStudioSettingValues')[key]||fallback}
-function saveSelected(key,value){const s=readSettingsMap('tnsStudioSettingValues');s[key]=value;writeSettingsMap('tnsStudioSettingValues',s);toast(`${value} saved`)}
+function getSettingToggle(key){const s=readSettingsMap('tnsSettingToggles');return Object.prototype.hasOwnProperty.call(s,key)?!!s[key]:!!SETTINGS_TOGGLE_DEFAULTS[key]}
+function setSettingToggle(key,value){const s=readSettingsMap('tnsSettingToggles');s[key]=!!value;writeSettingsMap('tnsSettingToggles',s);if(key==='darkMode')applyTheme(value?'dark':'light')}
+function selectedValue(key,fallback){return readSettingsMap('tnsSettingValues')[key]||fallback}
+function saveSelected(key,value){const s=readSettingsMap('tnsSettingValues');s[key]=value;writeSettingsMap('tnsSettingValues',s);toast(`${value} saved`)}
 function settingsCategory(id){return SETTINGS_CATEGORIES.find(x=>x.id===id)}
 function settingsBackButton(){return '<button class="settings-nav-arrow" id="settingsInnerBack" type="button" aria-label="Back" title="Back">←</button>'}
 function renderSettingsHome(){
@@ -246,7 +246,7 @@ $('#settingsDetailList')?.addEventListener('click',e=>{
 });
 function choicePageKey(stackKey){const map={language:'language',languageHindi:'language',languageSpanish:'language',languageFrench:'language',qualityHD:'quality',qualityFHD:'quality',quality4K:'quality',ratio916:'ratio',ratio169:'ratio',ratio11:'ratio'};return map[stackKey]||stackKey}
 $('#settingsHomeNav')?.addEventListener('click',()=>showPanel('dashboard'));
-$('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}authenticatedUser=null;window.TNSAuth?.logout?.();localStorage.removeItem('tnsStudioLanguage');location.reload()});
+$('#logoutBtn')?.addEventListener('click',async()=>{try{await json('/api/auth/logout',{method:'POST'})}catch{}authenticatedUser=null;window.TNSAuth?.logout?.();localStorage.removeItem('tnsLanguage');location.reload()});
 
 function saveProject(type,title){const key=projectKey();const list=JSON.parse(localStorage.getItem(key)||'[]');list.unshift({id:crypto.randomUUID?.()||String(Date.now()),type,title,date:new Date().toISOString()});localStorage.setItem(key,JSON.stringify(list.slice(0,30)));renderProjects()}
 function renderProjects(){const list=JSON.parse(localStorage.getItem(projectKey())||'[]');$('#projectList').innerHTML=list.length?list.map(p=>`<div class="project-row"><div><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.type)} • ${new Date(p.date).toLocaleString()}</small></div><span class="muted">Saved</span></div>`).join(''):'<p class="muted">No projects yet. Start creating.</p>';$('#recentProjects').innerHTML=list.slice(0,4).map(p=>`<div class="recent-card"><span>🎬</span><b>${escapeHtml(p.title)}</b><small>${escapeHtml(p.type)}</small></div>`).join('')||'<div class="recent-card"><span>✨</span><b>Your creations appear here</b><small>Start with any creator tool.</small></div>'}
@@ -270,7 +270,7 @@ const moduleSettingDefaults={
 let activeModuleSettings='';
 function openModuleSettingsModal(key){
   ensureModuleSettingsModal(); activeModuleSettings=key; const item=MODULE_SETTINGS[key]||{title:'Feature Settings',items:[]}; $('#moduleModalTitle').textContent=item.title;
-  const saved=JSON.parse(localStorage.getItem('tnsStudioModuleSettings_'+key)||'null')||moduleSettingDefaults[key]||{};
+  const saved=JSON.parse(localStorage.getItem('tnsModuleSettings_'+key)||'null')||moduleSettingDefaults[key]||{};
   const fields=Object.entries(saved).map(([name,val])=>{const label=name.replace(/([A-Z])/g,' $1').replace(/^./,x=>x.toUpperCase());
     if(typeof val==='boolean') return `<div><label>${escapeHtml(label)}</label><select data-setting-key="${escapeHtml(name)}"><option value="true" ${val?'selected':''}>On</option><option value="false" ${!val?'selected':''}>Off</option></select></div>`;
     const options={quality:['SD','HD','Full HD','2K','4K'],style:['Photorealistic','Cinematic','Realistic Smartphone','Illustration','Anime','3D'],aspect:['9:16','16:9','1:1','4:5'],format:['9:16','16:9','1:1'],language:['Auto','English','Hindi'],voice:['Default','Male','Female','Narrator'],speed:['0.75x','1x','1.25x','1.5x','2x'],export:['720','1080','1440','2160'],audio:['AAC 192k','AAC 320k'],privacy:['Private','Shared'],storage:['Standard','High'],renewal:['On','Off'],plan:['Current','Monthly','Yearly']}[name];
@@ -283,15 +283,15 @@ function openModuleSettingsModal(key){
 }
 function saveModuleSettings(){
   const data={}; $$('#moduleModalForm [data-setting-key]').forEach(el=>data[el.dataset.settingKey]=el.tagName==='SELECT'&&['true','false'].includes(el.value)?el.value==='true':el.value);
-  localStorage.setItem('tnsStudioModuleSettings_'+activeModuleSettings,JSON.stringify(data)); $('#moduleSettingsStatus').textContent='Settings saved.'; toast('Module settings saved');
+  localStorage.setItem('tnsModuleSettings_'+activeModuleSettings,JSON.stringify(data)); $('#moduleSettingsStatus').textContent='Settings saved.'; toast('Module settings saved');
 }
-function resetModuleSettings(){localStorage.removeItem('tnsStudioModuleSettings_'+activeModuleSettings);openModuleSettingsModal(activeModuleSettings);}
+function resetModuleSettings(){localStorage.removeItem('tnsModuleSettings_'+activeModuleSettings);openModuleSettingsModal(activeModuleSettings);}
 document.addEventListener('click',e=>{const btn=e.target.closest('.module-settings-btn');if(btn){e.preventDefault();e.stopImmediatePropagation();openModuleSettingsModal(btn.dataset.moduleSettings)}},true);
 document.addEventListener('click',e=>{if(e.target.id==='saveModuleSettings')saveModuleSettings();if(e.target.id==='resetModuleSettings')resetModuleSettings()});
 
 $$('.settings-tab').forEach(b=>b.addEventListener('click',()=>{const key=b.dataset.settingsTab;$$('.settings-tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');$$('.settings-content').forEach(x=>x.classList.add('hidden'));$('#settings'+key.charAt(0).toUpperCase()+key.slice(1))?.classList.remove('hidden');if(key==='storage')$('#storageProjectCount').textContent=`${JSON.parse(localStorage.getItem(projectKey())||'[]').length} projects saved.`}));
 $('#openLanguageInside')?.addEventListener('click',()=>showPanel('languageInside'));
-function renderLanguageInside(filter=''){const grid=$('#languageInsideGrid');if(!grid)return;const q=filter.toLowerCase();grid.innerHTML=LANGS.filter(x=>x[0].toLowerCase().includes(q)||x[3].toLowerCase().includes(q)||x[2].toLowerCase().includes(q)).map(x=>`<button class="language-option ${selectedLang===x[2]?'selected':''}" data-inside-lang="${x[2]}"><span class="lang-icon">${escapeHtml(x[1])}</span><span><b>${escapeHtml(x[3])}</b><small>${escapeHtml(x[0])} · ${x[2].toUpperCase()}</small></span></button>`).join('');$$('[data-inside-lang]').forEach(b=>b.addEventListener('click',()=>{selectedLang=b.dataset.insideLang;localStorage.setItem('tnsStudioLanguage',selectedLang);applyLanguageMeta(selectedLang);renderLanguageInside($('#languageInsideSearch').value);toast('Language updated')}))}
+function renderLanguageInside(filter=''){const grid=$('#languageInsideGrid');if(!grid)return;const q=filter.toLowerCase();grid.innerHTML=LANGS.filter(x=>x[0].toLowerCase().includes(q)||x[3].toLowerCase().includes(q)||x[2].toLowerCase().includes(q)).map(x=>`<button class="language-option ${selectedLang===x[2]?'selected':''}" data-inside-lang="${x[2]}"><span class="lang-icon">${escapeHtml(x[1])}</span><span><b>${escapeHtml(x[3])}</b><small>${escapeHtml(x[0])} · ${x[2].toUpperCase()}</small></span></button>`).join('');$$('[data-inside-lang]').forEach(b=>b.addEventListener('click',()=>{selectedLang=b.dataset.insideLang;localStorage.setItem('tnsLanguage',selectedLang);applyLanguageMeta(selectedLang);renderLanguageInside($('#languageInsideSearch').value);toast('Language updated')}))}
 $('#languageInsideSearch')?.addEventListener('input',e=>renderLanguageInside(e.target.value));
 const oldShowPanel=showPanel; showPanel=function(id){oldShowPanel(id);if(id==='languageInside')renderLanguageInside();if(id==='settings')showSettingsHome();};
 
@@ -309,7 +309,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     ["18","settingsApp","App Settings"],["19","languageInside","Language Selection (Inside)"],
     ["23","appIcon","Mobile App Icon"]
   ];
-  window.TNSStudioScreenRegistry = screenRegistry;
+  window.TNSScreenRegistry = screenRegistry;
   try {
     Object.entries(window.TNS_MODULE_SETTINGS_CONFIG||{}).forEach(([key,cfg])=>{
       if(typeof MODULE_SETTINGS!=='undefined' && !MODULE_SETTINGS[key]){
@@ -375,7 +375,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     const detected=voiceLanguageEl?.dataset.detectedLanguage;
     const languageLocales={English:'en-IN',Hindi:'hi-IN',Tamil:'ta-IN',Kannada:'kn-IN',Telugu:'te-IN',Bengali:'bn-IN',Gujarati:'gu-IN',Punjabi:'pa-IN',Malayalam:'ml-IN',Marathi:'mr-IN',Urdu:'ur-IN',Odia:'or-IN',Arabic:'ar-SA',Russian:'ru-RU',Chinese:'zh-CN',Japanese:'ja-JP',Korean:'ko-KR',Thai:'th-TH',Greek:'el-GR',Hebrew:'he-IL'};
     if(detected&&languageLocales[detected])return languageLocales[detected];
-    const appLanguage=localStorage.getItem('tnsStudioLanguage')||'hi';
+    const appLanguage=localStorage.getItem('tnsLanguage')||'hi';
     const appLocales={hi:'hi-IN',en:'en-IN',ta:'ta-IN',kn:'kn-IN',te:'te-IN',bn:'bn-IN',gu:'gu-IN',pa:'pa-IN',ml:'ml-IN',or:'or-IN',mr:'mr-IN',ur:'ur-IN',ar:'ar-SA',ru:'ru-RU',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',th:'th-TH',el:'el-GR',he:'he-IL'};
     return appLocales[appLanguage]||appLanguage;
   }
@@ -599,7 +599,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   function selectedVoiceLanguage(){
     const chosen=voiceLanguageEl?.value||'auto';
     if(chosen!=='auto')return chosen;
-    const code=localStorage.getItem('tnsStudioLanguage')||'hi';
+    const code=localStorage.getItem('tnsLanguage')||'hi';
     return ({hi:'hi-IN',en:'en-IN',ta:'ta-IN',kn:'kn-IN',te:'te-IN',bn:'bn-IN',gu:'gu-IN',pa:'pa-IN',ml:'ml-IN',mr:'mr-IN',ur:'ur-IN',or:'or-IN',ar:'ar-SA',ru:'ru-RU',zh:'zh-CN',ja:'ja-JP',ko:'ko-KR',th:'th-TH',el:'el-GR',he:'he-IL'})[code]||code;
   }
   const MAX_FILE_BYTES = 1200 * 1024;
@@ -681,7 +681,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
       if (!textToShare.trim()) return;
       try {
         if (typeof navigator.share === 'function') {
-          await navigator.share({ title: 'TNS Studio', text: textToShare });
+          await navigator.share({ title: 'TNS', text: textToShare });
           setStatus('TNS ka jawab share kar diya gaya.');
           return;
         }
@@ -796,7 +796,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     return node;
   };
   const setStatus = text => { if (status) status.textContent = text || ''; };
-  const fitInput = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,140)+'px'; };
+  const fitInput = () => { input.style.height='auto'; input.style.height=Math.min(input.scrollHeight,140)+'px'; document.body.classList.toggle('tns-chat-draft', !!input.value.trim()); };
   // On phones, focusing the composer hides introductory cards and bottom navigation,
   // giving the user a clear writing area while the on-screen keyboard is open.
   input.addEventListener('focus', () => {
@@ -1069,7 +1069,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   const handleVoiceOnlyTurn=async spokenText=>{
     if(!voiceOnlyActive||voiceOnlyBusy)return;voiceOnlyBusy=true;const turn=++voiceOnlyTurn;setVoiceOnlyState('thinking');setVoiceOnlyStatus('TNS aapki baat samajh raha hai…');
     try{
-      const result=await json('/api/tns-ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:spokenText,history:[],research:false,appLanguage:localStorage.getItem('tnsStudioLanguage')||'hi',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})});
+      const result=await json('/api/tns-ai/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:spokenText,history:[],research:false,appLanguage:localStorage.getItem('tnsLanguage')||'hi',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})});
       if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;
       const reply=String(result.reply||result.text||'Maaf kijiye, jawab nahi mila.');
       if(result.demo||result.provider==='mock')setVoiceOnlyStatus('Demo mode: asli AI service abhi connect nahi hai. Jawab awaaz mein sun rahe hain…');else setVoiceOnlyStatus('TNS jawab de raha hai…');
@@ -1174,7 +1174,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
           body:JSON.stringify({
             message:message || `Please analyze this file and explain it in the selected language: ${fileToSend.name}`,
             research:researchEnabled,
-            appLanguage:localStorage.getItem('tnsStudioLanguage')||'en',
+            appLanguage:localStorage.getItem('tnsLanguage')||'en',
             file:{name:fileToSend.name,type:fileToSend.type,data:dataUrl}
           })
         });
@@ -1182,7 +1182,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
         result=await json('/api/tns-ai/chat',{
           method:'POST',
           headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({message,history:conversationHistory,research:researchEnabled,appLanguage:localStorage.getItem('tnsStudioLanguage')||'en',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})
+          body:JSON.stringify({message,history:conversationHistory,research:researchEnabled,appLanguage:localStorage.getItem('tnsLanguage')||'en',replyLanguage:selectedVoiceLanguage(),preferRequestedLanguage:voiceLanguageEl?.value!=='auto'})
         });
       }
       if(requestViewGeneration!==conversationViewGeneration){ pending.remove(); return; }
@@ -1216,7 +1216,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
         if('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window){
           window.speechSynthesis.cancel();
           const utterance=new SpeechSynthesisUtterance(spokenReply);
-          const lang=(voiceLanguageEl?.value&&voiceLanguageEl.value!=='auto')?selectedVoiceLanguage():(result.replyLanguage||localStorage.getItem('tnsStudioLanguage')||'hi');
+          const lang=(voiceLanguageEl?.value&&voiceLanguageEl.value!=='auto')?selectedVoiceLanguage():(result.replyLanguage||localStorage.getItem('tnsLanguage')||'hi');
           utterance.lang=lang==='Hindi'?'hi-IN':lang==='English'?'en-IN':lang==='Tamil'?'ta-IN':lang==='Kannada'?'kn-IN':lang==='Telugu'?'te-IN':lang==='Bengali'?'bn-IN':lang==='Gujarati'?'gu-IN':lang==='Punjabi'?'pa-IN':lang==='Malayalam'?'ml-IN':lang==='Odia'?'or-IN':lang==='hi'?'hi-IN':lang==='en'?'en-IN':lang;
           utterance.rate=Math.min(2,Math.max(0.5,Number(voiceRateEl?.value||1)));
           const wanted=String(utterance.lang||'').toLowerCase().replace('_','-');

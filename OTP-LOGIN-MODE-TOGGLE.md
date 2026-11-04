@@ -1,4 +1,4 @@
-TNS Studio login mode
+TNS  login mode
 
 Current temporary mode: password login (OTP request is not called).
 

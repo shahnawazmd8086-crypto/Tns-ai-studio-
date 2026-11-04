@@ -1,7 +1,7 @@
 # TNS Checkpoint 39 — Language Preference Persistence
 
 ## Scope
-Only voice preference persistence and its automated audit were changed. The app language (`tnsStudioLanguage`) remains separate from voice input/output language (`tnsVoiceLanguage`), device voice URI (`tnsVoiceURI`), and speech rate (`tnsVoiceRate`).
+Only voice preference persistence and its automated audit were changed. The app language (`tnsLanguage`) remains separate from voice input/output language (`tnsVoiceLanguage`), device voice URI (`tnsVoiceURI`), and speech rate (`tnsVoiceRate`).
 
 ## Changes
 - Restore the saved voice language only if it is still offered by the current voice-language selector.

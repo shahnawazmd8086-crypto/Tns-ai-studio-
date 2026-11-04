@@ -1,4 +1,4 @@
-# TNS Studio Checkpoint 46 — Per-reply voice playback
+# TNS  Checkpoint 46 — Per-reply voice playback
 
 ## Requested behavior
 - A completed TNS assistant reply displays its own Listen button underneath.

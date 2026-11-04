@@ -1,4 +1,4 @@
-# TNS Studio — Step 28: Submission Result Verification
+# TNS  — Step 28: Submission Result Verification
 
 Built from Step 27 (`TNS-CHAT-STEP-27-APPROVED-PUBLIC-FORM-ACTION.zip`).
 

@@ -1,7 +1,7 @@
 # TNS Checkpoint 4 — Dashboard usability refinement
 
 ## Source
-Updated from the user-uploaded `Tns-ai-studio--main (28).zip`.
+Updated from the user-uploaded `Tns-ai---main (28).zip`.
 
 ## What changed
 - Reduced the repeated hero/logo footprint on the dashboard.

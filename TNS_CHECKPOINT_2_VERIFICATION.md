@@ -2,7 +2,7 @@
 
 ## ZIP received and baseline verified
 - The uploaded ZIP opened successfully and passed `unzip -t` with no archive errors.
-- The project contains the chat-first TNS home from Checkpoint 1 plus the existing studio modules.
+- The project contains the chat-first TNS home from Checkpoint 1 plus the existing  modules.
 - `npm run syntax` passed before and after the new edits.
 - `npm test` passed before and after the new edits.
 

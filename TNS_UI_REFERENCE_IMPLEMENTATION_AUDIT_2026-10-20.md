@@ -1,7 +1,7 @@
-# TNS Studio UI Reference Implementation Audit — 2026-10-20
+# TNS  UI Reference Implementation Audit — 2026-10-20
 
 ## Source archive
-- Uploaded ZIP: `Tns-ai-studio--main (34).zip`
+- Uploaded ZIP: `Tns-ai---main (34).zip`
 - Original SHA-256: `b447a84958e3ffd90de7719317a68f205b1a9561a82f045ae47dfec97f2e1bfd`
 - Original ZIP integrity: PASS (`unzip -t`)
 

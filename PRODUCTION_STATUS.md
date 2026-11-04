@@ -3,7 +3,7 @@
 This ZIP is the audited source baseline for the locked TNS UI/product direction.
 
 ## Implemented in source
-- TNS branding; legacy TNS AI Studio branding removed from the main app.
+- TNS branding; legacy TNS AI  branding removed from the main app.
 - User-chosen password flow with show/hide controls and server-side password hashing.
 - Stronger scrypt password parameters for newly created/changed passwords; legacy hashes can still be verified for migration.
 - Server-authoritative authentication with HttpOnly session cookies; browser localStorage is not used for authentication tokens or user identity.

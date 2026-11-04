@@ -1,6 +1,6 @@
 # TNS — Final Consolidated Audit Package
 
-Source: `TNS_Studio_UPLOAD_READY.zip` (latest available package).
+Source: `TNS__UPLOAD_READY.zip` (latest available package).
 
 ## Consolidated fixes in this package
 - Authentication data path is Linux case-safe and preserves legacy lowercase data.

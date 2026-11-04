@@ -1,4 +1,4 @@
-# TNS Studio UI Reference Implementation — Step 5
+# TNS  UI Reference Implementation — Step 5
 
 Date: 2026-10-20
 

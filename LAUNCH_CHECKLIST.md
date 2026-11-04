@@ -15,7 +15,7 @@
 - Security headers and API rate limiting are enabled.
 - Legacy user-data migration path remains available.
 - 184 ISO 639-1 language choices are available in the language selector.
-- Legacy `TNS AI Studio` / old slogan branding is absent from the main app source.
+- Legacy `TNS AI ` / old slogan branding is absent from the main app source.
 
 ## Before public production
 - Configure a persistent production database.

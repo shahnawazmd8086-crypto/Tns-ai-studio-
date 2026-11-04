@@ -1,4 +1,4 @@
-# TNS Studio — OTP-only login cleanup
+# TNS  — OTP-only login cleanup
 
 ## Changes in this ZIP
 - Login journey remains Email or Mobile Number → OTP → existing dashboard.

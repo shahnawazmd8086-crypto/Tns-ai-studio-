@@ -1,4 +1,4 @@
-# TNS Studio — Step 37 Uploads and Release Security Audit
+# TNS  — Step 37 Uploads and Release Security Audit
 
 ## Scope
 This is a working-copy-only release hygiene pass based on Step 36. Original Step 35 and Step 36 archives were not modified. AI Video and Edit Video feature work is out of scope.

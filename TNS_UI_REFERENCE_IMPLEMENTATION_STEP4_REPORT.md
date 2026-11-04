@@ -1,9 +1,9 @@
-# TNS Studio UI Reference Implementation — Step 4
+# TNS  UI Reference Implementation — Step 4
 
 Date: 2026-10-20
 
 ## Source checkpoint
-- Input: `TNS-STUDIO-UI-REFERENCE-IMPLEMENTATION-STEP3.zip`
+- Input: `TNS--UI-REFERENCE-IMPLEMENTATION-STEP3.zip`
 - Step 3 is preserved unchanged; this is a separate working checkpoint.
 
 ## Scope

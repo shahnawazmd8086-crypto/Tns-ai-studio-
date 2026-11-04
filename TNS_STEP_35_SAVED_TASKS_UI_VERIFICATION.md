@@ -1,4 +1,4 @@
-# TNS Studio — Step 35: Saved Tasks UI verification
+# TNS  — Step 35: Saved Tasks UI verification
 
 ## Scope
 Verify the Step 34 Saved Tasks flow without changing unrelated dashboard features.

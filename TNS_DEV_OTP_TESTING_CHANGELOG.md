@@ -1,4 +1,4 @@
-# TNS Studio — Development OTP Testing Change
+# TNS  — Development OTP Testing Change
 
 ## Scope
 - Added a development-only OTP disclosure path for testing without an email/SMS provider.

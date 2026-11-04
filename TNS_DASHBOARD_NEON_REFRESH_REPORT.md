@@ -1,4 +1,4 @@
-# TNS Studio Dashboard Neon Refresh — 2026-10-28
+# TNS  Dashboard Neon Refresh — 2026-10-28
 
 ## Scope
 - Updated only `public/index.html` and `public/style.css` for the dashboard visual refresh.

@@ -1,5 +1,5 @@
 const SESSION_STORAGE_KEY =
-  "tns_studio_session";
+  "tns_session";
 
 
 function getSession() {

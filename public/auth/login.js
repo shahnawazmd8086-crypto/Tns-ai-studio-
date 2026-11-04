@@ -109,7 +109,7 @@
     if (data.user) {
       try {
         localStorage.setItem(
-          "tnsStudioUser",
+          "tnsUser",
           JSON.stringify(data.user)
         );
       } catch {}

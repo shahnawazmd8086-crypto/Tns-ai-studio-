@@ -167,7 +167,7 @@ const TNSLanguageComponent = {
   savePreference() {
     try {
       localStorage.setItem(
-        "tns_studio_language",
+        "tns_language",
         this.state.currentLanguage
       );
 
@@ -181,7 +181,7 @@ const TNSLanguageComponent = {
     try {
       const saved =
         localStorage.getItem(
-          "tns_studio_language"
+          "tns_language"
         );
 
       if (!saved) {

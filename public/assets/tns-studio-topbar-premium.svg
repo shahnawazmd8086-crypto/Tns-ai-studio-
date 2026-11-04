@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="TNS premium logo">
+  <defs>
+    <linearGradient id="bg" x1="12" y1="8" x2="116" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#102d52"/>
+      <stop offset=".52" stop-color="#111b3d"/>
+      <stop offset="1" stop-color="#251344"/>
+    </linearGradient>
+    <linearGradient id="metal" x1="28" y1="25" x2="99" y2="103" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#9ff5ff"/>
+      <stop offset=".38" stop-color="#35c8ff"/>
+      <stop offset=".72" stop-color="#8b83ff"/>
+      <stop offset="1" stop-color="#e9a8ff"/>
+    </linearGradient>
+    <linearGradient id="edge" x1="16" y1="12" x2="112" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8beaff"/><stop offset=".55" stop-color="#667bff"/><stop offset="1" stop-color="#d47bff"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="4"/></filter>
+  </defs>
+  <rect x="5" y="5" width="118" height="118" rx="34" fill="#020817"/>
+  <rect x="7" y="7" width="114" height="114" rx="32" fill="url(#bg)" stroke="url(#edge)" stroke-width="2.5"/>
+  <path d="M30 34h68v17H73v46H55V51H30z" fill="url(#metal)" opacity=".35" filter="url(#glow)"/>
+  <path d="M29 31h70v18H73v49H55V49H29z" fill="url(#metal)"/>
+  <path d="M29 31h70" stroke="#f2fdff" stroke-opacity=".75" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="99" cy="91" r="4" fill="#ffe3a3"/>
+  <path d="M99 82v-5m0 28v-5m-9-4h-5m28 0h-5" stroke="#ffe3a3" stroke-width="1.5" stroke-linecap="round" opacity=".9"/>
+</svg>

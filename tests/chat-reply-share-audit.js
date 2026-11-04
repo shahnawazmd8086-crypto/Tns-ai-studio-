@@ -5,7 +5,7 @@ const root = path.join(__dirname, '..');
 const js = fs.readFileSync(path.join(root, 'public', 'app.js'), 'utf8');
 const css = fs.readFileSync(path.join(root, 'public', 'style.css'), 'utf8');
 assert(js.includes("shareButton.className = 'home-reply-share-button'"), 'Share icon must be created for TNS replies.');
-assert(js.includes("navigator.share({ title: 'TNS Studio', text: textToShare })"), 'Share icon must open the native share sheet with the exact reply text.');
+assert(js.includes("navigator.share({ title: 'TNS', text: textToShare })"), 'Share icon must open the native share sheet with the exact reply text.');
 assert(js.includes("const thisReplyOnly = String(replyText ?? '');"), 'Each share button must capture only its own TNS reply text.');
 assert(js.includes('const textToShare = thisReplyOnly;'), 'Share action must use the captured reply, not the chat history or neighboring replies.');
 assert(!/navigator\.share\([\s\S]{0,180}(?:messages\.innerText|messages\.textContent|conversationHistory)/.test(js), 'Share action must not submit the full conversation.');

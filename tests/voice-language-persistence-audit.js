@@ -9,7 +9,7 @@ assert(js.includes("localStorage.getItem('tnsVoiceRate')"),'Saved speech rate sh
 assert(js.includes("localStorage.setItem('tnsVoiceRate',voiceRateEl.value)"),'Speech rate changes should be persisted.');
 assert(js.includes("localStorage.getItem('tnsVoiceURI')"),'Device voice preference should be restored when that voice is available.');
 assert(js.includes("localStorage.setItem('tnsVoiceURI',voiceChoiceEl.value)"),'Device voice preference should be persisted.');
-assert(js.includes("localStorage.getItem('tnsStudioLanguage')"),'App language must remain separately stored.');
+assert(js.includes("localStorage.getItem('tnsLanguage')"),'App language must remain separately stored.');
 assert(js.includes("delete voiceLanguageEl.dataset.detectedLanguage"),'Manual voice-language choice should clear stale detected-language override.');
-assert(js.includes("localStorage.removeItem('tnsStudioLanguage')"),'Logout should still clear app-language selection.');
+assert(js.includes("localStorage.removeItem('tnsLanguage')"),'Logout should still clear app-language selection.');
 console.log('VOICE_LANGUAGE_PERSISTENCE_AUDIT_OK');

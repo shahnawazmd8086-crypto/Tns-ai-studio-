@@ -1,5 +1,5 @@
 const TNSStorage = {
-  prefix: "tns_studio_",
+  prefix: "tns_",
 
   set(key, value) {
     if (!key) {

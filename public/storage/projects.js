@@ -1,5 +1,5 @@
 const TNSProjectStorage = {
-  storageKey: "tns_studio_projects",
+  storageKey: "tns_projects",
 
   getAll() {
     try {

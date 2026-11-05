@@ -2269,3 +2269,69 @@ body.tns-chat-typing #dashboard .home-chat-composer {
   #voiceConversation .voice-only-orb-wrap{width:min(76vw,300px);height:min(76vw,300px)}
   #voiceConversation .voice-only-orb{width:min(48vw,190px);height:min(48vw,190px)}
 }
+
+
+/* Focused mobile dashboard polish: transparent brand mark, edge-to-edge header,
+   and both voice/send controls contained inside the single message field. */
+body:has(#dashboard.active) #app > .topbar {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-left: max(12px, env(safe-area-inset-left)) !important;
+  padding-right: max(12px, env(safe-area-inset-right)) !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  border-top: 0 !important;
+  border-radius: 0 !important;
+}
+body:has(#dashboard.active) #app > .topbar .brand-area .logo-mini {
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 48px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 0 9px rgba(35, 174, 255, .48)) drop-shadow(0 0 10px rgba(190, 55, 255, .32));
+}
+#dashboard .home-input-box {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+}
+#dashboard .home-input-box #homeChatVoice {
+  position: relative !important;
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  box-shadow: 0 3px 12px rgba(0,0,0,.24) !important;
+}
+#dashboard .home-input-box #homeChatDictation {
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  margin: 0 !important;
+}
+#dashboard .home-input-box textarea { flex: 1 1 0% !important; min-width: 0 !important; }
+#dashboard .home-chat-composer > #homeChatVoice { display: none !important; }
+@media (max-width: 420px) {
+  body:has(#dashboard.active) #app > .topbar .brand-area .logo-mini {
+    width: 46px !important; height: 46px !important; flex-basis: 46px !important;
+  }
+  #dashboard .home-input-box { gap: 5px !important; padding-left: 7px !important; padding-right: 7px !important; }
+  #dashboard .home-input-box #homeChatVoice { flex-basis: 40px !important; width: 40px !important; min-width: 40px !important; height: 40px !important; }
+  #dashboard .home-input-box #homeChatDictation { flex-basis: 34px !important; width: 34px !important; min-width: 34px !important; height: 34px !important; }
+}

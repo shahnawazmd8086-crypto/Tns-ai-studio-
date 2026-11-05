@@ -8,7 +8,8 @@ assert(js.includes("const setMicListeningUI = (listening) =>"),'A shared listeni
 assert(js.includes('const button = dictationButton;'),'Only the microphone inside the chat box must be controlled by this recording UI.');
 assert(js.includes("button.classList.toggle('is-listening', listening)"),'Inside microphone must show listening state.');
 assert(js.includes("button.setAttribute('aria-pressed', String(listening))"),'Listening state must be exposed accessibly.');
-assert(js.includes('🔴 Microphone CHALU hai'),'Starting the mic must show a clear active message.');
+assert(js.includes("recognition.onstart=()=>{if(voiceRecognition!==recognition)return;setMicListeningUI(true);setStatus('');};"),'Starting the mic must keep the visual listening state without showing a status message.');
+assert(!js.includes('🔴 Microphone CHALU hai'),'The microphone-active status text must not appear on screen.');
 assert(js.includes("if (voiceRecognition) { stopSpeechInput(); return; }"),'Tapping an active mic must stop listening.');
 assert(css.includes('#dashboard .home-action-btn.is-listening { background:linear-gradient(145deg,#ff4b5c'),'Existing outside microphone styling must remain unchanged.');
 assert(css.includes('#dashboard .home-dictation-btn.is-listening'),'Inside dictation mic must have a strong visible active state.');

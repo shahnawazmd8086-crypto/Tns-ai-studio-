@@ -103,5 +103,6 @@ assert.match(server, /replyLanguage: result\?\.replyLanguage \|\| replyLanguage/
 assert.match(httpProvider, /async chat\(input = \{\}\)[\s\S]*callJson\(this\.aiUrl, this\.apiKey, \{ type: 'chat', \.\.\.input \}/, 'HTTP provider must forward replyLanguage and languageInstruction');
 assert.match(app, /appLanguage:localStorage\.getItem\('tnsLanguage'\)\|\|'en'/);
 assert.match(app, /result\.replyLanguage\|\|localStorage\.getItem\('tnsLanguage'\)/);
-for (const locale of ['ta-IN','kn-IN','te-IN','bn-IN','gu-IN','pa-IN','ml-IN','mr-IN','ur-IN']) assert.ok(html.includes(`value="${locale}"`), `missing voice locale ${locale}`);
+for (const locale of ['ta-IN','kn-IN','te-IN','bn-IN','gu-IN','pa-IN','ml-IN','mr-IN','ur-IN']) assert.ok(app.includes(locale), `missing automatic reply voice locale ${locale}`);
+assert.ok(!html.includes('home-voice-language-options'), 'Separate voice language panel should not be displayed.');
 console.log('LANGUAGE_REPLY_AUDIT_OK');

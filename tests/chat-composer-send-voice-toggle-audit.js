@@ -4,7 +4,7 @@ const app = fs.readFileSync('public/app.js', 'utf8');
 const html = fs.readFileSync('public/index.html', 'utf8');
 const handlerStart = app.indexOf("$id('homeChatVoice')?.addEventListener('click',()=>{");
 if (handlerStart < 0) throw new Error('Composer action click handler is missing.');
-const handlerEnd = app.indexOf("voiceOnlyStart?.addEventListener", handlerStart);
+const handlerEnd = app.indexOf("$id('voiceOnlyClose')?.addEventListener", handlerStart);
 const handler = app.slice(handlerStart, handlerEnd);
 const checks = [
   ['typed text uses form submit', /if\(input\.value\.trim\(\) \|\| attachedFile\)[\s\S]*?form\.requestSubmit\(\)/.test(handler)],

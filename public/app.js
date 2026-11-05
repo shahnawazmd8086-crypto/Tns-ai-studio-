@@ -629,6 +629,24 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     if(attachMenu)attachMenu.classList.add('hidden');
     form.classList.toggle('is-sending',busy);
   };
+  const addReplyVoiceButton = (node, replyText, replyLanguage) => {
+    if (!node || node.querySelector('.home-reply-voice-button')) return;
+    const thisReplyOnly = String(replyText ?? '');
+    const replyLocale = normalizeTnsReplyLocale(replyLanguage) || detectTnsReplyLocale(thisReplyOnly);
+    const playReplyButton = document.createElement('button');
+    playReplyButton.type = 'button';
+    playReplyButton.className='home-reply-voice-button';
+    playReplyButton.textContent='🔊';
+    playReplyButton.setAttribute('aria-label','TNS ka jawab isi bhasha mein sunein');
+    playReplyButton.title='Jawab sunein';
+    playReplyButton.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      speakTns(thisReplyOnly, replyLocale);
+    });
+    node.appendChild(playReplyButton);
+  };
+
   const addReplyCopyButton = (node, replyText) => {
     if (!node || node.querySelector('.home-reply-copy-button')) return;
     const copyButton = document.createElement('button');
@@ -762,7 +780,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     node.className = `home-chat-message ${role}${isError ? ' error' : ''}`;
     node.textContent = text;
     messages.appendChild(node);
-    if (role === 'assistant' && !isError && String(text) !== 'Soch raha hoon…') { addReplyCopyButton(node, text); addReplyShareButton(node, text); addReplyFeedbackButton(node, text); }
+    if (role === 'assistant' && !isError && String(text) !== 'Soch raha hoon…') { addReplyVoiceButton(node, text); addReplyCopyButton(node, text); addReplyShareButton(node, text); addReplyFeedbackButton(node, text); }
     if (role === 'user' && !isError) {
       let pressTimer = null;
       let longPressed = false;
@@ -782,7 +800,6 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
           node.remove();
           scheduleConversationSave();
           updateStarterVisibility();
-          setStatus('Aapka message aur uska TNS jawab delete ho gaya.');
         });
         node.appendChild(removeButton);
       };
@@ -915,8 +932,8 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     let receivedSpeech=false;
     let finalStatusSet=false;
     setMicListeningUI(true);
-    setStatus(conversationMode?'🔴 Microphone CHALU hai — ab boliye. Band karne ke liye mic dobara tap karein.':'🔴 Microphone CHALU hai — apna message boliye. Band karne ke liye mic dobara tap karein.');
-    recognition.onstart=()=>{if(voiceRecognition!==recognition)return;setMicListeningUI(true);setStatus(conversationMode?'🔴 Microphone CHALU hai — ab apna sawal boliye.':'🔴 Microphone CHALU hai — ab apna message boliye.');};
+    setStatus('');
+    recognition.onstart=()=>{if(voiceRecognition!==recognition)return;setMicListeningUI(true);setStatus('');};
     recognition.onresult=event=>{
       if(voiceRecognition!==recognition)return;
       let spoken='';
@@ -1038,8 +1055,6 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   const voiceOnlyPanel=$id('voiceConversation');
   const voiceOnlyStatus=$id('voiceOnlyStatus');
   const voiceOnlyOrb=$id('voiceOnlyOrb');
-  const voiceOnlyStart=$id('voiceOnlyStart');
-  const voiceOnlyStop=$id('voiceOnlyStop');
   let voiceOnlyRecognition=null;
   let voiceOnlyActive=false;
   let voiceOnlyBusy=false;
@@ -1051,20 +1066,19 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     voiceOnlyActive=false;voiceOnlyBusy=false;voiceOnlyTurn++;stopVoiceOnlyRecognition();
     try{window.speechSynthesis?.cancel()}catch{}
     setVoiceOnlyState('idle');setVoiceOnlyStatus('Voice conversation band hai.');
-    if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;
     if(returnToChat)showPanel('dashboard');
   };
   const startVoiceOnlyListening=()=>{
     if(!voiceOnlyActive||voiceOnlyBusy)return;
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(!SpeechRecognition){setVoiceOnlyStatus('Is browser mein speech recognition supported nahi hai. Chrome ya supported browser mein try karein.');setVoiceOnlyState('error');voiceOnlyActive=false;if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;return;}
+    if(!SpeechRecognition){setVoiceOnlyStatus('Is browser mein speech recognition supported nahi hai. Chrome ya supported browser mein try karein.');setVoiceOnlyState('error');voiceOnlyActive=false;return;}
     const recognition=new SpeechRecognition();voiceOnlyRecognition=recognition;recognition.lang=selectedVoiceLanguage();recognition.interimResults=true;recognition.continuous=false;recognition.maxAlternatives=1;
     let finalText='';
     recognition.onstart=()=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;setVoiceOnlyState('listening');setVoiceOnlyStatus('🎙 Aap sun raha hoon… boliye.');};
     recognition.onresult=event=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;for(let i=event.resultIndex||0;i<(event.results?.length||0);i++){const res=event.results[i];const phrase=String(res?.[0]?.transcript||'').trim();if(res?.isFinal&&phrase)finalText+=(finalText?' ':'')+phrase;else if(phrase)setVoiceOnlyStatus('Aap: '+phrase);}};
-    recognition.onerror=event=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;voiceOnlyRecognition=null;if(event?.error==='not-allowed'||event?.error==='service-not-allowed'){setVoiceOnlyStatus('Microphone permission allow karke dobara Start dabayein.');setVoiceOnlyState('error');voiceOnlyActive=false;if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;}else if(event?.error==='no-speech'){setVoiceOnlyStatus('Awaaz nahi mili. Sun raha hoon—dobara boliye.');setTimeout(startVoiceOnlyListening,250);}else{setVoiceOnlyStatus('Voice input mein dikkat aayi. Dobara sunne ki koshish kar raha hoon.');setTimeout(startVoiceOnlyListening,500);}};
+    recognition.onerror=event=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;voiceOnlyRecognition=null;if(event?.error==='not-allowed'||event?.error==='service-not-allowed'){setVoiceOnlyStatus('Microphone permission allow karke dobara Start dabayein.');setVoiceOnlyState('error');voiceOnlyActive=false;}else if(event?.error==='no-speech'){setVoiceOnlyStatus('Awaaz nahi mili. Sun raha hoon—dobara boliye.');setTimeout(startVoiceOnlyListening,250);}else{setVoiceOnlyStatus('Voice input mein dikkat aayi. Dobara sunne ki koshish kar raha hoon.');setTimeout(startVoiceOnlyListening,500);}};
     recognition.onend=()=>{if(voiceOnlyRecognition!==recognition||!voiceOnlyActive)return;voiceOnlyRecognition=null;if(finalText.trim())void handleVoiceOnlyTurn(finalText.trim());else if(!voiceOnlyBusy)setTimeout(startVoiceOnlyListening,180);};
-    try{recognition.start()}catch{voiceOnlyRecognition=null;setVoiceOnlyStatus('Microphone shuru nahi ho saka. Permission check karein.');setVoiceOnlyState('error');voiceOnlyActive=false;if(voiceOnlyStart)voiceOnlyStart.disabled=false;if(voiceOnlyStop)voiceOnlyStop.disabled=true;}
+    try{recognition.start()}catch{voiceOnlyRecognition=null;setVoiceOnlyStatus('Microphone shuru nahi ho saka. Permission check karein.');setVoiceOnlyState('error');voiceOnlyActive=false;}
   };
   const handleVoiceOnlyTurn=async spokenText=>{
     if(!voiceOnlyActive||voiceOnlyBusy)return;voiceOnlyBusy=true;const turn=++voiceOnlyTurn;setVoiceOnlyState('thinking');setVoiceOnlyStatus('TNS aapki baat samajh raha hai…');
@@ -1082,7 +1096,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
       window.speechSynthesis.cancel();window.speechSynthesis.speak(utterance);
     }catch(error){if(!voiceOnlyActive||turn!==voiceOnlyTurn)return;voiceOnlyBusy=false;setVoiceOnlyState('error');setVoiceOnlyStatus(String(error?.message||'TNS se jawab nahi mil saka.'));setTimeout(startVoiceOnlyListening,900);}
   };
-  const beginVoiceOnly=()=>{if(voiceOnlyActive)return;voiceOnlyActive=true;voiceOnlyBusy=false;voiceOnlyTurn++;if(voiceOnlyStart)voiceOnlyStart.disabled=true;if(voiceOnlyStop)voiceOnlyStop.disabled=false;setVoiceOnlyState('listening');setVoiceOnlyStatus('Microphone taiyar ho raha hai… boliye.');startVoiceOnlyListening();};
+  const beginVoiceOnly=()=>{if(voiceOnlyActive)return;voiceOnlyActive=true;voiceOnlyBusy=false;voiceOnlyTurn++;setVoiceOnlyState('listening');setVoiceOnlyStatus('Microphone taiyar ho raha hai… boliye.');startVoiceOnlyListening();};
   $id('homeChatVoice')?.addEventListener('click',()=>{
     // The same round control is a Send arrow while text is present and the
     // voice-conversation microphone while the composer is empty.
@@ -1093,12 +1107,8 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     showPanel('voiceConversation');
     setVoiceOnlyStatus('Voice-only mode shuru ho raha hai…');
     setVoiceOnlyState('idle');
-    if(voiceOnlyStart)voiceOnlyStart.disabled=false;
-    if(voiceOnlyStop)voiceOnlyStop.disabled=true;
     beginVoiceOnly();
   });
-  voiceOnlyStart?.addEventListener('click',beginVoiceOnly);
-  voiceOnlyStop?.addEventListener('click',()=>endVoiceOnly());
   $id('voiceOnlyClose')?.addEventListener('click',()=>endVoiceOnly());
   document.addEventListener('keydown',event=>{if(event.key==='Escape'&&voiceOnlyPanel?.classList.contains('active'))endVoiceOnly();});
   $id('homeChatDictation')?.addEventListener('click',()=>{
@@ -1194,13 +1204,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
       pending.textContent=displayedReply;
       pending.classList.remove('error');
       const replyLocale=normalizeTnsReplyLocale(result.replyLanguage)||detectTnsReplyLocale(displayedReply);
-      const playReplyButton=document.createElement('button');
-      playReplyButton.type='button';
-      playReplyButton.className='home-reply-voice-button';
-      playReplyButton.textContent='🔊 सुनें';
-      playReplyButton.setAttribute('aria-label','TNS ka jawab isi bhasha mein sunein');
-      playReplyButton.addEventListener('click',()=>speakTns(displayedReply,replyLocale));
-      pending.appendChild(playReplyButton);
+      addReplyVoiceButton(pending, displayedReply, replyLocale);
       addReplyCopyButton(pending, displayedReply);
       addReplyShareButton(pending, displayedReply);
       addReplyFeedbackButton(pending, displayedReply);

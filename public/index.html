@@ -7,7 +7,7 @@
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<section class="screen splash-screen" data-screen-number="1" id="splashScreen"><div class="splash-card"><img alt="TNS" class="splash-logo" src="/assets/icons/tns-512.png"/><h1>TNS</h1><p>Create, edit and connect with TNS</p><div aria-label="Loading" class="splash-loader"><span></span></div></div></section>
+<section class="screen splash-screen" data-screen-number="1" id="splashScreen"><div class="splash-card"><img alt="TNS" class="splash-logo" src="/assets/icons/tns-512.png"/><h1>TNS</h1><div aria-label="Loading" class="splash-loader"><span></span></div></div></section>
 <section class="screen auth-screen" data-screen-number="2" id="authScreen">
 <div class="auth-card login-reference-card glass">
 <div class="logo-lockup login-logo-lockup"><img alt="TNS" class="logo-mark login-logo-image" src="/assets/tns-login-logo.png"/><div><div class="brand-big">TNS</div></div></div>
@@ -42,7 +42,7 @@
 <button class="primary wide otp-verify-btn" id="verifyOtpBtn" type="button">Verify &amp; Continue</button><p class="status" id="otpMessage" aria-live="polite"></p><button class="text-btn" id="backToLogin" type="button">Back</button>
 </div></section>
 <div class="hidden" id="app">
-<header class="topbar"><div class="brand-area"><button aria-label="Menu" class="topbar-menu-btn" title="Menu" type="button"><span></span><span></span><span></span></button><img alt="TNS" class="logo-mini" src="/assets/tns-topbar-premium.svg"/><div class="topbar-brand-copy"><strong>TNS</strong></div></div><div class="top-actions"><button class="icon-btn" id="searchBtn" title="Search">⌕</button><button aria-label="New chat" class="icon-btn topbar-new-chat-btn" id="homeChatNew" title="New chat" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button aria-label="Notifications" class="icon-btn premium-top-icon" id="notificationBellBtn" title="Notifications" type="button"><img alt="Notifications" src="/assets/icons/tns-notification-premium.svg"/></button></div></header>
+<header class="topbar"><div class="brand-area"><button aria-label="Menu" class="topbar-menu-btn" title="Menu" type="button"><span></span><span></span><span></span></button><img alt="TNS Studio" class="logo-mini" src="/assets/tns-topbar-new.jpg"/><div class="topbar-brand-copy"><strong>TNS</strong></div></div><div class="top-actions"><button class="icon-btn" id="searchBtn" title="Search">⌕</button><button aria-label="New chat" class="icon-btn topbar-new-chat-btn" id="homeChatNew" title="New chat" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg></button><button aria-label="Notifications" class="icon-btn premium-top-icon" id="notificationBellBtn" title="Notifications" type="button"><img alt="Notifications" src="/assets/icons/tns-notification-premium.svg"/></button></div></header>
 <div aria-hidden="true" class="topbar-menu-popover hidden" id="topbarMenu">
 <button class="topbar-menu-item" data-menu-open="settings" type="button"><span>👤</span><div><b>Profile &amp; Account</b><small>Account preferences</small></div></button>
 <button class="topbar-menu-item" data-menu-open="premium" type="button"><span>👑</span><div><b>Premium</b><small>Unlock More</small></div></button>
@@ -51,20 +51,13 @@
 <button class="topbar-menu-item" data-menu-open="savedTasks" type="button"><span>💾</span><div><b>Saved Tasks</b><small>Resume and track your website work</small></div></button>
 </div>
 <main>
-<section class="panel voice-only-panel" data-screen-number="24" id="voiceConversation" aria-label="Voice to voice conversation">
+<section class="panel voice-only-panel" data-screen-number="24" id="voiceConversation" aria-label="Voice conversation">
   <div class="voice-only-card">
-    <button class="voice-only-back" id="voiceOnlyClose" type="button" aria-label="Back to dashboard"><span aria-hidden="true">‹</span> Back</button>
-    <div class="voice-only-brand"><span class="voice-brand-mark">T</span><span>TNS <b>VOICE</b></span></div>
-    <div class="voice-only-eyebrow"><span class="voice-live-dot"></span> PRIVATE VOICE SESSION</div>
+    <button class="voice-only-back" id="voiceOnlyClose" type="button" aria-label="Return to chat dashboard">
+      <svg aria-hidden="true" viewBox="0 0 32 32" focusable="false"><path d="M19.5 5.5 9 16l10.5 10.5M10 16h17"/></svg>
+    </button>
     <div class="voice-only-orb-wrap"><div class="voice-only-orbit orbit-one"></div><div class="voice-only-orbit orbit-two"></div><div class="voice-only-orb" id="voiceOnlyOrb" data-state="idle" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div></div>
-    <h2 id="voiceOnlyTitle">Let’s talk.</h2>
-    <p class="voice-only-subtitle">A natural conversation with TNS</p>
-    <p id="voiceOnlyStatus" class="voice-only-status" role="status" aria-live="polite">Start talking and TNS will reply with voice.</p>
-    <div class="voice-only-controls">
-      <button id="voiceOnlyStart" class="voice-only-start" type="button"><span aria-hidden="true">🎙</span> Start talking</button>
-      <button id="voiceOnlyStop" class="voice-only-stop" type="button" disabled><span aria-hidden="true">■</span> End session</button>
-    </div>
-    <div class="voice-only-footer"><span aria-hidden="true">✦</span> Voice-to-voice only <i></i> No chat or messages</div>
+    <p id="voiceOnlyStatus" class="voice-only-status voice-only-sr-status" role="status" aria-live="polite">Voice conversation is starting.</p>
   </div>
 </section>
 <section class="panel active" data-screen-number="6" id="dashboard">
@@ -116,8 +109,8 @@
 <button class="recording-send" id="homeChatRecordingSend" type="button" aria-label="Bola hua message bhejein" title="Send">↑</button>
 </div>
 </form>
-<details class="home-voice-language-options"><summary>🌐 Voice language</summary><label>Choose spoken language <select aria_label="Voice language" id="voiceLanguage"><option selected="selected" value="auto">Auto (app language)</option><option value="en-IN">English (India)</option><option value="hi-IN">Hindi</option><option value="ta-IN">Tamil</option><option value="kn-IN">Kannada</option><option value="te-IN">Telugu</option><option value="bn-IN">Bengali</option><option value="gu-IN">Gujarati</option><option value="pa-IN">Punjabi</option><option value="ml-IN">Malayalam</option><option value="mr-IN">Marathi</option><option value="ur-IN">Urdu</option><option value="or-IN">Odia</option><option value="ar-SA">Arabic</option><option value="ru-RU">Russian</option><option value="zh-CN">Chinese (Mandarin)</option><option value="ja-JP">Japanese</option><option value="ko-KR">Korean</option><option value="th-TH">Thai</option><option value="el-GR">Greek</option><option value="he-IL">Hebrew</option></select></label><select aria_label="Device voice" id="voiceSystemVoice"><option value="">Default device voice</option></select><select aria_label="Speech speed" id="voiceSpeechRate"><option value="0.75">Slow</option><option value="0.9">Relaxed</option><option selected="selected" value="1">Normal</option><option value="1.15">Fast</option><option value="1.3">Faster</option></select><button class="home-tool-chip" id="stopTnsVoicePlayback" type="button">■ Stop voice</button></details>
-<p class="home-chat-disclaimer">TNS jawab aur available tools ke zariye madad karega. Live search, booking ya submission ki availability connected services par depend karegi.</p>
+<div class="settings-hidden-controls" aria-hidden="true"><select id="voiceLanguage" tabindex="-1"><option selected="selected" value="auto">Auto (reply language)</option></select><select id="voiceSystemVoice" tabindex="-1"><option value="">Default device voice</option></select><select id="voiceSpeechRate" tabindex="-1"><option selected="selected" value="1">Normal</option></select><button id="stopTnsVoicePlayback" type="button" tabindex="-1">Stop voice</button></div>
+
 </div>
 <div hidden="" id="recentProjects"></div>
 </section>

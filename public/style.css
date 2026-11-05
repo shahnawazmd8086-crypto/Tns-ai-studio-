@@ -1754,7 +1754,7 @@ body:has(#dashboard.active) .topbar-new-chat-btn:focus-visible{outline:2px solid
 @media(max-width:560px){body:has(#dashboard.active) .topbar-new-chat-btn{width:30px;height:30px;min-width:30px;padding:5px}}
 
 /* Per-reply speak action: appears only below a completed TNS answer. */
-.home-reply-voice-button{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:7px 12px;border:1px solid var(--border,rgba(255,255,255,.2));border-radius:999px;background:rgba(95,125,255,.14);color:inherit;font:inherit;font-size:.88rem;cursor:pointer;touch-action:manipulation}
+.home-reply-voice-button{display:inline-flex;align-items:center;justify-content:center;margin:10px 0 0 0;padding:7px 10px;min-width:36px;min-height:34px;border:1px solid var(--border,rgba(255,255,255,.2));border-radius:999px;background:rgba(95,125,255,.14);color:inherit;font:inherit;font-size:.95rem;cursor:pointer;touch-action:manipulation}
 .home-reply-voice-button:active{transform:scale(.97)}
 .home-reply-voice-button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 
@@ -2092,4 +2092,180 @@ body:has(#dashboard.active) #app > .topbar .top-actions {
     padding: 7px 8px !important;
     border-radius: 17px !important;
   }
+}
+
+
+/* Focused TNS header + composer update: visual-only; existing controls and handlers stay intact. */
+body:has(#dashboard.active) #app > .topbar {
+  width: calc(100% - 8px) !important;
+  margin: 6px 4px 0 !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+body:has(#dashboard.active) #app > .topbar .brand-area {
+  gap: clamp(5px, 1.2vw, 9px) !important;
+}
+body:has(#dashboard.active) #app > .topbar .brand-area .logo-mini {
+  width: 48px !important;
+  height: 48px !important;
+  flex: 0 0 48px !important;
+  padding: 0 !important;
+  object-fit: cover !important;
+  border: 1px solid rgba(119, 190, 255, .42) !important;
+  border-radius: 12px !important;
+  background: #050b25 !important;
+  box-shadow: 0 0 16px rgba(39, 163, 255, .25), 0 0 17px rgba(196, 49, 255, .16) !important;
+}
+@media (max-width: 420px) {
+  body:has(#dashboard.active) #app > .topbar {
+    width: calc(100% - 8px) !important;
+    margin: 6px 4px 0 !important;
+    padding: 6px 7px !important;
+  }
+  body:has(#dashboard.active) #app > .topbar .brand-area .logo-mini {
+    width: 44px !important;
+    height: 44px !important;
+    flex-basis: 44px !important;
+  }
+}
+
+/* Keep one clean question box: remove the larger outer frame and enlarge the inner input box. */
+#dashboard .home-chat-composer {
+  width: 100% !important;
+  padding: 0 !important;
+  gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#dashboard .home-input-box {
+  flex: 1 1 0% !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  min-height: 56px !important;
+  padding: 6px 10px !important;
+  gap: 8px !important;
+  border: 1px solid rgba(128, 151, 255, .52) !important;
+  border-radius: 19px !important;
+  background: linear-gradient(145deg, rgba(16, 23, 48, .98), rgba(8, 13, 31, .98)) !important;
+  box-shadow: 0 6px 19px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.045) !important;
+}
+#dashboard .home-input-box textarea {
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 40px !important;
+  max-height: 140px !important;
+  padding: 9px 2px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  resize: none !important;
+  overflow-y: auto !important;
+  font-size: 16px !important;
+  line-height: 1.35 !important;
+}
+#dashboard .home-input-box textarea:focus {
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+}
+#dashboard .home-input-box:focus-within {
+  border-color: rgba(91, 196, 255, .82) !important;
+  box-shadow: 0 0 0 2px rgba(91, 196, 255, .10), 0 6px 19px rgba(0,0,0,.22) !important;
+}
+#dashboard .home-action-btn {
+  flex: 0 0 48px !important;
+  width: 48px !important;
+  min-width: 48px !important;
+  height: 48px !important;
+}
+body.tns-chat-typing #dashboard .home-chat-composer {
+  left: 8px !important;
+  right: 8px !important;
+  width: auto !important;
+  padding: 0 !important;
+}
+@media (max-width: 420px) {
+  #dashboard .home-input-box { min-height: 54px !important; padding: 5px 8px !important; gap: 5px !important; }
+  #dashboard .home-action-btn { flex-basis: 44px !important; width: 44px !important; min-width: 44px !important; height: 44px !important; }
+}
+
+
+/* Focused fix: vertically center the empty-chat prompt in the available chat area. */
+#dashboard .home-chat-messages:empty {
+  flex: 1 1 auto;
+  min-height: clamp(300px, 42dvh, 650px);
+  max-height: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#dashboard .home-chat-messages:empty::before {
+  min-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+/* Full-screen automatic voice conversation: only the exit arrow and live orb remain visible. */
+#voiceConversation.panel.active{
+  position:fixed;
+  inset:0;
+  z-index:90;
+  display:flex;
+  width:100vw;
+  height:100dvh;
+  min-height:100dvh;
+  max-width:none;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  align-items:center;
+  justify-content:center;
+  background:radial-gradient(ellipse at 50% 48%,rgba(81,91,255,.22),transparent 38%),radial-gradient(ellipse at 12% 90%,rgba(0,199,255,.09),transparent 36%),#080b16;
+}
+#voiceConversation .voice-only-card{
+  position:relative;
+  display:flex;
+  width:100%;
+  height:100%;
+  min-height:100dvh;
+  max-width:none;
+  padding:env(safe-area-inset-top,0px) 20px env(safe-area-inset-bottom,0px);
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+  background:transparent;
+  align-items:center;
+  justify-content:center;
+}
+#voiceConversation .voice-only-back{
+  position:fixed;
+  z-index:2;
+  top:calc(env(safe-area-inset-top,0px) + 18px);
+  left:18px;
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:1px solid rgba(180,198,255,.24);
+  border-radius:19px;
+  background:rgba(255,255,255,.075);
+  color:#f4f7ff;
+  box-shadow:0 8px 28px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.1);
+}
+#voiceConversation .voice-only-back svg{width:34px;height:34px;overflow:visible}
+#voiceConversation .voice-only-back path{fill:none;stroke:currentColor;stroke-width:4.2;stroke-linecap:round;stroke-linejoin:round}
+#voiceConversation .voice-only-orb-wrap{width:min(72vw,340px);height:min(72vw,340px);max-width:72vw;max-height:72vw;margin:0;flex:0 0 auto}
+#voiceConversation .voice-only-orb{width:min(48vw,220px);height:min(48vw,220px)}
+#voiceConversation .voice-only-sr-status{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+@media(max-width:420px){
+  #voiceConversation .voice-only-back{top:calc(env(safe-area-inset-top,0px) + 14px);left:14px;width:54px;height:54px;border-radius:17px}
+  #voiceConversation .voice-only-orb-wrap{width:min(76vw,300px);height:min(76vw,300px)}
+  #voiceConversation .voice-only-orb{width:min(48vw,190px);height:min(48vw,190px)}
 }

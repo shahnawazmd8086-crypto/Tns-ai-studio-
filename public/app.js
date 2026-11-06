@@ -564,7 +564,7 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
   };
   const conversationMessages = () => Array.from(messages.querySelectorAll('.home-chat-message'))
     .filter(node => !node.classList.contains('error') && !node.classList.contains('pending'))
-    .map(node => { const clone=node.cloneNode(true); clone.querySelectorAll('button').forEach(button=>button.remove()); return {role:node.classList.contains('user')?'user':'assistant',content:String(clone.textContent||'').trim().slice(0,8000)}; })
+    .map(node => { const clone=node.cloneNode(true); clone.querySelectorAll('button,.home-message-menu').forEach(element=>element.remove()); return {role:node.classList.contains('user')?'user':'assistant',content:String(clone.textContent||'').trim().slice(0,8000)}; })
     .filter(turn=>turn.content && turn.content!=='Soch raha hoon…').slice(-100);
   const saveConversation = async (expectedGeneration=conversationViewGeneration) => {
     const turns=conversationMessages(); if(expectedGeneration!==conversationViewGeneration)return;
@@ -784,29 +784,86 @@ $('#upgradePremiumBtn')?.addEventListener('click',()=>showPanel('premiumDetails'
     if (role === 'user' && !isError) {
       let pressTimer = null;
       let longPressed = false;
+      const closeMessageMenu = () => node.querySelector('.home-message-menu')?.remove();
       const cancelPress = () => { if (pressTimer) clearTimeout(pressTimer); pressTimer = null; };
-      const revealDelete = () => {
-        if (!node.isConnected || node.querySelector('.home-message-delete')) return;
-        longPressed = true;
-        const removeButton = document.createElement('button');
-        removeButton.type = 'button';
-        removeButton.className = 'home-message-delete';
-        removeButton.textContent = 'Delete message';
-        removeButton.setAttribute('aria-label', 'Is message aur TNS ka jawab delete karein');
-        removeButton.addEventListener('click', event => {
-          event.stopPropagation();
-          const next = node.nextElementSibling;
-          if (next && next.classList.contains('home-chat-message') && next.classList.contains('assistant')) next.remove();
-          node.remove();
-          scheduleConversationSave();
-          updateStarterVisibility();
-        });
-        node.appendChild(removeButton);
+      const pairedReply = () => {
+        const next = node.nextElementSibling;
+        return next && next.classList.contains('home-chat-message') && next.classList.contains('assistant') ? next : null;
       };
-      node.addEventListener('pointerdown', () => { longPressed = false; pressTimer = setTimeout(revealDelete, 600); });
+      const revealMessageMenu = () => {
+        if (!node.isConnected || node.querySelector('.home-message-menu')) return;
+        longPressed = true;
+        const menu = document.createElement('div');
+        menu.className = 'home-message-menu';
+        menu.setAttribute('role', 'group');
+        menu.setAttribute('aria-label', 'Message actions');
+        const addAction = (label, icon, action, danger=false) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `home-message-action${danger ? ' is-danger' : ''}`;
+          button.dataset.action = action;
+          button.innerHTML = `<span class="home-message-action-icon" aria-hidden="true">${icon}</span><span>${label}</span>`;
+          button.addEventListener('click', async event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const messageText = String(node.firstChild?.textContent || '').trim();
+            closeMessageMenu();
+            if (action === 'copy') {
+              try {
+                if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(messageText);
+                else {
+                  const helper = document.createElement('textarea'); helper.value = messageText; helper.style.position = 'fixed'; helper.style.opacity = '0'; document.body.appendChild(helper); helper.select();
+                  const copied = document.execCommand('copy'); helper.remove();
+                  if (!copied) throw new Error('Copy unavailable');
+                }
+                setStatus('Aapka message copy ho gaya.');
+              } catch { setStatus('Message copy nahi ho saka.'); }
+            } else if (action === 'select') {
+              const textNode = node.firstChild;
+              if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+                const range = document.createRange(); range.selectNodeContents(textNode);
+                const selection = window.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+                setStatus('Ab aap message text select kar sakte hain.');
+              }
+            } else if (action === 'edit') {
+              if (isSending) { setStatus('Pehle TNS ka current jawab aane dein, phir message edit karein.'); return; }
+              const reply = pairedReply();
+              if (reply) reply.remove();
+              node.remove();
+              input.value = messageText;
+              fitInput(); updateActionButton(); scheduleConversationSave();
+              input.focus();
+              form.requestSubmit();
+            } else if (action === 'share') {
+              try {
+                if (navigator.share) await navigator.share({ text: messageText });
+                else if (navigator.clipboard?.writeText) { await navigator.clipboard.writeText(messageText); setStatus('Share supported nahi hai; message copy kar diya gaya hai.'); }
+                else setStatus('Is browser mein share available nahi hai.');
+              } catch (error) { if (error?.name !== 'AbortError') setStatus('Message share nahi ho saka.'); }
+            } else if (action === 'delete') {
+              const reply = pairedReply();
+              if (reply) reply.remove();
+              node.remove();
+              scheduleConversationSave();
+              updateStarterVisibility();
+              setStatus('Aapka message aur uska TNS jawab delete ho gaya.');
+            }
+          });
+          menu.appendChild(button);
+        };
+        addAction('Copy', '▢', 'copy');
+        addAction('Select Text', '⌗', 'select');
+        addAction('Edit Message', '✎', 'edit');
+        addAction('Share', '↗', 'share');
+        addAction('Delete', '⌫', 'delete', true);
+        node.appendChild(menu);
+      };
+      node.addEventListener('pointerdown', () => { longPressed = false; pressTimer = setTimeout(revealMessageMenu, 650); });
       ['pointerup','pointerleave','pointercancel'].forEach(type => node.addEventListener(type, cancelPress));
-      node.addEventListener('contextmenu', event => { event.preventDefault(); cancelPress(); revealDelete(); });
-      node.addEventListener('click', event => { if (longPressed) { event.preventDefault(); event.stopPropagation(); longPressed = false; } });
+      node.addEventListener('contextmenu', event => { event.preventDefault(); cancelPress(); revealMessageMenu(); });
+      node.addEventListener('click', event => {
+        if (longPressed && !event.target.closest('.home-message-menu')) { event.preventDefault(); event.stopPropagation(); longPressed = false; }
+      });
     }
     updateStarterVisibility();
     messages.scrollTop = messages.scrollHeight;

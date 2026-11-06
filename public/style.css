@@ -901,7 +901,11 @@ body:has(#dashboard.active) #notifyBtn::after{content:none !important;}
 .home-chat-message.user { align-self:flex-end; background:rgba(106,130,255,.18); border:1px solid rgba(106,130,255,.26); }
 .home-chat-message.assistant { align-self:flex-start; background:rgba(255,255,255,.055); border:1px solid var(--border,rgba(255,255,255,.12)); }
 .home-chat-message.error { border-color:rgba(255,90,90,.5); }
-.home-message-delete { display:block; margin:10px 0 0 auto; padding:7px 12px; border:1px solid rgba(255,105,105,.45); border-radius:10px; background:rgba(180,45,55,.2); color:inherit; font:inherit; font-size:12px; font-weight:650; cursor:pointer; }
+.home-message-menu { display:flex; flex-direction:column; gap:2px; width:min(220px,100%); margin:10px 0 0 auto; padding:5px; border:1px solid rgba(130,150,255,.32); border-radius:13px; background:rgba(10,15,38,.97); box-shadow:0 10px 28px rgba(0,0,0,.35); }
+.home-message-action { display:flex; align-items:center; gap:10px; width:100%; min-height:38px; padding:7px 10px; border:0; border-radius:8px; background:transparent; color:inherit; font:inherit; font-size:13px; font-weight:600; text-align:left; cursor:pointer; }
+.home-message-action:active { background:rgba(120,145,255,.18); }
+.home-message-action-icon { display:inline-flex; align-items:center; justify-content:center; width:20px; font-size:16px; }
+.home-message-action.is-danger { color:#ff8b96; }
 .home-chat-message.user { touch-action:pan-y; }
 .home-chat-retry { display:block; margin-top:10px; padding:8px 12px; border-radius:10px; border:1px solid var(--border,rgba(255,255,255,.2)); background:rgba(106,130,255,.16); color:inherit; font:inherit; font-weight:600; cursor:pointer; }
 .home-chat-retry:disabled { opacity:.6; cursor:wait; }
@@ -2334,4 +2338,61 @@ body:has(#dashboard.active) #app > .topbar .brand-area .logo-mini {
   #dashboard .home-input-box { gap: 5px !important; padding-left: 7px !important; padding-right: 7px !important; }
   #dashboard .home-input-box #homeChatVoice { flex-basis: 40px !important; width: 40px !important; min-width: 40px !important; height: 40px !important; }
   #dashboard .home-input-box #homeChatDictation { flex-basis: 34px !important; width: 34px !important; min-width: 34px !important; height: 34px !important; }
+}
+
+
+/* Focused mobile composer fix: hide textarea scrollbar, anchor controls, and keep the composer within the viewport. */
+#dashboard .home-chat-composer,
+body.tns-chat-typing #dashboard .home-chat-composer {
+  width: auto !important;
+  max-width: min(900px, calc(100vw - 16px)) !important;
+  box-sizing: border-box !important;
+}
+#dashboard .home-input-box {
+  box-sizing: border-box !important;
+  min-width: 0 !important;
+  align-items: flex-end !important;
+}
+#dashboard .home-input-box .home-attach-wrap,
+#dashboard .home-input-box #homeChatDictation,
+#dashboard .home-input-box #homeChatVoice {
+  align-self: flex-end !important;
+  flex-shrink: 0 !important;
+  margin-bottom: 4px !important;
+}
+#dashboard .home-input-box textarea {
+  min-width: 0 !important;
+  align-self: stretch !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+#dashboard .home-input-box textarea::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+@media (max-width: 560px) {
+  #dashboard .home-chat-composer,
+  body.tns-chat-typing #dashboard .home-chat-composer {
+    left: max(8px, env(safe-area-inset-left)) !important;
+    right: max(8px, env(safe-area-inset-right)) !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+}
+
+
+/* Login and OTP: show the TNS artwork directly, without a square logo tile. */
+#authScreen .login-logo-image,
+#otpScreen .otp-logo-lockup .logo-mark {
+  width: clamp(104px, 24vw, 136px) !important;
+  height: auto !important;
+  max-height: 116px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  filter: drop-shadow(0 0 14px rgba(0, 150, 255, .24)) drop-shadow(0 0 16px rgba(180, 45, 255, .18));
 }
